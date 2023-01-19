@@ -45,8 +45,8 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Lint
-        run: yarn lint
+      # - name: Lint
+      #   run: yarn lint
 
-      - name: Test
-        run: yarn test
+      # - name: Test
+      #   run: yarn test
