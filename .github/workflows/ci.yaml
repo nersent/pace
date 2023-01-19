@@ -13,6 +13,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-20.04
+    env:
+      CARGO_TERM_COLOR: always
 
     steps:
       - name: Check out Git repository
@@ -46,8 +48,13 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          components: rustfmt, clippy, cargo-nextest
+          components: rustfmt, clippy
           override: true
+
+      - name: Install Rust tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
 
       - name: Rust Cache
         uses: actions/cache@v3
