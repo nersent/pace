@@ -1,5 +1,3 @@
-## 💰 Dupa
-
 ![title](/static/readme.png)
 
 ### Development
