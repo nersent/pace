@@ -1,0 +1,13 @@
+{
+  "name": "@trw-masterclass/dupa",
+  "version": "1.0.0",
+  "private": true,
+  "author": "xnerhu <xnerhu@gmail.com>",
+  "scripts": {
+    "dev": "cargo watch -x run",
+    "test": "cargo nextest run"
+  },
+  "dependencies": {
+    "cross-env": "^7.0.3"
+  }
+}
