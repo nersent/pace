@@ -1,8 +1,4 @@
-use std::{
-    borrow::Borrow,
-    env,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use colored::Colorize;
 use polars::prelude::DataFrame;

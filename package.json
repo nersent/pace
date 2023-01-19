@@ -7,7 +7,8 @@
     "dev": "cargo watch -x run",
     "build": "cargo build",
     "test": "cargo nextest run",
-    "lint": "cargo fmt --all -- --check && cargo clippy -- -D warnings"
+    "lint": "cargo fmt --all -- --check && cargo clippy -- -D warnings",
+    "lint:fix": "cargo clippy --fix --allow-dirty"
   },
   "dependencies": {
     "cross-env": "^7.0.3"

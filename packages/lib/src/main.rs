@@ -1,4 +1,9 @@
-use components::utils::testing::ComponentTestSnapshot;
+#![allow(
+    clippy::needless_return,
+    clippy::type_complexity,
+    clippy::needless_range_loop,
+    dead_code
+)]
 
 mod components;
 mod data;

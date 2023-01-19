@@ -3,7 +3,7 @@ pub fn compare_floats(a: f64, b: f64, precision: f64) -> bool {
 }
 
 pub fn find_max_index(arr: &[Option<f64>]) -> usize {
-    assert!(arr.len() > 0, "Array must have at least one element");
+    assert!(!arr.is_empty(), "Array must have at least one element");
 
     let mut max_value: Option<f64> = None;
     let mut max_value_index: Option<usize> = None;
@@ -30,7 +30,7 @@ pub fn find_max_index(arr: &[Option<f64>]) -> usize {
 }
 
 pub fn find_min_index(arr: &[Option<f64>]) -> usize {
-    assert!(arr.len() > 0, "Array must have at least one element");
+    assert!(!arr.is_empty(), "Array must have at least one element");
 
     let mut max_value: Option<f64> = None;
     let mut max_value_index: Option<usize> = None;

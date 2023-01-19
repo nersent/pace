@@ -17,11 +17,11 @@ mod tests {
         expected: &[Option<bool>],
     ) {
         let mut snapshot = ComponentTestSnapshot::<bool>::new();
-        for cctx in cctx.into_iter() {
+        for cctx in cctx {
             let output = target.next(cctx.get().close());
             snapshot.push(Some(output));
         }
-        snapshot.assert(&expected);
+        snapshot.assert(expected);
     }
 
     #[test]

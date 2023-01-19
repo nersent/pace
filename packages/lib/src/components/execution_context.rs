@@ -1,8 +1,6 @@
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
 use crate::data::asset_data_provider::AssetDataProvider;
-
-use super::component_context::ComponentContext;
 
 pub struct ExecutionContext {
     pub asset_data_provider: Rc<dyn AssetDataProvider + 'static>,
@@ -48,7 +46,7 @@ impl ExecutionContext {
             self.is_running = true;
             return true;
         }
-        self.current_tick = self.current_tick + 1;
+        self.current_tick += 1;
         return self.current_tick <= self.end_tick;
     }
 
