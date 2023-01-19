@@ -49,11 +49,21 @@ jobs:
           components: rustfmt, clippy
           override: true
 
+      - name: Rust Cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
       - name: Lint
         run: yarn lint
-
-      - name: Build
-        run: yarn build
 
       - name: Test
         run: yarn test
