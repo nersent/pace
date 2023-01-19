@@ -12,5 +12,7 @@ itertools = "0.10.5"
 similar-asserts = "1.4.2"
 similar = "2.2.1"
 colored = "2.0.0"
+
+[dev-dependencies]
 cargo-watch = "8.3.0"
 cargo-nextest = "0.9.49"
