@@ -13,12 +13,12 @@ mod tests {
 
     fn _test(
         cctx: &mut ComponentContext,
-        batch_validator: &mut RecursiveBatchValidator,
+        target: &mut RecursiveBatchValidator,
         expected: &[Option<bool>],
     ) {
         let mut snapshot = ComponentTestSnapshot::<bool>::new();
         for cctx in cctx.into_iter() {
-            let output = batch_validator.next(cctx.get().close());
+            let output = target.next(cctx.get().close());
             snapshot.push(Some(output));
         }
         snapshot.assert(&expected);

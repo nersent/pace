@@ -5,8 +5,8 @@ use crate::components::{
 use super::recursive_batch_validator::RecursiveBatchValidator;
 
 pub struct RecursiveSMA {
+    pub length: usize,
     ctx: ComponentContext,
-    length: usize,
     _length_f64: f64,
     sum: f64,
     lifo: RecursiveLIFO,
@@ -18,8 +18,8 @@ impl RecursiveSMA {
     pub fn new(ctx: ComponentContext, length: usize) -> Self {
         assert!(length > 1, "RecursiveSMA must have a length larger than 1");
         return RecursiveSMA {
-            ctx: ctx.clone(),
             length,
+            ctx: ctx.clone(),
             _length_f64: length as f64,
             sum: 0.0,
             lifo: RecursiveLIFO::new(ctx.clone(), length),

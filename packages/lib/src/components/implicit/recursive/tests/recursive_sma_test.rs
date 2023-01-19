@@ -6,10 +6,10 @@ mod tests {
         utils::testing::{load_test_artifact_with_target, ComponentTestSnapshot},
     };
 
-    fn _test(cctx: &mut ComponentContext, sma: &mut RecursiveSMA, expected: &[Option<f64>]) {
+    fn _test(cctx: &mut ComponentContext, target: &mut RecursiveSMA, expected: &[Option<f64>]) {
         let mut snapshot = ComponentTestSnapshot::<f64>::new();
         for cctx in cctx.into_iter() {
-            let output = sma.next(cctx.get().close());
+            let output = target.next(cctx.get().close());
             snapshot.push(output);
         }
         snapshot.assert(&expected);
