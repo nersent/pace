@@ -6,15 +6,11 @@ on:
     branches:
       - master
 
-permissions:
-  id-token: write
-  contents: read
-  issues: write
-  pull-requests: write
-
 jobs:
   build:
     runs-on: ubuntu-20.04
+    permissions:
+      actions: write
 
     steps:
       - name: Cancel Previous Runs
