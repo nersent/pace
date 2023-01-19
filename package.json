@@ -5,7 +5,8 @@
   "author": "xnerhu <xnerhu@gmail.com>",
   "scripts": {
     "dev": "cargo watch -x run",
-    "test": "cargo nextest run"
+    "test": "cargo nextest run",
+    "lint": "cargo fmt --all -- --check"
   },
   "dependencies": {
     "cross-env": "^7.0.3"
