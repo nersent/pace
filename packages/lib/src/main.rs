@@ -2,7 +2,7 @@
     clippy::needless_return,
     clippy::type_complexity,
     clippy::needless_range_loop,
-    dead_code
+    unused
 )]
 
 mod components;
