@@ -34,10 +34,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
 
-      - name: Install dependencies
+      - name: Install Node.js dependencies
         run: yarn install --prefer-offline --frozen-lockfile
         env:
           ADBLOCK: true
+
+      - name: Install Rust toolchain
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
 
       - name: Lint
         run: yarn lint
