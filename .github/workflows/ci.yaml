@@ -51,11 +51,6 @@ jobs:
           components: rustfmt, clippy
           override: true
 
-      - name: Install Rust tools
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-nextest
-
       - name: Rust Cache
         uses: actions/cache@v3
         continue-on-error: false
@@ -69,8 +64,13 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
+      - name: Install Rust tools
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+
       - name: Lint
         run: yarn lint
 
-      # - name: Test
-      #   run: yarn test
+      - name: Test
+        run: yarn test
