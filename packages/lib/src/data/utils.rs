@@ -3,6 +3,8 @@ use std::path::Path;
 use polars::prelude::ParquetReader;
 use polars::prelude::*;
 
+use crate::base::strategy::types::StrategyActionKind;
+
 pub fn read_parquet(path: &Path) -> DataFrame {
     let mut file = std::fs::File::open(path).unwrap();
     let df = ParquetReader::new(&mut file).finish().unwrap();
@@ -18,6 +20,7 @@ pub fn read_csv(path: &Path) -> DataFrame {
 pub trait SeriesUtils {
     fn to_f64(&self) -> Vec<Option<f64>>;
     fn to_i32(&self) -> Vec<Option<i32>>;
+    fn to_strategy_action(&self) -> Vec<Option<StrategyActionKind>>;
 }
 
 impl SeriesUtils for Series {
@@ -40,6 +43,26 @@ impl SeriesUtils for Series {
             .unwrap()
             .into_iter()
             .map(|val| if val.unwrap().is_nan() { None } else { val })
+            .collect::<Vec<_>>();
+    }
+
+    fn to_strategy_action(&self) -> Vec<Option<StrategyActionKind>> {
+        return self
+            .to_f64()
+            .into_iter()
+            .map(|value| {
+                if value.is_none() {
+                    return None;
+                }
+                let value = value.unwrap();
+                if value == 1.0 {
+                    return Some(StrategyActionKind::Long);
+                }
+                if value == -1.0 {
+                    return Some(StrategyActionKind::Short);
+                }
+                return None;
+            })
             .collect::<Vec<_>>();
     }
 }

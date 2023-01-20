@@ -4,7 +4,7 @@ use colored::Colorize;
 use polars::prelude::DataFrame;
 
 use crate::{
-    base::component_context::ComponentContext,
+    base::{component_context::ComponentContext, strategy::types::StrategyActionKind},
     data::{
         types::Timeframe,
         utils::{read_csv, SeriesUtils},
@@ -108,6 +108,14 @@ impl ComponentTestSnapshot<f64> {
     }
 }
 
+impl ComponentTestSnapshot<StrategyActionKind> {
+    pub fn assert(&self, expected: &[Option<StrategyActionKind>]) {
+        self.assert_iter(expected, |actual, expected| {
+            return actual == expected;
+        })
+    }
+}
+
 impl ComponentTestSnapshot<(Option<f64>, Option<f64>, bool)> {
     pub fn assert(&self, expected: &[Option<(Option<f64>, Option<f64>, bool)>]) {
         self.assert_iter(expected, |actual, expected| {
@@ -145,5 +153,13 @@ pub fn load_test_artifact_with_target(
 ) -> (DataFrame, ComponentContext, Vec<Option<f64>>) {
     let (df, ctx) = load_test_artifact(path);
     let values = df.column("_target_").unwrap().to_f64();
+    return (df, ctx, values);
+}
+
+pub fn load_test_strategy_artifact_with_target(
+    path: &str,
+) -> (DataFrame, ComponentContext, Vec<Option<StrategyActionKind>>) {
+    let (df, ctx) = load_test_artifact(path);
+    let values = df.column("_target_").unwrap().to_strategy_action();
     return (df, ctx, values);
 }

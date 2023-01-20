@@ -17,7 +17,7 @@ pub struct IndicatorRSI {
     rsi: RecursiveRSI,
 }
 
-use RecursiveRSIResult as IndicatorRSIResult;
+pub type IndicatorRSIResult = RecursiveRSIResult;
 
 impl IndicatorRSI {
     pub fn new(ctx: ComponentContext, config: IndicatorRSIConfig) -> Self {
