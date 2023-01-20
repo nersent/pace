@@ -51,9 +51,7 @@ impl SeriesUtils for Series {
             .to_f64()
             .into_iter()
             .map(|value| {
-                if value.is_none() {
-                    return None;
-                }
+                value?;
                 let value = value.unwrap();
                 if value == 1.0 {
                     return Some(StrategyActionKind::Long);
