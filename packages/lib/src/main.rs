@@ -7,6 +7,7 @@
 
 mod base;
 mod data;
+mod indicators;
 mod utils;
 
 fn main() {
