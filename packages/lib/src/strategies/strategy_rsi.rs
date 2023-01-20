@@ -20,9 +20,9 @@ pub struct StrategyRSIConfig {
 }
 
 pub struct StrategyRSI {
+    pub config: StrategyRSIConfig,
     ctx: ComponentContext,
     rsi: IndicatorRSI,
-    config: StrategyRSIConfig,
     cross_over: RecursiveCrossOver,
     cross_under: RecursiveCrossUnder,
 }

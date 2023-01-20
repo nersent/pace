@@ -19,6 +19,9 @@ pub struct IndicatorRSI {
 
 pub type IndicatorRSIResult = RecursiveRSIResult;
 
+pub static INDICATOR_RSI_MAX_VALUE: f64 = 100.0;
+pub static INDICATOR_RSI_MIN_VALUE: f64 = 0.0;
+
 impl IndicatorRSI {
     pub fn new(ctx: ComponentContext, config: IndicatorRSIConfig) -> Self {
         return IndicatorRSI {

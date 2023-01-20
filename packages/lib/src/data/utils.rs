@@ -1,7 +1,9 @@
 use std::path::Path;
 
-use polars::prelude::ParquetReader;
-use polars::prelude::*;
+use polars::{
+    prelude::{CsvReader, DataFrame, DataType, IsFloat, ParquetReader, SerReader},
+    series::Series,
+};
 
 use crate::base::strategy::types::StrategyActionKind;
 

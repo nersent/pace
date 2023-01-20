@@ -3,3 +3,4 @@ __pycache__
 target
 node_modules
 .rustc_info
+.vscode
