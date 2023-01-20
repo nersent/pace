@@ -28,7 +28,7 @@ mod tests {
         let mut snapshot = ComponentTestSnapshot::<StrategyActionKind>::new();
         for cctx in cctx {
             let (result, _) = target.next();
-            snapshot.push(result);
+            snapshot.push(Some(result));
         }
         snapshot.assert(expected);
     }

@@ -41,7 +41,7 @@ impl StrategyRSI {
         };
     }
 
-    pub fn next(&mut self) -> (Option<StrategyActionKind>, IndicatorRSIResult) {
+    pub fn next(&mut self) -> (StrategyActionKind, IndicatorRSIResult) {
         self.ctx.assert();
         let result_rsi = self.rsi.next();
 
@@ -54,11 +54,11 @@ impl StrategyRSI {
             .next(result_rsi.rsi, Some(self.config.overbought_threshold));
 
         let result = if is_cross_over {
-            Some(StrategyActionKind::Long)
+            StrategyActionKind::Long
         } else if is_cross_under {
-            Some(StrategyActionKind::Short)
+            StrategyActionKind::Short
         } else {
-            None
+            StrategyActionKind::None
         };
 
         return (result, result_rsi);

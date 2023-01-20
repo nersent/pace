@@ -10,7 +10,7 @@ use polars::{
 };
 
 pub struct FeatureComposer {
-    rows: Vec<Vec<Feature>>,
+    rows: Vec<Vec<Box<dyn Feature>>>,
 }
 
 impl FeatureComposer {
@@ -18,11 +18,11 @@ impl FeatureComposer {
         return FeatureComposer { rows: Vec::new() };
     }
 
-    pub fn push_row(&mut self, features: Vec<Feature>) {
+    pub fn push_row(&mut self, features: Vec<Box<dyn Feature>>) {
         self.rows.push(features);
     }
 
-    fn flatten_row(features: &Vec<Feature>) -> HashMap<String, Option<f64>> {
+    fn flatten_row(features: &Vec<Box<dyn Feature>>) -> HashMap<String, Option<f64>> {
         let mut map: HashMap<String, Option<f64>> = HashMap::new();
 
         for feature in features {
@@ -53,5 +53,23 @@ impl FeatureComposer {
         }
 
         return map;
+    }
+
+    pub fn to_df(&self) -> DataFrame {
+        let map = self.flatten();
+        let mut columns: Vec<Series> = Vec::new();
+
+        let mut keys: Vec<String> = map.keys().map(|s| s.to_string()).collect();
+        keys.sort();
+
+        for key in keys {
+            let value = map.get(&key).unwrap();
+            let series = Series::new(&key, value);
+            columns.push(series);
+        }
+
+        let df: PolarsResult<DataFrame> = DataFrame::new(columns);
+
+        return df.unwrap();
     }
 }

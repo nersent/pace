@@ -4,3 +4,4 @@ target
 node_modules
 .rustc_info
 .vscode
+.out

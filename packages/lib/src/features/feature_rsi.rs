@@ -1,7 +1,12 @@
+use std::collections::HashMap;
+
 use crate::{
     base::{
         component_context::ComponentContext,
-        features::{feature::Feature, types::FeatureKind},
+        features::{
+            feature::Feature, feature_builder::FeatureBuilder,
+            feature_regions::FeatureTernaryTrendRegions, types::FeatureKind,
+        },
         implicit::{
             recursive::{
                 recursive_cross_over::RecursiveCrossOver,
@@ -21,40 +26,59 @@ use crate::{
     },
 };
 
-pub struct FeatureRSI {
+pub struct FeatureBuilderRSI {
     ctx: ComponentContext,
     strategy: StrategyRSI,
 }
 
-impl FeatureRSI {
-    pub fn new(ctx: ComponentContext, strategy: StrategyRSI) -> Self {
+pub struct FeatureRSI {
+    pub raw: Option<f64>,
+    pub action: StrategyActionKind,
+    pub regions: FeatureTernaryTrendRegions,
+    pub up: Option<f64>,
+    pub down: Option<f64>,
+}
+
+impl Feature for FeatureRSI {
+    fn flatten(&self) -> HashMap<String, Option<f64>> {
+        let mut map = HashMap::from([
+            (String::from("raw"), self.raw),
+            (String::from("up"), self.up),
+            (String::from("down"), self.down),
+            (String::from("action"), Some(self.action.to_f64())),
+        ]);
+        map.extend(self.regions.flatten());
+        return map;
+    }
+}
+
+impl FeatureBuilder<FeatureRSI> for FeatureBuilderRSI {
+    fn next(&mut self) -> FeatureRSI {
+        self.ctx.assert();
+        let (action, res) = self.strategy.next();
+        let rsi = res.rsi;
+
         return FeatureRSI {
+            raw: rsi,
+            action,
+            regions: FeatureTernaryTrendRegions::new(
+                rsi,
+                INDICATOR_RSI_MIN_VALUE,
+                INDICATOR_RSI_MAX_VALUE,
+                self.strategy.config.oversold_threshold,
+                self.strategy.config.overbought_threshold,
+            ),
+            up: res.up.map(|v| v / INDICATOR_RSI_MAX_VALUE),
+            down: res.down.map(|v| v / INDICATOR_RSI_MAX_VALUE),
+        };
+    }
+}
+
+impl FeatureBuilderRSI {
+    pub fn new(ctx: ComponentContext, strategy: StrategyRSI) -> Self {
+        return FeatureBuilderRSI {
             ctx: ctx.clone(),
             strategy,
         };
-    }
-
-    pub fn next(&mut self) -> Feature {
-        self.ctx.assert();
-        let (strategy, res) = self.strategy.next();
-        let rsi = res.rsi;
-
-        return Feature::as_root(
-            "rsi",
-            Vec::from([
-                Feature::as_raw("value", rsi),
-                Feature::from_strategy_action(strategy),
-                Feature::to_overbought_oversold_regions(
-                    "value",
-                    rsi,
-                    INDICATOR_RSI_MIN_VALUE,
-                    INDICATOR_RSI_MAX_VALUE,
-                    self.strategy.config.oversold_threshold,
-                    self.strategy.config.overbought_threshold,
-                ),
-                Feature::as_numeric("up", res.up.map(|v| v / INDICATOR_RSI_MAX_VALUE)),
-                Feature::as_numeric("down", res.down.map(|v| v / INDICATOR_RSI_MAX_VALUE)),
-            ]),
-        );
     }
 }

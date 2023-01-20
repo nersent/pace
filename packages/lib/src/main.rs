@@ -5,98 +5,34 @@
     unused
 )]
 
-use base::{features::feature::Feature, strategy::types::StrategyActionKind};
-use features::feature_composer::FeatureComposer;
-use indicators::indicator_rsi::{INDICATOR_RSI_MAX_VALUE, INDICATOR_RSI_MIN_VALUE};
+use std::path::Path;
 
-use crate::features::utils::compute_regions;
+use base::{
+    component_context::ComponentContext,
+    features::{feature::Feature, feature_regions::FeatureTernaryTrendRegions},
+    strategy::types::StrategyActionKind,
+    utils::testing::{get_test_artifact_path, load_test_artifact},
+};
+use data::{types::Timeframe, utils::read_csv};
+
+use crate::base::features::{feature::FeatureNamespace, feature_composer::FeatureComposer};
 
 mod base;
 mod data;
+mod dataset;
 mod features;
 mod indicators;
 mod strategies;
 mod utils;
 
-fn main() {
-    let mut composer = FeatureComposer::new();
-    let rsi = Some(75.0);
-    let root = Feature::as_root(
-        "rsi",
-        Vec::from([
-            Feature::as_raw("value", rsi),
-            Feature::from_strategy_action(Some(StrategyActionKind::Long)),
-            Feature::to_overbought_oversold_regions(
-                "value",
-                rsi,
-                INDICATOR_RSI_MIN_VALUE,
-                INDICATOR_RSI_MAX_VALUE,
-                30.0,
-                70.0,
-            ),
-            Feature::as_numeric("up", Some(0.84)),
-            Feature::as_numeric("down", Some(0.14)),
-        ]),
-    );
-    composer.push_row(Vec::from([root]));
-    let rsi = Some(0.0);
-    let root = Feature::as_root(
-        "rsi",
-        Vec::from([
-            Feature::as_raw("value", rsi),
-            Feature::from_strategy_action(Some(StrategyActionKind::Long)),
-            Feature::to_overbought_oversold_regions(
-                "value",
-                rsi,
-                INDICATOR_RSI_MIN_VALUE,
-                INDICATOR_RSI_MAX_VALUE,
-                30.0,
-                70.0,
-            ),
-            Feature::as_numeric("up", Some(0.84)),
-            Feature::as_numeric("down", Some(0.14)),
-        ]),
-    );
-    composer.push_row(Vec::from([root]));
-    let rsi = Some(100.0);
-    let root = Feature::as_root(
-        "rsi",
-        Vec::from([
-            Feature::as_raw("value", rsi),
-            Feature::from_strategy_action(Some(StrategyActionKind::Long)),
-            Feature::to_overbought_oversold_regions(
-                "value",
-                rsi,
-                INDICATOR_RSI_MIN_VALUE,
-                INDICATOR_RSI_MAX_VALUE,
-                30.0,
-                70.0,
-            ),
-            Feature::as_numeric("up", Some(0.84)),
-            Feature::as_numeric("down", Some(0.14)),
-        ]),
-    );
-    composer.push_row(Vec::from([root]));
-    let rsi = Some(50.0);
-    let root = Feature::as_root(
-        "rsi",
-        Vec::from([
-            Feature::as_raw("value", rsi),
-            Feature::from_strategy_action(Some(StrategyActionKind::Long)),
-            Feature::to_overbought_oversold_regions(
-                "value",
-                rsi,
-                INDICATOR_RSI_MIN_VALUE,
-                INDICATOR_RSI_MAX_VALUE,
-                30.0,
-                70.0,
-            ),
-            Feature::as_numeric("up", Some(0.84)),
-            Feature::as_numeric("down", Some(0.14)),
-        ]),
-    );
-    composer.push_row(Vec::from([root]));
+fn generate_ml_dataset() {
+    let df = read_csv(&Path::new(
+        "artifacts/tests/implicit/recursive/sma/btc_1d_length_2_close.csv",
+    ));
+    let ctx = ComponentContext::build_from_df(&df, "BTC_USD", Timeframe::OneDay);
+    dataset::dataset_ml::generate_ml_dataset(ctx, &Path::new(".out/dataset_ml.csv"));
+}
 
-    let map = composer.flatten();
-    println!("{:?}", map);
+fn main() {
+    generate_ml_dataset();
 }

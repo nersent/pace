@@ -61,7 +61,7 @@ impl SeriesUtils for Series {
                 if value == -1.0 {
                     return Some(StrategyActionKind::Short);
                 }
-                return None;
+                return Some(StrategyActionKind::None);
             })
             .collect::<Vec<_>>();
     }
