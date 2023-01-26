@@ -3,6 +3,7 @@
     clippy::type_complexity,
     clippy::needless_range_loop,
     clippy::too_many_arguments,
+    clippy::uninlined_format_args,
     unused
 )]
 
@@ -32,6 +33,7 @@ fn generate_ml_dataset() {
     ));
     let ctx = ComponentContext::build_from_df(&df, "BTC_USD", Timeframe::OneDay);
     dataset::dataset_ml::generate_ml_dataset(ctx, Path::new(".out/dataset_ml.csv"));
+    println!("[process] exit");
 }
 
 fn main() {
