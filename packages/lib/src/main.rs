@@ -2,6 +2,7 @@
     clippy::needless_return,
     clippy::type_complexity,
     clippy::needless_range_loop,
+    clippy::too_many_arguments,
     unused
 )]
 
