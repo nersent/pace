@@ -73,4 +73,40 @@ impl ExecutionContext {
     pub fn time(&self) -> Option<Duration> {
         return self.asset_data_provider.get_time(self.current_tick);
     }
+
+    pub fn opens(&self) -> &[Option<f64>] {
+        return self
+            .asset_data_provider
+            .get_opens(self.start_tick, self.end_tick);
+    }
+
+    pub fn highs(&self) -> &[Option<f64>] {
+        return self
+            .asset_data_provider
+            .get_highs(self.start_tick, self.end_tick);
+    }
+
+    pub fn prev_high(&self, tick: usize) -> Option<f64> {
+        return self.asset_data_provider.get_high(self.current_tick - tick);
+    }
+
+    pub fn prev_low(&self, tick: usize) -> Option<f64> {
+        return self.asset_data_provider.get_low(self.current_tick - tick);
+    }
+
+    pub fn prev_close(&self, tick: usize) -> Option<f64> {
+        return self.asset_data_provider.get_close(self.current_tick - tick);
+    }
+
+    pub fn prev_highs(&self, length: usize) -> &[Option<f64>] {
+        return self
+            .asset_data_provider
+            .get_highs(self.current_tick - (length - 1), self.current_tick);
+    }
+
+    pub fn prev_lows(&self, length: usize) -> &[Option<f64>] {
+        return self
+            .asset_data_provider
+            .get_lows(self.current_tick - (length - 1), self.current_tick);
+    }
 }

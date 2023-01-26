@@ -1,3 +1,4 @@
+pub mod recursive_atr;
 pub mod recursive_batch_validator;
 pub mod recursive_cross_over;
 pub mod recursive_cross_under;
