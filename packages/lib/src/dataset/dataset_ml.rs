@@ -10,7 +10,7 @@ use crate::{
         },
         implicit::source::{Source, SourceKind},
     },
-    features::feature_rsi::FeatureBuilderRSI,
+    features::feature_builder_rsi::FeatureBuilderRSI,
     indicators::indicator_rsi::{IndicatorRSI, IndicatorRSIConfig},
     strategies::strategy_rsi::{
         StrategyRSI, StrategyRSIConfig, STRATEGY_RSI_DEFAULT_OVERBOUGHT_THRESHOLD,

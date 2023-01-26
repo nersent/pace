@@ -1,1 +1,1 @@
-pub mod feature_rsi;
+pub mod feature_builder_rsi;
