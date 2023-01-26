@@ -43,6 +43,7 @@ impl StrategyRSI {
 
     pub fn next(&mut self) -> (StrategyActionKind, IndicatorRSIResult) {
         self.ctx.assert();
+
         let result_rsi = self.rsi.next();
 
         let is_cross_over = self

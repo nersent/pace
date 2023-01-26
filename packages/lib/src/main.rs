@@ -26,11 +26,11 @@ mod strategies;
 mod utils;
 
 fn generate_ml_dataset() {
-    let df = read_csv(&Path::new(
+    let df = read_csv(Path::new(
         "artifacts/tests/implicit/recursive/sma/btc_1d_length_2_close.csv",
     ));
     let ctx = ComponentContext::build_from_df(&df, "BTC_USD", Timeframe::OneDay);
-    dataset::dataset_ml::generate_ml_dataset(ctx, &Path::new(".out/dataset_ml.csv"));
+    dataset::dataset_ml::generate_ml_dataset(ctx, Path::new(".out/dataset_ml.csv"));
 }
 
 fn main() {

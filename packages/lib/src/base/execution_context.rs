@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{rc::Rc, time::Duration};
 
 use crate::data::asset_data_provider::AssetDataProvider;
 
@@ -68,5 +68,9 @@ impl ExecutionContext {
 
     pub fn volume(&self) -> Option<f64> {
         return self.asset_data_provider.get_volume(self.current_tick);
+    }
+
+    pub fn time(&self) -> Option<Duration> {
+        return self.asset_data_provider.get_time(self.current_tick);
     }
 }

@@ -39,7 +39,7 @@ impl FeatureComposer {
             let row_map = FeatureComposer::flatten_row(row);
 
             for (key, value) in row_map {
-                let values = map.entry(key).or_insert(Vec::new());
+                let values = map.entry(key).or_default();
                 values.push(value);
             }
         }
@@ -59,8 +59,17 @@ impl FeatureComposer {
         let map = self.flatten();
         let mut columns: Vec<Series> = Vec::new();
 
-        let mut keys: Vec<String> = map.keys().map(|s| s.to_string()).collect();
+        let keys: Vec<String> = map.keys().map(|s| s.to_string()).collect();
+        let mut first_order_keys = keys.clone();
+        first_order_keys.retain(|s| {
+            s == "time" || s == "open" || s == "high" || s == "low" || s == "close" || s == "volume"
+        });
+        let mut keys = keys
+            .into_iter()
+            .filter(|s| !first_order_keys.contains(s))
+            .collect::<Vec<_>>();
         keys.sort();
+        keys = [&first_order_keys[..], &keys[..]].concat();
 
         for key in keys {
             let value = map.get(&key).unwrap();

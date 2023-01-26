@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use super::types::Timeframe;
 
 pub trait AssetDataProvider {
@@ -10,6 +12,7 @@ pub trait AssetDataProvider {
     fn get_low(&self, index: usize) -> Option<f64>;
     fn get_close(&self, index: usize) -> Option<f64>;
     fn get_volume(&self, index: usize) -> Option<f64>;
+    fn get_time(&self, index: usize) -> Option<Duration>;
     fn get_opens(&self, start_index: usize, end_index: usize) -> &[Option<f64>];
     fn get_highs(&self, start_index: usize, end_index: usize) -> &[Option<f64>];
     fn get_lows(&self, start_index: usize, end_index: usize) -> &[Option<f64>];

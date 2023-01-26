@@ -4,7 +4,7 @@ use crate::{
     base::{
         component_context::ComponentContext,
         features::{
-            feature::{Feature, FeatureNamespace},
+            feature::{Feature, FeatureNamespace, RawFeature},
             feature_builder::FeatureBuilder,
             feature_composer::FeatureComposer,
         },
@@ -41,7 +41,15 @@ pub fn generate_ml_dataset(ctx: ComponentContext, path: &Path) {
     let mut composer = FeatureComposer::new();
 
     for cctx in ctx {
+        let ctx = cctx.get();
+
         let mut features: Vec<Box<dyn Feature>> = Vec::new();
+        let current_time = ctx.time();
+
+        features.push(Box::new(RawFeature::new(
+            "time",
+            Some(current_time.unwrap().as_secs_f64()),
+        )));
 
         features.push(Box::new(FeatureNamespace::new(
             String::from("rsi"),

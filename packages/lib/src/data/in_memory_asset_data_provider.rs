@@ -1,4 +1,6 @@
-use polars::prelude::DataFrame;
+use std::time::Duration;
+
+use polars::prelude::{DataFrame, TimeUnit};
 
 use super::utils::SeriesUtils;
 use super::{asset_data_provider::AssetDataProvider, types::Timeframe};
@@ -11,6 +13,7 @@ pub struct InMemoryAssetDataProvider {
     low: Vec<Option<f64>>,
     close: Vec<Option<f64>>,
     volume: Vec<Option<f64>>,
+    time: Vec<Option<Duration>>,
     start_tick: usize,
     end_tick: usize,
 }
@@ -52,6 +55,10 @@ impl AssetDataProvider for InMemoryAssetDataProvider {
         return self.volume[index];
     }
 
+    fn get_time(&self, index: usize) -> Option<Duration> {
+        return self.time[index];
+    }
+
     fn get_opens(&self, start_index: usize, end_index: usize) -> &[Option<f64>] {
         return &self.open[start_index..end_index + 1];
     }
@@ -82,6 +89,7 @@ impl InMemoryAssetDataProvider {
         low: Vec<Option<f64>>,
         close: Vec<Option<f64>>,
         volume: Vec<Option<f64>>,
+        time: Vec<Option<Duration>>,
     ) -> Self {
         let start_tick = 0;
         let end_tick = close.len() - 1;
@@ -96,6 +104,7 @@ impl InMemoryAssetDataProvider {
             volume,
             start_tick,
             end_tick,
+            time,
         };
     }
 
@@ -110,6 +119,7 @@ impl InMemoryAssetDataProvider {
             volume: values.clone(),
             start_tick: 0,
             end_tick: values.len() - 1,
+            time: vec![None; values.len()],
         };
     }
 
@@ -119,9 +129,10 @@ impl InMemoryAssetDataProvider {
         let low = df.column("low").unwrap().to_f64();
         let close = df.column("close").unwrap().to_f64();
         let volume = df.column("volume").unwrap().to_f64();
+        let time = df.column("time").unwrap().to_duration();
 
         return InMemoryAssetDataProvider::new(
-            asset_name, timeframe, open, high, low, close, volume,
+            asset_name, timeframe, open, high, low, close, volume, time,
         );
     }
 }

@@ -1,7 +1,7 @@
-use std::path::Path;
+use std::{path::Path, time::Duration};
 
 use polars::{
-    prelude::{CsvReader, DataFrame, DataType, IsFloat, ParquetReader, SerReader},
+    prelude::{CsvReader, DataFrame, DataType, IsFloat, ParquetReader, SerReader, TimeUnit},
     series::Series,
 };
 
@@ -23,6 +23,7 @@ pub trait SeriesUtils {
     fn to_f64(&self) -> Vec<Option<f64>>;
     fn to_i32(&self) -> Vec<Option<i32>>;
     fn to_strategy_action(&self) -> Vec<Option<StrategyActionKind>>;
+    fn to_duration(&self) -> Vec<Option<Duration>>;
 }
 
 impl SeriesUtils for Series {
@@ -62,6 +63,23 @@ impl SeriesUtils for Series {
                     return Some(StrategyActionKind::Short);
                 }
                 return Some(StrategyActionKind::None);
+            })
+            .collect::<Vec<_>>();
+    }
+
+    fn to_duration(&self) -> Vec<Option<Duration>> {
+        return self
+            .cast(&DataType::Float64)
+            .unwrap()
+            .f64()
+            .unwrap()
+            .into_iter()
+            .map(|val| {
+                if val.unwrap().is_nan() {
+                    None
+                } else {
+                    Some(Duration::from_secs_f64(val.unwrap()))
+                }
             })
             .collect::<Vec<_>>();
     }

@@ -27,3 +27,25 @@ impl FeatureNamespace {
         return FeatureNamespace { name, feature };
     }
 }
+
+pub struct RawFeature {
+    pub name: String,
+    pub value: Option<f64>,
+}
+
+impl Feature for RawFeature {
+    fn flatten(&self) -> HashMap<String, Option<f64>> {
+        let mut map = HashMap::new();
+        map.insert(self.name.clone(), self.value);
+        return map;
+    }
+}
+
+impl RawFeature {
+    pub fn new(name: &str, value: Option<f64>) -> Self {
+        return RawFeature {
+            name: String::from(name),
+            value,
+        };
+    }
+}
