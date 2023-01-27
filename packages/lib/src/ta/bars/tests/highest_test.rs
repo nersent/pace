@@ -17,7 +17,7 @@ mod tests {
                 continue;
             }
             let output = Bars::highest(ctx.prev_highs(length), length);
-            snapshot.push(output.map(|x| x as f64));
+            snapshot.push(output.map(|x| x));
         }
         snapshot.assert(expected);
     }
