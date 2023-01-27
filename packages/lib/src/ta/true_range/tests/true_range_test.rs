@@ -23,7 +23,7 @@ mod tests {
                 prev_close,
                 handle_na,
             );
-            snapshot.push(output.map(|x| x));
+            snapshot.push(output);
         }
         snapshot.assert(expected);
     }

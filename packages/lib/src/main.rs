@@ -4,6 +4,7 @@
     clippy::needless_range_loop,
     clippy::too_many_arguments,
     clippy::uninlined_format_args,
+    clippy::module_inception,
     unused
 )]
 

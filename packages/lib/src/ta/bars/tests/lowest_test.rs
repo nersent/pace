@@ -17,7 +17,7 @@ mod tests {
                 continue;
             }
             let output = Bars::lowest(ctx.prev_lows(length), length);
-            snapshot.push(output.map(|x| x));
+            snapshot.push(output);
         }
         snapshot.assert(expected);
     }
