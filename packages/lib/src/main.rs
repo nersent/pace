@@ -9,30 +9,25 @@
 
 use std::path::Path;
 
-use base::{
-    component_context::ComponentContext,
-    features::{feature::Feature, feature_regions::FeatureTernaryTrendRegions},
-    strategy::types::StrategyActionKind,
-    utils::testing::{get_test_artifact_path, load_test_artifact},
+use crate::{
+    asset::timeframe::Timeframe, components::component_context::ComponentContext,
+    data::csv::read_csv, testing::fixture::Fixture,
 };
-use data::{types::Timeframe, utils::read_csv};
 
-use crate::base::features::{feature::FeatureNamespace, feature_composer::FeatureComposer};
-
-mod base;
+mod asset;
+mod components;
 mod data;
-mod dataset;
 mod features;
-mod indicators;
-mod strategies;
+mod math;
+mod ml;
+mod strategy;
+mod ta;
+mod testing;
 mod utils;
 
 fn generate_ml_dataset() {
-    let df = read_csv(Path::new(
-        "artifacts/tests/implicit/recursive/sma/btc_1d_length_2_close.csv",
-    ));
-    let ctx = ComponentContext::build_from_df(&df, "BTC_USD", Timeframe::OneDay);
-    dataset::dataset_ml::generate_ml_dataset(ctx, Path::new(".out/dataset_ml.csv"));
+    let (df, ctx) = Fixture::raw("ml/fixtures/btc_1d.csv");
+    ml::dataset_ml::generate_ml_dataset(ctx, Path::new(".out/dataset_ml.csv"));
     println!("[process] exit");
 }
 

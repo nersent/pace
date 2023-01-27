@@ -1,1 +1,6 @@
-pub mod feature_builder_rsi;
+pub mod feature;
+pub mod feature_builder;
+pub mod feature_composer;
+pub mod feature_regions;
+
+mod tests;
