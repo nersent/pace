@@ -1,3 +1,4 @@
+pub mod aroon;
 pub mod bars;
 pub mod cross;
 pub mod moving_average;

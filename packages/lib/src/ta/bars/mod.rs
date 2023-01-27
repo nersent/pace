@@ -1,2 +1,2 @@
-mod bars;
 mod tests;
+pub mod utils;

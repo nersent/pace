@@ -132,6 +132,16 @@ impl ComponentTestSnapshot<(Option<f64>, Option<f64>, bool)> {
     }
 }
 
+impl ComponentTestSnapshot<(Option<f64>, Option<f64>)> {
+    pub fn assert(&self, expected: &[Option<(Option<f64>, Option<f64>)>]) {
+        self.assert_iter(expected, |actual, expected| match (actual.0, expected.0) {
+            (None, None) => true,
+            (Some(_actual), Some(_expected)) => _actual.compare(_expected),
+            _ => false,
+        })
+    }
+}
+
 pub fn get_test_artifact_path(path: &str) -> PathBuf {
     return Path::new("../../artifacts/tests").join(path);
 }

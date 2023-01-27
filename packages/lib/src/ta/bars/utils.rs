@@ -1,8 +1,8 @@
 use crate::utils::array::{find_max_index, find_min_index};
 
-pub struct Bars {}
+pub struct BarUtils {}
 
-impl Bars {
+impl BarUtils {
     pub fn highest_bars(series: &[Option<f64>], length: usize) -> Option<i32> {
         let index = find_max_index(series);
         return Some(-(length.abs_diff(index).abs_diff(1) as i32));

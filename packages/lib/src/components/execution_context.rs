@@ -109,4 +109,8 @@ impl ExecutionContext {
             .asset_data_provider
             .get_lows(self.current_tick - (length - 1), self.current_tick);
     }
+
+    pub fn at_length(&self, length: usize) -> bool {
+        return self.current_tick >= length - 1;
+    }
 }

@@ -4,7 +4,7 @@ mod tests {
 
     use crate::{
         components::{component_context::ComponentContext, testing::ComponentTestSnapshot},
-        ta::bars::bars::Bars,
+        ta::bars::utils::BarUtils,
         testing::fixture::Fixture,
     };
 
@@ -12,11 +12,11 @@ mod tests {
         let mut snapshot = ComponentTestSnapshot::<f64>::new();
         for cctx in cctx {
             let ctx = cctx.get();
-            if (ctx.current_tick < length - 1) {
+            if (!ctx.at_length(length)) {
                 snapshot.push(None);
                 continue;
             }
-            let output = Bars::lowest_bars(ctx.prev_lows(length), length);
+            let output = BarUtils::lowest_bars(ctx.prev_lows(length), length);
             snapshot.push(output.map(|x| x as f64));
         }
         snapshot.assert(expected);
