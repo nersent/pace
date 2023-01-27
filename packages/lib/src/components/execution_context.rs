@@ -50,6 +50,10 @@ impl ExecutionContext {
         return self.current_tick <= self.end_tick;
     }
 
+    pub fn tick(&self) -> usize {
+        return self.current_tick;
+    }
+
     pub fn open(&self) -> Option<f64> {
         return self.asset_data_provider.get_open(self.current_tick);
     }
