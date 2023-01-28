@@ -15,6 +15,7 @@ use polars::export::chrono::format;
 use strategy::{
     metrics::{
         strategy_equity_metric::{StrategyEquityMetric, StrategyEquityMetricConfig},
+        strategy_omega_ratio_metric::{StrategyOmegaRatioMetric, StrategyOmegaRatioMetricConfig},
         strategy_sharpe_ratio_metric::{
             StrategySharpeRatioMetric, StrategySharpeRatioMetricConfig,
         },
@@ -63,7 +64,12 @@ fn example_strategy() {
         ctx.clone(),
         StrategySharpeRatioMetricConfig {
             risk_free_rate: 0.0,
-            multiplier: 1.0,
+        },
+    );
+    let mut omega_ratio = StrategyOmegaRatioMetric::new(
+        ctx.clone(),
+        StrategyOmegaRatioMetricConfig {
+            risk_free_rate: 0.0,
         },
     );
 
@@ -73,8 +79,8 @@ fn example_strategy() {
         let price = ctx.open();
         let mut action: StrategyActionKind = StrategyActionKind::None;
 
-        let long_ticks = [5];
-        let short_ticks = [1];
+        let long_ticks = [408];
+        let short_ticks = [];
 
         if long_ticks.contains(&tick) {
             action = StrategyActionKind::Long;
@@ -90,10 +96,11 @@ fn example_strategy() {
 
         let current_trade = strategy.next(action);
         let equity = equity.next(current_trade);
-        let sharpe_ratio = sharpe_ratio.next(equity);
+        let sharpe_ratio = sharpe_ratio.next(equity) * f64::sqrt(365.0);
+        let omega_ratio = omega_ratio.next(equity) * f64::sqrt(365.0);
 
         println!(
-            "\n{}: {}{}\n{}\n{}",
+            "\n{}: {}{}\n{}\n{}\n{}",
             format!("[{}]", tick).bright_cyan().bold(),
             format!("{:?}", price.unwrap_or(0.0)).blue(),
             if current_trade.is_none() || current_trade.unwrap().entry_price.is_none() {
@@ -107,10 +114,11 @@ fn example_strategy() {
             )
             .bright_black(),
             format!("Sharpe: {:0.2}", sharpe_ratio).bright_black(),
+            format!("Omega: {:0.2}", omega_ratio).bright_black(),
             // current_trade,
         );
 
-        if (tick > 20) {
+        if (tick > 500) {
             break;
         }
     }

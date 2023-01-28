@@ -6,7 +6,6 @@ use super::strategy_equity_metric::StrategyEquity;
 
 pub struct StrategySharpeRatioMetricConfig {
     pub risk_free_rate: f64,
-    pub multiplier: f64,
 }
 
 pub struct StrategySharpeRatioMetric {
@@ -29,7 +28,7 @@ impl StrategySharpeRatioMetric {
             equity.returns_mean,
             equity.returns_stdev,
             self.config.risk_free_rate,
-        ) * self.config.multiplier;
+        );
 
         return sharpe_ratio;
     }
