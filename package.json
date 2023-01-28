@@ -5,7 +5,8 @@
   "author": "xnerhu <xnerhu@gmail.com>",
   "scripts": {
     "dev": "cargo watch -x run",
-    "build": "cargo build",
+    "build": "cross-env RUSTFLAGS=\"-C embed-bitcode -C target-cpu=native\" cargo build --release",
+    "build:optimized": "cargo pgo optimize",
     "test": "cargo nextest run",
     "lint": "cargo fmt --all -- --check && cargo clippy -- -D warnings",
     "lint:fix": "cargo clippy --fix --allow-dirty"

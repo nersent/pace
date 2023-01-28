@@ -839,6 +839,7 @@ dependencies = [
 name = "lib"
 version = "0.0.1"
 dependencies = [
+ "chrono",
  "colored",
  "itertools",
  "polars",

@@ -5,6 +5,7 @@ edition = "2021"
 
 [profile.release]
 lto = "fat"
+opt-level = 3
 
 [dependencies]
 polars = { version = "0.26.1", features = ["parquet", "lazy"] }
@@ -12,4 +13,4 @@ itertools = "0.10.5"
 similar-asserts = "1.4.2"
 similar = "2.2.1"
 colored = "2.0.0"
-
+chrono = "0.4.23"
