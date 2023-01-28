@@ -1,6 +1,10 @@
 use crate::components::component_context::ComponentContext;
 
-use super::{action::StrategyActionKind, trade::StrategyTrade};
+use super::{
+    action::StrategyActionKind,
+    orderbook::{Order, OrderBook, OrderBookConfig},
+    trade::Trade,
+};
 
 pub struct StrategyContextConfig {
     /**
@@ -11,75 +15,60 @@ pub struct StrategyContextConfig {
 
 pub struct StrategyContext {
     pub config: StrategyContextConfig,
-    pub trades: Vec<StrategyTrade>,
+    pub trades: Vec<Trade>,
+    current_trade: Option<Trade>,
     ctx: ComponentContext,
-    prev_action: Option<StrategyActionKind>,
+    orderbook: OrderBook,
 }
 
 impl StrategyContext {
     pub fn new(ctx: ComponentContext, config: StrategyContextConfig) -> Self {
         return StrategyContext {
             config,
-            ctx,
+            ctx: ctx.clone(),
             trades: Vec::new(),
-            prev_action: None,
+            orderbook: OrderBook::new(ctx.clone(), OrderBookConfig { slippage: 1 }),
+            current_trade: None,
         };
     }
 
-    fn create_trade(&mut self, action: StrategyActionKind) {
-        assert!(action != StrategyActionKind::None);
-        self.trades.push(StrategyTrade {
-            direction: action.to_direction(),
-            is_filled: false,
-            is_closed: false,
-            fill_tick: None,
-            fill_price: None,
-            close_tick: None,
-            close_price: None,
-        });
-    }
+    pub fn next(&mut self, action: StrategyActionKind) -> Option<Trade> {
+        self.ctx.assert();
+        let direction = action.to_direction();
 
-    pub fn next(&mut self, action: StrategyActionKind) {
-        let prev_action = self.prev_action;
-        self.prev_action = Some(action);
-
-        if !self.trades.is_empty() {
-            let mut current_trade = self.trades.last_mut().unwrap();
-
-            if (action != StrategyActionKind::None) {
-                return;
-            }
-
-            if !current_trade.is_filled {
-                let ctx = self.ctx.get();
-
-                current_trade.fill_price = ctx.open();
-                current_trade.is_filled = true;
-                current_trade.fill_tick = Some(ctx.tick());
-
-                return;
-            }
-
-            if let Some(prev_action) = prev_action {
-                if prev_action != StrategyActionKind::None
-                    && !current_trade.is_closed
-                    && current_trade.direction != prev_action.to_direction()
-                {
-                    let ctx = self.ctx.get();
-
-                    current_trade.close_price = ctx.open();
-                    current_trade.close_tick = Some(ctx.tick());
-                    current_trade.is_closed = true;
-
-                    return;
+        if let Some(direction) = direction {
+            if self.current_trade.is_none() {
+                self.current_trade = Some(Trade::new(direction));
+                self.orderbook.place(direction);
+            } else {
+                let mut current_trade = self.current_trade.as_mut().unwrap();
+                if current_trade.direction != direction {
+                    self.orderbook.place(direction);
                 }
             }
         }
 
-        if (action != StrategyActionKind::None
-            && (self.trades.is_empty() || self.trades.last().unwrap().is_closed))
-        {
-            self.create_trade(action);
+        let ctx = self.ctx.get();
+        let filled_order = self.orderbook.next();
+
+        if let Some(filled_order) = filled_order {
+            assert!(self.current_trade.is_some(), "No trade");
+            let mut current_trade = self.current_trade.as_mut().unwrap();
+
+            if current_trade.entry_tick.is_none() {
+                current_trade.entry_price = filled_order.fill_price;
+                current_trade.entry_tick = filled_order.fill_tick;
+            } else {
+                current_trade.exit_price = filled_order.fill_price;
+                current_trade.exit_tick = filled_order.fill_tick;
+                current_trade.is_closed = true;
+                let current_trade = current_trade.clone();
+                self.trades.push(current_trade);
+                self.current_trade = None;
+                return Some(current_trade);
+            }
         }
+
+        return self.current_trade;
     }
 }

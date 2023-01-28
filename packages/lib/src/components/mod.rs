@@ -1,13 +1,10 @@
 pub mod batch_validator;
 pub mod component_context;
-// pub mod explicit;
-// pub mod features;
-// pub mod implicit;
-// pub mod pinescript;
-// pub mod strategy;
-// pub mod utils;
 pub mod execution_context;
 pub mod lifo;
+pub mod mean;
 pub mod position;
 pub mod source;
+pub mod stdev;
 pub mod testing;
+pub mod variance;

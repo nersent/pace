@@ -11,7 +11,16 @@
 use std::path::Path;
 
 use colored::Colorize;
-use strategy::strategy_context::{StrategyContext, StrategyContextConfig};
+use polars::export::chrono::format;
+use strategy::{
+    metrics::{
+        strategy_equity_metric::{StrategyEquityMetric, StrategyEquityMetricConfig},
+        strategy_sharpe_ratio_metric::{
+            StrategySharpeRatioMetric, StrategySharpeRatioMetricConfig,
+        },
+    },
+    strategy_context::{StrategyContext, StrategyContextConfig},
+};
 
 use crate::{
     asset::timeframe::Timeframe, components::component_context::ComponentContext,
@@ -44,33 +53,64 @@ fn example_strategy() {
         },
     );
 
+    let mut equity = StrategyEquityMetric::new(
+        ctx.clone(),
+        StrategyEquityMetricConfig {
+            initial_capital: 1000.0,
+        },
+    );
+    let mut sharpe_ratio = StrategySharpeRatioMetric::new(
+        ctx.clone(),
+        StrategySharpeRatioMetricConfig {
+            risk_free_rate: 0.0,
+            multiplier: 1.0,
+        },
+    );
+
     for cctx in ctx {
         let ctx = cctx.get();
-        let current_tick = ctx.tick();
-        let current_price = ctx.open();
+        let tick = ctx.tick();
+        let price = ctx.open();
         let mut action: StrategyActionKind = StrategyActionKind::None;
 
-        if (current_tick == 4 || current_tick == 5) {
+        let long_ticks = [5];
+        let short_ticks = [1];
+
+        if long_ticks.contains(&tick) {
             action = StrategyActionKind::Long;
-        } else if (current_tick == 8) {
+        } else if short_ticks.contains(&tick) {
             action = StrategyActionKind::Short;
         }
 
-        strategy.next(action);
+        // if (current_tick == 4 || current_tick == 7) {
+        //     action = StrategyActionKind::Long;
+        // } else if (current_tick == 10 || current_tick == 14) {
+        //     action = StrategyActionKind::Short;
+        // }
+
+        let current_trade = strategy.next(action);
+        let equity = equity.next(current_trade);
+        let sharpe_ratio = sharpe_ratio.next(equity);
 
         println!(
-            "\n{} {} | {}\n{:?}",
-            format!("[{}]", current_tick).bright_cyan().bold(),
-            format!("{:?}", current_price).bright_black(),
-            match action {
-                StrategyActionKind::None => format!("None").bright_white(),
-                StrategyActionKind::Long => format!("▲ [Long]").bright_green().bold(),
-                StrategyActionKind::Short => format!("▲ [Short]").bright_red().bold(),
+            "\n{}: {}{}\n{}\n{}",
+            format!("[{}]", tick).bright_cyan().bold(),
+            format!("{:?}", price.unwrap_or(0.0)).blue(),
+            if current_trade.is_none() || current_trade.unwrap().entry_price.is_none() {
+                "".to_string()
+            } else {
+                format!("| {}", current_trade.unwrap().to_colored_string()).to_string()
             },
-            strategy.trades.last()
+            format!(
+                "Equity: {:0.2} | Returns: {:0.2} | Mean returns: {:0.2} | Stdev Returns: {:0.2}",
+                equity.equity, equity.returns, equity.returns_mean, equity.returns_stdev
+            )
+            .bright_black(),
+            format!("Sharpe: {:0.2}", sharpe_ratio).bright_black(),
+            // current_trade,
         );
 
-        if (current_tick > 10) {
+        if (tick > 20) {
             break;
         }
     }

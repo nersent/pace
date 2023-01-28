@@ -1,4 +1,4 @@
-use super::trade::StrategyTradeDirection;
+use super::trade::TradeDirection;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum StrategyActionKind {
@@ -16,11 +16,11 @@ impl StrategyActionKind {
         };
     }
 
-    pub fn to_direction(&self) -> StrategyTradeDirection {
+    pub fn to_direction(&self) -> Option<TradeDirection> {
         return match self {
-            StrategyActionKind::None => panic!("Cannot convert None to direction"),
-            StrategyActionKind::Long => StrategyTradeDirection::Long,
-            StrategyActionKind::Short => StrategyTradeDirection::Short,
+            StrategyActionKind::None => None,
+            StrategyActionKind::Long => Some(TradeDirection::Long),
+            StrategyActionKind::Short => Some(TradeDirection::Short),
         };
     }
 }

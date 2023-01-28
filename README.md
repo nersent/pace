@@ -42,3 +42,6 @@ $ yarn install
 - https://nnethercote.github.io/2022/07/20/how-to-speed-up-the-rust-compiler-in-july-2022.html
 - https://nnethercote.github.io/perf-book/build-configuration.html#link-time-optimization
 - https://www.reddit.com/r/rust/comments/yecr1v/how_to_speed_up_the_rust_compiler_in_october_2022/
+- https://jonisalonen.com/2013/deriving-welfords-method-for-computing-variance/
+- https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm
+- https://pypi.org/project/welford/
