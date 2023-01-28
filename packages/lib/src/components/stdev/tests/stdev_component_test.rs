@@ -21,7 +21,7 @@ mod tests {
         for cctx in cctx {
             let ctx = cctx.get();
             let output = target.next(ctx.close().unwrap());
-            snapshot.push(output);
+            snapshot.push(Some(output));
         }
         snapshot.assert(expected);
     }
@@ -47,7 +47,7 @@ mod tests {
             &mut ctx.clone(),
             &mut StandardDeviationComponent::new(ctx.clone()),
             &[
-                None,
+                Some(0.0),
                 Some(1.4142135623730951),
                 Some(3.055050463303893),
                 Some(6.191391873668904),
