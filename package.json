@@ -5,6 +5,8 @@
   "author": "xnerhu <xnerhu@gmail.com>",
   "scripts": {
     "dev": "cargo watch -x run",
+    "build:py": "maturin build --manifest-path packages/lib/Cargo.toml -o build/lib --interpreter python3.9 && pip3 install build/lib/lib-0.0.1-cp39-none-win_amd64.whl --force-reinstall",
+    "dev:py": "cross-env PYTHONPATH=\"./\" C:/Python39/python.exe ./packages/optimizer/src/main.py",
     "build": "cross-env RUSTFLAGS=\"-C embed-bitcode -C target-cpu=native\" cargo build --release",
     "build:optimized": "cargo pgo optimize",
     "test": "cargo nextest run",

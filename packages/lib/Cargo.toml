@@ -3,6 +3,10 @@ name = "lib"
 version = "0.0.1"
 edition = "2021"
 
+[lib]
+name = "dupa"
+crate-type = ["cdylib", "rlib"]
+
 [profile.release]
 lto = "fat"
 opt-level = 3
@@ -14,3 +18,4 @@ similar-asserts = "1.4.2"
 similar = "2.2.1"
 colored = "2.0.0"
 chrono = "0.4.23"
+pyo3 = { version = "0.18.0", features = ["extension-module", "macros"] }

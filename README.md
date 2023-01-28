@@ -46,3 +46,5 @@ $ yarn install
 - https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm
 - https://pypi.org/project/welford/
 - https://github.com/Kobzol/cargo-pgo
+- https://pyo3.rs/main/function/signature
+- https://pyo3.rs/main/features
