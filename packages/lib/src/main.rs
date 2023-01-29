@@ -68,7 +68,7 @@ fn example_strategy() -> u128 {
         RelativeStrengthIndexIndicator::new(
             ctx.clone(),
             RelativeStrengthIndexIndicatorConfig {
-                length: 14,
+                length: 118,
                 src: Source::from_kind(ctx.clone(), SourceKind::Close),
             },
         ),
@@ -101,6 +101,7 @@ fn example_strategy() -> u128 {
     );
     let mut total_closed_trades = StrategyTotalClosedTradesMetric::new(ctx.clone());
     let start_time = Instant::now();
+    let mut xd = 0.0;
 
     for cctx in ctx {
         let ctx = cctx.get();
@@ -109,17 +110,68 @@ fn example_strategy() -> u128 {
         let time = ctx.time();
         let mut action: StrategyActionKind = StrategyActionKind::None;
 
-        let long_ticks = [];
-        let short_ticks = [];
+        let (rsi_action, _) = rsi_strategy.next();
+        action = rsi_action;
+
+        if false && tick > 1930 {
+            let current_trade = strategy.next(action);
+            let _equity = equity.next(current_trade);
+            let sharpe_ratio = sharpe_ratio.next(_equity) * f64::sqrt(365.0);
+            let omega_ratio = omega_ratio.next(_equity) * f64::sqrt(365.0);
+            let total_closed_trades = total_closed_trades.next(current_trade);
+
+            // if (equity.returns > xd) {
+            //     xd = equity.returns;
+            // }
+
+            // if equity.returns > 20.0 {
+            //     println!("{}: {}", tick, equity.returns);
+            // }
+
+            if (tick >= 2621 - 50 && tick <= 2621 + 50) {
+                println!(
+                "\n{}: {}{} | {}\n{}\n{}\n{}\n{}",
+                // format!("[{}]", tick).bright_cyan().bold(),
+                if tick == 2621 {
+                    format!("[{}]", tick).on_bright_red().bold()
+                } else {
+                    format!("[{}]", tick).bright_cyan().bold()
+                },
+                format!("{:?}", price.unwrap_or(0.0)).blue(),
+                if current_trade.is_none() || current_trade.unwrap().entry_price.is_none() {
+                    "".to_string()
+                } else {
+                    format!(" | {}", current_trade.unwrap().to_colored_string()).to_string()
+                },
+                format!(
+                    "{}",
+                    NaiveDateTime::from_timestamp_millis(time.unwrap().as_millis() as i64)
+                        .unwrap()
+                        .format("%d-%m-%Y %H:%M")
+                )
+                .bright_black(),
+                format!(
+                    "Equity: {:0.2} | Returns: {:0.2} | Mean returns: {:0.2} | Stdev Returns: {:0.2} | Fill size: {:?} | pnL: {} | Equity before trade: {:0.2} | Entry price: {:0.2} | Fixed Returns {:0.2}",
+                    _equity.equity, _equity.returns, _equity.returns_mean, _equity.returns_stdev, equity.trade_fill_size,_equity.trade_pnl, equity.current_equity, if current_trade.is_some() { current_trade.unwrap().entry_price.unwrap_or(0.0) } else { 0.0 }, _equity.fixed_returns
+                )
+                .bright_black(),
+                format!("Sharpe: {:0.2}", sharpe_ratio).bright_black(),
+                format!("Omega: {:0.2}", omega_ratio).bright_black(),
+                format!("Total closed trades: {}", total_closed_trades).bright_black(),
+                // current_trade,
+            );
+            }
+            continue;
+        }
+
+        let long_ticks = [2, 20];
+        let short_ticks = [10, 15];
 
         if long_ticks.contains(&tick) {
             action = StrategyActionKind::Long;
         } else if short_ticks.contains(&tick) {
             action = StrategyActionKind::Short;
         }
-
-        let (rsi_action, _) = rsi_strategy.next();
-        action = rsi_action;
 
         // if (current_tick == 4 || current_tick == 7) {
         //     action = StrategyActionKind::Long;
@@ -128,41 +180,41 @@ fn example_strategy() -> u128 {
         // }
 
         let current_trade = strategy.next(action);
-        let equity = equity.next(current_trade);
-        let sharpe_ratio = sharpe_ratio.next(equity) * f64::sqrt(365.0);
-        let omega_ratio = omega_ratio.next(equity) * f64::sqrt(365.0);
+        let _equity = equity.next(current_trade);
+        let sharpe_ratio = sharpe_ratio.next(_equity) * f64::sqrt(365.0);
+        let omega_ratio = omega_ratio.next(_equity) * f64::sqrt(365.0);
         let total_closed_trades = total_closed_trades.next(current_trade);
 
-        // println!(
-        //     "\n{}: {}{} | {}\n{}\n{}\n{}\n{}",
-        //     format!("[{}]", tick).bright_cyan().bold(),
-        //     format!("{:?}", price.unwrap_or(0.0)).blue(),
-        //     if current_trade.is_none() || current_trade.unwrap().entry_price.is_none() {
-        //         "".to_string()
-        //     } else {
-        //         format!("| {}", current_trade.unwrap().to_colored_string()).to_string()
-        //     },
-        //     format!(
-        //         "{}",
-        //         NaiveDateTime::from_timestamp_millis(time.unwrap().as_millis() as i64)
-        //             .unwrap()
-        //             .format("%d-%m-%Y %H:%M")
-        //     )
-        //     .bright_black(),
-        //     format!(
-        //         "Equity: {:0.2} | Returns: {:0.2} | Mean returns: {:0.2} | Stdev Returns: {:0.2}",
-        //         equity.equity, equity.returns, equity.returns_mean, equity.returns_stdev
-        //     )
-        //     .bright_black(),
-        //     format!("Sharpe: {:0.2}", sharpe_ratio).bright_black(),
-        //     format!("Omega: {:0.2}", omega_ratio).bright_black(),
-        //     format!("Total closed trades: {}", total_closed_trades).bright_black(),
-        //     // current_trade,
-        // );
+        println!(
+                "\n{}: {}{} | {}\n{}\n{}\n{}\n{}",
+                format!("[{}]", tick).bright_cyan().bold(),
+                format!("{:?}", price.unwrap_or(0.0)).blue(),
+                if current_trade.is_none() || current_trade.unwrap().entry_price.is_none() {
+                    "".to_string()
+                } else {
+                    format!(" | {}", current_trade.unwrap().to_colored_string()).to_string()
+                },
+                format!(
+                    "{}",
+                    NaiveDateTime::from_timestamp_millis(time.unwrap().as_millis() as i64)
+                        .unwrap()
+                        .format("%d-%m-%Y %H:%M")
+                )
+                .bright_black(),
+                format!(
+                    "Equity: {:0.2} | Returns: {:0.2} | Mean returns: {:0.2} | Stdev Returns: {:0.2} | Fill size: {:?} | pnL: {} | Trade pnL: {:0.2} | Fixed Returns: {:0.2}",
+                    _equity.equity, _equity.returns, _equity.returns_mean, _equity.returns_stdev, equity.trade_fill_size, _equity.pnl, _equity.trade_pnl, _equity.fixed_returns
+                )
+                .bright_black(),
+                format!("Sharpe: {:0.2}", sharpe_ratio).bright_black(),
+                format!("Omega: {:0.2}", omega_ratio).bright_black(),
+                format!("Total closed trades: {}", total_closed_trades).bright_black(),
+                // current_trade,
+            );
 
-        // if (tick > 450) {
-        //     break;
-        // }
+        if (tick > 100) {
+            break;
+        }
     }
 
     let end_time = Instant::now();
@@ -173,21 +225,23 @@ fn example_strategy() -> u128 {
 }
 
 fn main() {
-    let mut time_sum: u128 = 0;
-    let mut time_count: u128 = 0;
-    let max = 5000;
-    for i in 0..max {
-        let elapsed_time = example_strategy();
-        time_sum += elapsed_time;
-        time_count += 1;
-        if time_count % 250 == 0 {
-            println!("{}%", f64::round((i as f64 / max as f64) * 100.0));
-        }
-    }
+    example_strategy();
 
-    let mean = time_sum / time_count;
+    // let mut time_sum: u128 = 0;
+    // let mut time_count: u128 = 0;
+    // let max = 5000;
+    // for i in 0..max {
+    //     let elapsed_time = example_strategy();
+    //     time_sum += elapsed_time;
+    //     time_count += 1;
+    //     if time_count % 250 == 0 {
+    //         println!("{}%", f64::round((i as f64 / max as f64) * 100.0));
+    //     }
+    // }
 
-    println!("Mean runtime: {}µs", mean);
+    // let mean = time_sum / time_count;
+
+    // println!("Mean runtime: {}µs", mean);
 
     // generate_ml_dataset();
 }

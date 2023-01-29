@@ -1,7 +1,7 @@
 use colored::{ColoredString, Colorize};
 use polars::export::chrono::format;
 
-use super::{action::StrategyActionKind, strategy_utils::compute_pnl};
+use super::{action::StrategyActionKind, strategy_utils::{compute_pnl, compute_trade_pnl}};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum TradeDirection {
@@ -41,9 +41,9 @@ impl Trade {
     }
 
     pub fn pnl(&self, fill_size: f64, current_price: f64) -> Option<f64> {
-        match (self.entry_price) {
-            (Some(entry_price)) => {
-                return Some(compute_pnl(
+        match self.entry_price {
+            Some(entry_price) => {
+                return Some(compute_trade_pnl(
                     fill_size,
                     entry_price,
                     current_price,

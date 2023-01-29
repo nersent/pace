@@ -1,14 +1,33 @@
-use polars::prelude::DataFrame;
-use pyo3::types::PyType;
-use pyo3::{prelude::*, types::PyDict};
-use std::{
-    path::{Path, PathBuf},
-    time::Instant,
-};
+use std::cell::Cell;
+use std::path::PathBuf;
+use std::rc::Rc;
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
-use chrono::{DateTime, NaiveDateTime};
-use colored::Colorize;
+use crate::asset::asset_data_provider::AssetDataProvider;
+use crate::asset::asset_data_provider_manager::AssetDataProviderManager;
+use itertools::Itertools;
+use pyo3::prelude::*;
+use pyo3::types::{PyDict, PyString, PyTuple, PyType};
+mod asset;
+mod components;
+mod data;
+mod features;
+mod math;
+mod ml;
+mod strategy;
+mod ta;
+mod testing;
+mod utils;
+use crate::asset::in_memory_asset_data_provider::InMemoryAssetDataProvider;
+use crate::components::execution_context::ExecutionContext;
+use crate::data::csv::read_csv;
+use crate::{
+    asset::timeframe::Timeframe, components::component_context::ComponentContext,
+    strategy::action::StrategyActionKind, testing::fixture::Fixture,
+};
 use components::source::{Source, SourceKind};
+use pyo3::types::IntoPyDict;
 use strategy::{
     metrics::{
         strategy_equity_metric::{StrategyEquityMetric, StrategyEquityMetricConfig},
@@ -30,210 +49,196 @@ use ta::relative_strength_index::{
         RSI_STRATEGY_THRESHOLD_OVERBOUGHT, RSI_STRATEGY_THRESHOLD_OVERSOLD,
     },
 };
-
-use crate::{
-    asset::timeframe::Timeframe, components::component_context::ComponentContext,
-    data::csv::read_csv, strategy::action::StrategyActionKind, testing::fixture::Fixture,
-};
-mod asset;
-mod components;
-mod data;
-mod features;
-mod math;
-mod ml;
-mod strategy;
-mod ta;
-mod testing;
-mod utils;
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-    Ok((a + b).to_string())
+#[pyclass(name = "AssetDataProviderManager")]
+pub struct PyAssetDataProviderManager {
+    // xd: Box<dyn Dupsko + Sync + Send>,
+    manager: AssetDataProviderManager,
 }
 
-#[pyfunction]
-fn xd(a: usize, b: usize) -> PyResult<String> {
-    Ok((a * b).to_string())
+#[pyclass(name = "StrategyResult")]
+#[derive(Debug)]
+pub struct PyStrategyResult {
+    #[pyo3(get)]
+    sharpe_ratio: f64,
+    #[pyo3(get)]
+    omega_ratio: f64,
+    #[pyo3(get)]
+    total_closed_trades: usize,
+    #[pyo3(get)]
+    equity: f64,
+    #[pyo3(get)]
+    elapsed: u128,
+    #[pyo3(get)]
+    equity_history: Option<Vec<f64>>,
+    #[pyo3(get)]
+    time_history: Option<Vec<u64>>,
+    #[pyo3(get)]
+    returns_history: Option<Vec<f64>>,
+    #[pyo3(get)]
+    fill_size_history: Option<Vec<Option<f64>>>,
 }
 
-// #[pyfunction]
-// fn example_strategy(path: String) -> PyResult<String> {
-//     let (df, ctx) = Fixture::raw(&path);
+#[derive(Debug, PartialEq, Clone)]
+#[pyclass(name = "StrategyConfig")]
+pub struct PyStrategyConfig {
+    rsi_length: usize,
+}
 
-//     let mut rsi_strategy = RelativeStrengthIndexStrategy::new(
-//         ctx.clone(),
-//         RelativeStrengthIndexStrategyConfig {
-//             threshold_oversold: RSI_STRATEGY_THRESHOLD_OVERSOLD,
-//             threshold_overbought: RSI_STRATEGY_THRESHOLD_OVERBOUGHT,
-//         },
-//         RelativeStrengthIndexIndicator::new(
-//             ctx.clone(),
-//             RelativeStrengthIndexIndicatorConfig {
-//                 length: 14,
-//                 src: Source::from_kind(ctx.clone(), SourceKind::Close),
-//             },
-//         ),
-//     );
+#[pymethods]
+impl PyAssetDataProviderManager {
+    #[new]
+    fn new() -> Self {
+        return PyAssetDataProviderManager {
+            manager: AssetDataProviderManager::new(),
+        };
+    }
 
-//     let mut strategy = StrategyContext::new(
-//         ctx.clone(),
-//         StrategyContextConfig {
-//             on_bar_close: false,
-//         },
-//     );
+    #[pyo3(signature = (path))]
+    fn load(&mut self, py: Python<'_>, path: String) -> PyResult<String> {
+        let path = PathBuf::from(path);
+        let df = read_csv(&path);
+        let asset_data_provider = InMemoryAssetDataProvider::from_df(
+            &df,
+            &"BTC_USD",
+            asset::timeframe::Timeframe::OneDay,
+        );
+        let id = "BTC_USD";
+        self.manager.add(&id, Arc::from(asset_data_provider));
+        return Ok(id.to_string());
+    }
 
-//     let mut equity = StrategyEquityMetric::new(
-//         ctx.clone(),
-//         StrategyEquityMetricConfig {
-//             initial_capital: 1000.0,
-//         },
-//     );
-//     let mut sharpe_ratio = StrategySharpeRatioMetric::new(
-//         ctx.clone(),
-//         StrategySharpeRatioMetricConfig {
-//             risk_free_rate: 0.0,
-//         },
-//     );
-//     let mut omega_ratio = StrategyOmegaRatioMetric::new(
-//         ctx.clone(),
-//         StrategyOmegaRatioMetricConfig {
-//             risk_free_rate: 0.0,
-//         },
-//     );
-//     let mut total_closed_trades = StrategyTotalClosedTradesMetric::new(ctx.clone());
-//     let start_time = Instant::now();
+    #[pyo3(signature = (id, config, with_history))]
+    fn example_strategy(
+        &self,
+        py: Python<'_>,
+        id: String,
+        config: &PyDict,
+        with_history: bool,
+    ) -> PyResult<PyStrategyResult> {
+        let asset_data_provider = self.manager.get(&id);
+        let ctx = ComponentContext::build(ExecutionContext::from_asset(asset_data_provider));
+        let rsi_length = config.get_item("rsi_length").unwrap().extract::<usize>()?;
 
-//     for cctx in ctx {
-//         let ctx = cctx.get();
-//         let tick = ctx.tick();
-//         let price = ctx.open();
-//         let time = ctx.time();
-//         let mut action: StrategyActionKind = StrategyActionKind::None;
+        let mut rsi_strategy = RelativeStrengthIndexStrategy::new(
+            ctx.clone(),
+            RelativeStrengthIndexStrategyConfig {
+                threshold_oversold: RSI_STRATEGY_THRESHOLD_OVERSOLD,
+                threshold_overbought: RSI_STRATEGY_THRESHOLD_OVERBOUGHT,
+            },
+            RelativeStrengthIndexIndicator::new(
+                ctx.clone(),
+                RelativeStrengthIndexIndicatorConfig {
+                    length: rsi_length,
+                    src: Source::from_kind(ctx.clone(), SourceKind::Close),
+                },
+            ),
+        );
 
-//         let long_ticks = [];
-//         let short_ticks = [];
+        let mut strategy = StrategyContext::new(
+            ctx.clone(),
+            StrategyContextConfig {
+                on_bar_close: false,
+            },
+        );
 
-//         if long_ticks.contains(&tick) {
-//             action = StrategyActionKind::Long;
-//         } else if short_ticks.contains(&tick) {
-//             action = StrategyActionKind::Short;
-//         }
+        let mut equity = StrategyEquityMetric::new(
+            ctx.clone(),
+            StrategyEquityMetricConfig {
+                initial_capital: 1000.0,
+            },
+        );
+        let mut sharpe_ratio = StrategySharpeRatioMetric::new(
+            ctx.clone(),
+            StrategySharpeRatioMetricConfig {
+                risk_free_rate: 0.0,
+            },
+        );
+        let mut omega_ratio = StrategyOmegaRatioMetric::new(
+            ctx.clone(),
+            StrategyOmegaRatioMetricConfig {
+                risk_free_rate: 0.0,
+            },
+        );
+        let mut total_closed_trades = StrategyTotalClosedTradesMetric::new(ctx.clone());
+        let start_time = Instant::now();
 
-//         let (rsi_action, _) = rsi_strategy.next();
-//         action = rsi_action;
+        let mut res = PyStrategyResult {
+            sharpe_ratio: 0.0,
+            omega_ratio: 0.0,
+            total_closed_trades: 0,
+            equity: 0.0,
+            elapsed: 0,
+            equity_history: if with_history { Some(Vec::new()) } else { None },
+            time_history: if with_history { Some(Vec::new()) } else { None },
+            returns_history: if with_history { Some(Vec::new()) } else { None },
+            fill_size_history: if with_history { Some(Vec::new()) } else { None },
+        };
+        let annualized = f64::sqrt(365.0);
+        let mut xd = 0.0;
 
-//         // if (current_tick == 4 || current_tick == 7) {
-//         //     action = StrategyActionKind::Long;
-//         // } else if (current_tick == 10 || current_tick == 14) {
-//         //     action = StrategyActionKind::Short;
-//         // }
+        for cctx in ctx {
+            let ctx = cctx.get();
+            let tick = ctx.tick();
+            let mut action: StrategyActionKind = StrategyActionKind::None;
 
-//         let current_trade = strategy.next(action);
-//         let equity = equity.next(current_trade);
-//         let sharpe_ratio = sharpe_ratio.next(equity) * f64::sqrt(365.0);
-//         let omega_ratio = omega_ratio.next(equity) * f64::sqrt(365.0);
-//         let total_closed_trades = total_closed_trades.next(current_trade);
+            let (rsi_action, _) = rsi_strategy.next();
 
-//         // println!(
-//         //     "\n{}: {}{} | {}\n{}\n{}\n{}\n{}",
-//         //     format!("[{}]", tick).bright_cyan().bold(),
-//         //     format!("{:?}", price.unwrap_or(0.0)).blue(),
-//         //     if current_trade.is_none() || current_trade.unwrap().entry_price.is_none() {
-//         //         "".to_string()
-//         //     } else {
-//         //         format!("| {}", current_trade.unwrap().to_colored_string()).to_string()
-//         //     },
-//         //     format!(
-//         //         "{}",
-//         //         NaiveDateTime::from_timestamp_millis(time.unwrap().as_millis() as i64)
-//         //             .unwrap()
-//         //             .format("%d-%m-%Y %H:%M")
-//         //     )
-//         //     .bright_black(),
-//         //     format!(
-//         //         "Equity: {:0.2} | Returns: {:0.2} | Mean returns: {:0.2} | Stdev Returns: {:0.2}",
-//         //         equity.equity, equity.returns, equity.returns_mean, equity.returns_stdev
-//         //     )
-//         //     .bright_black(),
-//         //     format!("Sharpe: {:0.2}", sharpe_ratio).bright_black(),
-//         //     format!("Omega: {:0.2}", omega_ratio).bright_black(),
-//         //     format!("Total closed trades: {}", total_closed_trades).bright_black(),
-//         //     // current_trade,
-//         // );
+            if tick > 1930 {
+                action = rsi_action;
+                let current_trade = strategy.next(action);
+                let _equity = equity.next(current_trade);
 
-//         // if (tick > 450) {
-//         //     break;
-//         // }
-//     }
+                res.sharpe_ratio = sharpe_ratio.next(_equity) * annualized;
+                res.omega_ratio = omega_ratio.next(_equity) * annualized;
+                res.total_closed_trades = total_closed_trades.next(current_trade);
+                res.equity = _equity.equity;
 
-//     let end_time = Instant::now();
-//     let elapsed_time = end_time - start_time;
-//     let elapsed_time = elapsed_time.as_micros();
+                if with_history {
+                    let time = ctx.time();
+                    res.equity_history.as_mut().unwrap().push(_equity.equity);
+                    res.time_history
+                        .as_mut()
+                        .unwrap()
+                        .push(time.unwrap().as_secs());
+                    res.returns_history.as_mut().unwrap().push(_equity.returns);
+                    res.fill_size_history
+                        .as_mut()
+                        .unwrap()
+                        .push(equity.trade_fill_size);
+                }
 
-//     return Ok(elapsed_time.to_string());
-// }
+                // if equity.returns > xd {
+                //     xd = equity.returns;
+                // }
+            }
+        }
 
-// #[pyfunction]
-// fn chuj(path: String) -> PyResult<String> {
-//     let path = PathBuf::from(path);
+        let end_time = Instant::now();
+        let elapsed_time = end_time - start_time;
+        let elapsed_time = elapsed_time.as_micros();
+        res.elapsed = elapsed_time;
+        // if with_history {
+        //     println!("xddddddddddd: {}", xd);
+        // }
+        return Ok(res);
 
-//     Ok(path.display().to_string())
-// }
+        // let gil = Python::acquire_gil();
+        // let py = gil.python();
+        // let dict = PyDict::new(py);
+        // dict.set_item("sharpe_ratio", res.sharpe_ratio)?;
+        // dict.set_item("omega_ratio", res.omega_ratio)?;
+        // dict.set_item("total_closed_trades", res.total_closed_trades)?;
+        // dict.set_item("elapsed", res.elapsed)?;
+        // return Ok(dict);
 
-// #[pyfn(m)]
-// fn chuj(path: String) -> PyResult<String> {
-//     return Ok(path);
-//     // let path = PathBuf::from(path);
-
-//     // let csv: DataFrame = read_csv(&path);
-//     // let tensor_as_py = Py::new(py, tensor)?.into_ref(py);
-
-//     // return PyObject::into_ptr(csv);
-// }
-/// A Python module implemented in Rust.
-///
-
-// #[pyfunction]
-// #[pyo3(signature = (path))]
-// fn chuj(path: String) -> PyResult<String> {
-//     return Ok(path);
-//     // let path = PathBuf::from(path);
-
-//     // let csv: DataFrame = read_csv(&path);
-//     // let tensor_as_py = Py::new(py, tensor)?.into_ref(py);
-
-//     // return PyObject::into_ptr(csv);
-// }
-
-#[pyfunction]
-#[pyo3(signature = (path))]
-fn chuj(path: String) -> PyResult<String> {
-    // let path = PathBuf::from(path);
-    // let csv: DataFrame = read_csv(&path);
-    // let pyref = PyRef::new(py, csv)?;
-
-    return Ok(path);
-    // let gil = Python::acquire_gil();
-    // let py = gil.python();
-    // let xd = Py::new(py, csv);
-
-    // return Ok("xd".to_string());
-    // let path = PathBuf::from(path);
-
-    // let csv: DataFrame = read_csv(&path);
-    // let tensor_as_py = Py::new(py, tensor)?.into_ref(py);
-
-    // return PyObject::into_ptr(csv);
+        // return Ok(res);
+    }
 }
 
 #[pymodule]
 fn dupa(py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(chuj, m)?)?;
-    // #[pyfunction(text_signature = "(path, /)")]
-
-    // m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
-    // // m.add_function(wrap_pyfunction!(example_strategy, m)?)?;
-    // m.add_function(wrap_pyfunction!(xd, m)?)?;
+    m.add_class::<PyAssetDataProviderManager>()?;
+    // m.add_function(wrap_pyfunction!(chuj, m)?)?;
 
     Ok(())
 }

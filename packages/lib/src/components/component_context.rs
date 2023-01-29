@@ -2,6 +2,7 @@ use std::{
     cell::{Ref, RefCell, RefMut},
     iter::Iterator,
     rc::Rc,
+    sync::Arc,
 };
 
 use polars::prelude::DataFrame;
@@ -34,7 +35,7 @@ impl ComponentContext {
         asset_name: &str,
         timeframe: Timeframe,
     ) -> ComponentContext {
-        let execution_context = ExecutionContext::from_asset(Rc::from(
+        let execution_context = ExecutionContext::from_asset(Arc::from(
             InMemoryAssetDataProvider::from_df(df, asset_name, timeframe),
         ));
         return Self::build(execution_context);

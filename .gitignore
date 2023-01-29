@@ -6,3 +6,4 @@ node_modules
 .vscode
 .out
 build
+output.csv

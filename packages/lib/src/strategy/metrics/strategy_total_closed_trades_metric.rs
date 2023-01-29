@@ -1,12 +1,4 @@
-use crate::{
-    components::component_context::ComponentContext,
-    strategy::{
-        strategy_utils::{compute_omega_ratio, compute_sharpe_ratio},
-        trade::Trade,
-    },
-};
-
-use super::strategy_equity_metric::StrategyEquity;
+use crate::{components::component_context::ComponentContext, strategy::trade::Trade};
 
 pub struct StrategyTotalClosedTradesMetric {
     ctx: ComponentContext,

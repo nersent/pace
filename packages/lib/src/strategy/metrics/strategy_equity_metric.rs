@@ -7,7 +7,7 @@ use crate::{
     },
     strategy::{
         action::StrategyActionKind,
-        strategy_utils::{compute_fill_size, compute_return, compute_sharpe_ratio},
+        strategy_utils::{compute_fill_size, compute_pnl, compute_return, compute_sharpe_ratio},
         trade::{Trade, TradeDirection},
     },
 };
@@ -15,9 +15,12 @@ use crate::{
 #[derive(Debug, Clone, Copy)]
 pub struct StrategyEquity {
     pub equity: f64,
+    pub fixed_returns: f64,
     pub returns: f64,
     pub returns_mean: f64,
     pub returns_stdev: f64,
+    pub pnl: f64,
+    pub trade_pnl: f64,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -28,9 +31,9 @@ pub struct StrategyEquityMetricConfig {
 pub struct StrategyEquityMetric {
     pub config: StrategyEquityMetricConfig,
     ctx: ComponentContext,
-    current_equity: f64,
+    pub current_equity: f64,
     prev_equity: Option<f64>,
-    trade_fill_size: Option<f64>,
+    pub trade_fill_size: Option<f64>,
     stdev: StandardDeviationComponent,
     mean_returns: MeanComponent,
 }
@@ -52,9 +55,9 @@ impl StrategyEquityMetric {
         self.ctx.assert();
 
         let ctx = self.ctx.get();
-        let tick = ctx.tick();
         let current_price = ctx.close().unwrap();
         let mut equity = self.current_equity;
+        let mut _pnl = 0.0;
 
         if let Some(trade) = trade {
             if self.trade_fill_size.is_none()
@@ -62,11 +65,15 @@ impl StrategyEquityMetric {
                 && trade.entry_tick.is_some()
                 && trade.exit_tick.is_none()
             {
-                self.trade_fill_size = Some(compute_fill_size(self.current_equity, current_price));
+                self.trade_fill_size = Some(compute_fill_size(
+                    self.current_equity,
+                    trade.entry_price.unwrap(),
+                ));
             }
 
             if let Some(trade_fill_size) = self.trade_fill_size {
-                equity += trade.pnl(trade_fill_size, current_price).unwrap_or(0.0);
+                _pnl = trade.pnl(trade_fill_size, current_price).unwrap_or(0.0);
+                equity += _pnl;
             }
 
             if trade.is_closed {
@@ -75,16 +82,19 @@ impl StrategyEquityMetric {
             }
         }
 
-        let returns = match self.prev_equity {
-            Some(prev_equity) => compute_return(equity, prev_equity),
-            None => 0.0,
-        };
-        let returns = self
-            .prev_equity
-            .map(|prev_equity| compute_return(equity, prev_equity))
-            .unwrap_or(0.0);
+        // let returns = self
+        //     .prev_equity
+        //     .map(|prev_equity| compute_return(equity, prev_equity))
+        //     .unwrap_or(0.0);
+
+        let fixed_returns = compute_return(equity, self.current_equity);
+        let returns = fixed_returns;
         let mean_returns = self.mean_returns.next(returns);
         let stdev_returns = self.stdev.next(returns);
+        let pnl = self
+            .prev_equity
+            .map(|prev_equity| compute_pnl(equity, self.current_equity))
+            .unwrap_or(0.0);
 
         self.prev_equity = Some(equity);
 
@@ -93,6 +103,9 @@ impl StrategyEquityMetric {
             returns,
             returns_mean: mean_returns,
             returns_stdev: stdev_returns,
+            pnl,
+            trade_pnl: _pnl,
+            fixed_returns,
         };
     }
 }
