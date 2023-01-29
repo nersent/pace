@@ -5,7 +5,7 @@
   "author": "xnerhu <xnerhu@gmail.com>",
   "scripts": {
     "dev": "cargo watch -x run",
-    "build": "cargo build",
+    "build": "cargo build --release",
     "test": "cargo nextest run",
     "lint": "cargo fmt --all -- --check && cargo clippy -- -D warnings",
     "lint:fix": "cargo clippy --fix --allow-dirty"
