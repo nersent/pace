@@ -1,1 +1,0 @@
-mod awesome_oscillator_indicator_test;

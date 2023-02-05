@@ -23,7 +23,7 @@ $ yarn install
 
 - Use [karma commit format](http://karma-runner.github.io/0.10/dev/git-commit-msg.html)
 
-### Architecture
+### Structure
 
 - TODO
 

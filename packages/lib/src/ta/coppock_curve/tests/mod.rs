@@ -1,1 +1,0 @@
-mod coppock_curve_indicator_test;

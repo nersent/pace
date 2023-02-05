@@ -11,23 +11,11 @@
 
 use std::path::Path;
 
-use components::change::recursive_prank::RecursivePercentRank;
+use crate::base::components::testing::Fixture;
 
-use crate::{
-    asset::timeframe::Timeframe, components::component_context::ComponentContext,
-    data::csv::read_csv, testing::fixture::Fixture,
-};
-
-mod asset;
-mod components;
-mod data;
-mod features;
-mod math;
+mod base;
+mod content;
 mod ml;
-mod pinescript;
-mod strategy;
-mod ta;
-mod testing;
 mod utils;
 
 fn generate_ml_dataset() {
@@ -37,20 +25,20 @@ fn generate_ml_dataset() {
 }
 
 fn main() {
-    let (_df, cctx, expected) =
-        Fixture::load("components/change/tests/fixtures/prank/btc_1d_length_14_close.csv");
-    let mut target = RecursivePercentRank::new(cctx.clone(), 14);
-    for cctx in cctx {
-        let ctx = cctx.get();
-        let output = target.next(ctx.close());
-        println!(
-            "[{}]: {:?} | {:?}",
-            ctx.current_tick, output, expected[ctx.current_tick]
-        );
-        if ctx.current_tick > 35 {
-            break;
-        }
-    }
+    // let (_df, cctx, expected) =
+    //     Fixture::load("components/change/tests/fixtures/prank/btc_1d_length_14_close.csv");
+    // let mut target = RecursivePercentRank::new(cctx.clone(), 14);
+    // for cctx in cctx {
+    //     let ctx = cctx.get();
+    //     let output = target.next(ctx.close());
+    //     println!(
+    //         "[{}]: {:?} | {:?}",
+    //         ctx.current_tick, output, expected[ctx.current_tick]
+    //     );
+    //     if ctx.current_tick > 35 {
+    //         break;
+    //     }
+    // }
 
-    // generate_ml_dataset();
+    generate_ml_dataset();
 }

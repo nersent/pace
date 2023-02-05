@@ -1,1 +1,0 @@
-mod relative_vigor_index_indicator_test;

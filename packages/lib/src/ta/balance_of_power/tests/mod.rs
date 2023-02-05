@@ -1,1 +1,0 @@
-mod balance_of_power_indicator_test;
