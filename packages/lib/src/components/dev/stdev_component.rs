@@ -56,9 +56,7 @@ impl StandardDeviationComponent {
 
         let mean = self.sma.next(value);
 
-        if mean.is_none() {
-            return None;
-        }
+        mean?;
 
         let mean = -mean.unwrap();
 
