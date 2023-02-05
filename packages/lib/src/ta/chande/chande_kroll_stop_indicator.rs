@@ -2,6 +2,7 @@ use crate::{
     components::{
         component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO, source::Source,
         sum::recursive_sum::RecursiveSum,
+        value_cache::fixed_value_cache_component::FixedValueCacheComponent,
     },
     ta::{
         bars::utils::BarUtils,
@@ -27,8 +28,8 @@ pub struct ChandeKrollStopIndicator {
     pub config: ChandeKrollStopIndicatorConfig,
     ctx: ComponentContext,
     atr: AverageTrueRangeComponent,
-    first_high_stop_highest_lifo: RecursiveLIFO,
-    first_low_stop_lowest_lifo: RecursiveLIFO,
+    first_high_stop_highest_cache: FixedValueCacheComponent,
+    first_low_stop_lowest_cache: FixedValueCacheComponent,
 }
 
 impl ChandeKrollStopIndicator {
@@ -36,8 +37,8 @@ impl ChandeKrollStopIndicator {
         return ChandeKrollStopIndicator {
             ctx: ctx.clone(),
             atr: AverageTrueRangeComponent::new(ctx.clone(), config.p),
-            first_high_stop_highest_lifo: RecursiveLIFO::new(ctx.clone(), config.q + 1),
-            first_low_stop_lowest_lifo: RecursiveLIFO::new(ctx.clone(), config.q + 1),
+            first_high_stop_highest_cache: FixedValueCacheComponent::new(ctx.clone(), config.q),
+            first_low_stop_lowest_cache: FixedValueCacheComponent::new(ctx.clone(), config.q),
             config,
         };
     }
@@ -49,8 +50,8 @@ impl ChandeKrollStopIndicator {
         let atr = self.atr.next();
 
         if atr.is_none() {
-            self.first_low_stop_lowest_lifo.next(None);
-            self.first_high_stop_highest_lifo.next(None);
+            self.first_low_stop_lowest_cache.next(None);
+            self.first_high_stop_highest_cache.next(None);
             return ChandeKrollStopIndicatorResult {
                 first_high_stop: None,
                 first_low_stop: None,
@@ -72,8 +73,8 @@ impl ChandeKrollStopIndicator {
             (None, None)
         };
 
-        self.first_high_stop_highest_lifo.next(first_high_stop);
-        self.first_low_stop_lowest_lifo.next(first_low_stop);
+        self.first_high_stop_highest_cache.next(first_high_stop);
+        self.first_low_stop_lowest_cache.next(first_low_stop);
 
         if !ctx.at_length(self.config.q) {
             return ChandeKrollStopIndicatorResult {
@@ -84,8 +85,8 @@ impl ChandeKrollStopIndicator {
             };
         }
 
-        let stop_short = BarUtils::highest(self.first_high_stop_highest_lifo.values());
-        let stop_long = BarUtils::lowest(self.first_low_stop_lowest_lifo.values());
+        let stop_short = BarUtils::highest(self.first_high_stop_highest_cache.all());
+        let stop_long = BarUtils::lowest(self.first_low_stop_lowest_cache.all());
 
         return ChandeKrollStopIndicatorResult {
             first_high_stop,

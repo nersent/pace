@@ -2,6 +2,7 @@ use crate::{
     components::{
         batch_validator::recursive_batch_validator::RecursiveBatchValidator,
         component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO,
+        value_cache::fixed_value_cache_component::FixedValueCacheComponent,
     },
     math::comparison::FloatComparison,
     ta::moving_average::{
@@ -13,7 +14,7 @@ pub struct DeviationComponent {
     pub length: usize,
     ctx: ComponentContext,
     sma: SimpleMovingAverageComponent,
-    value_lifo: RecursiveLIFO,
+    input_cache: FixedValueCacheComponent,
 }
 
 impl DeviationComponent {
@@ -27,7 +28,7 @@ impl DeviationComponent {
             ctx: ctx.clone(),
             length,
             sma: SimpleMovingAverageComponent::new(ctx.clone(), length),
-            value_lifo: RecursiveLIFO::new(ctx.clone(), length),
+            input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
         };
     }
 
@@ -38,31 +39,23 @@ impl DeviationComponent {
             return Some(0.0);
         }
 
-        let mean = self.sma.next(value);
-        let (first_value, last_value, is_filled) = self.value_lifo.next(value);
+        self.input_cache.next(value);
 
-        if last_value.is_none() || mean.is_none() || !is_filled {
+        let mean = self.sma.next(value);
+
+        if mean.is_none() || !self.input_cache.is_filled() {
             return None;
         }
 
         let mean = mean.unwrap();
-        let mut sum: f64 = 0.0;
 
-        if let Some(first_value) = first_value {
-            sum += (first_value - mean).abs();
-        }
-
-        let values = self.value_lifo.values();
-
-        for i in 0..self.length - 1 {
-            let _value = values[i];
-            if let Some(_value) = _value {
-                sum += (_value - mean).abs();
-            }
-        }
+        let values = self.input_cache.all();
+        let sum = values
+            .iter()
+            .map(|v| (v.unwrap_or(mean) - mean).abs())
+            .sum::<f64>();
 
         let dev = sum / self.length as f64;
-
         return Some(dev);
     }
 }

@@ -13,6 +13,7 @@ use crate::asset::{
 use super::execution_context::ExecutionContext;
 
 pub struct ComponentContext {
+    tick: Option<usize>,
     last_computation_tick: Option<usize>,
     execution_context: Rc<RefCell<ExecutionContext>>,
 }
@@ -21,6 +22,7 @@ impl ComponentContext {
     pub fn new(execution_context: Rc<RefCell<ExecutionContext>>) -> ComponentContext {
         return ComponentContext {
             execution_context,
+            tick: None,
             last_computation_tick: None,
         };
     }
@@ -64,6 +66,28 @@ impl ComponentContext {
             );
         }
         self.last_computation_tick = Some(current_tick);
+    }
+
+    #[cfg(debug_assertions)]
+    fn _assert(&mut self, current_tick: usize) {
+        if let Some(tick) = self.tick {
+            assert!(
+                tick + 1 == current_tick,
+                "Component tries to compute value for {}, but last computation was for {}",
+                current_tick,
+                tick
+            );
+        }
+    }
+
+    pub fn on_next(&mut self) {
+        let current_tick = self.get().current_tick;
+        self._assert(current_tick);
+        self.tick = Some(current_tick);
+    }
+
+    pub fn at_length(&self, length: usize) -> bool {
+        return self.tick.unwrap() >= length - 1;
     }
 }
 

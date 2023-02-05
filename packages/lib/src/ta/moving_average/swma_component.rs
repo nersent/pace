@@ -2,6 +2,7 @@ use crate::{
     components::{
         batch_validator::recursive_batch_validator::RecursiveBatchValidator,
         component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO,
+        value_cache::fixed_value_cache_component::FixedValueCacheComponent,
     },
     math::comparison::FloatComparison,
     ta::moving_average::{
@@ -12,7 +13,7 @@ use crate::{
 pub struct SymmetricallyWeightedMovingAverageComponent {
     length: usize,
     ctx: ComponentContext,
-    value_lifo: RecursiveLIFO,
+    input_cache: FixedValueCacheComponent,
     batch_validator: RecursiveBatchValidator,
 }
 
@@ -24,7 +25,7 @@ impl SymmetricallyWeightedMovingAverageComponent {
         return SymmetricallyWeightedMovingAverageComponent {
             ctx: ctx.clone(),
             length,
-            value_lifo: RecursiveLIFO::new(ctx.clone(), length),
+            input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
             batch_validator: RecursiveBatchValidator::new(ctx.clone(), length),
         };
     }
@@ -32,22 +33,22 @@ impl SymmetricallyWeightedMovingAverageComponent {
     pub fn next(&mut self, value: Option<f64>) -> Option<f64> {
         self.ctx.assert();
 
-        let (first_value, last_value, is_filled) = self.value_lifo.next(value);
+        self.input_cache.next(value);
         let is_valid = self.batch_validator.next(value);
 
         if !self.ctx.get().at_length(self.length) || !is_valid {
             return None;
         }
 
-        let values = self.value_lifo.values_with_first();
+        let values = self.input_cache.all();
         let mut swma = 0.0;
 
-        for i in 0..values.len() {
-            let value = values[values.len() - 1 - i].unwrap();
+        let swma = values.iter().enumerate().fold(0.0, |acc, (i, value)| {
+            let value = value.unwrap();
             let weight = WEIGHTS[i];
             let weighted_value = value * weight;
-            swma += weighted_value;
-        }
+            acc + weighted_value
+        });
 
         return Some(swma);
     }

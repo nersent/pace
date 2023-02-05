@@ -2,6 +2,7 @@ use crate::components::{
     batch_validator::recursive_batch_validator::RecursiveBatchValidator,
     component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO,
     position::recursive_position::RecursivePosition,
+    value_cache::fixed_value_cache_component::FixedValueCacheComponent,
 };
 
 pub struct SimpleMovingAverageComponent {
@@ -9,7 +10,7 @@ pub struct SimpleMovingAverageComponent {
     ctx: ComponentContext,
     _length_f64: f64,
     sum: f64,
-    lifo: RecursiveLIFO,
+    input_cache: FixedValueCacheComponent,
     batch_validator: RecursiveBatchValidator,
     position: RecursivePosition,
 }
@@ -22,7 +23,7 @@ impl SimpleMovingAverageComponent {
             ctx: ctx.clone(),
             _length_f64: length as f64,
             sum: 0.0,
-            lifo: RecursiveLIFO::new(ctx.clone(), length),
+            input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
             batch_validator: RecursiveBatchValidator::new(ctx.clone(), length),
             position: RecursivePosition::new(ctx.clone()),
         };
@@ -33,8 +34,11 @@ impl SimpleMovingAverageComponent {
         if self.length == 1 {
             return value;
         }
+        self.input_cache.next(value);
         let is_valid = self.batch_validator.next(value);
-        let (first_value, last_value, is_filled) = self.lifo.next(value);
+        let is_filled = self.input_cache.is_filled();
+        let first_value = self.input_cache.first();
+        let last_value = self.input_cache.last();
         let mut mean: Option<f64> = None;
         if let Some(last_value) = last_value {
             self.sum += last_value;

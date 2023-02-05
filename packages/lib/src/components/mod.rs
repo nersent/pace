@@ -10,3 +10,4 @@ pub mod source;
 pub mod stoch;
 pub mod sum;
 pub mod testing;
+pub mod value_cache;

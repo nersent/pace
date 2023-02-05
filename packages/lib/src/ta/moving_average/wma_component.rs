@@ -2,6 +2,7 @@ use crate::{
     components::{
         batch_validator::recursive_batch_validator::RecursiveBatchValidator,
         component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO,
+        value_cache::fixed_value_cache_component::FixedValueCacheComponent,
     },
     math::comparison::FloatComparison,
     ta::moving_average::{
@@ -12,7 +13,7 @@ use crate::{
 pub struct WeightedMovingAverageComponent {
     pub length: usize,
     ctx: ComponentContext,
-    value_lifo: RecursiveLIFO,
+    input_cache: FixedValueCacheComponent,
     batch_validator: RecursiveBatchValidator,
 }
 
@@ -25,7 +26,7 @@ impl WeightedMovingAverageComponent {
         return WeightedMovingAverageComponent {
             ctx: ctx.clone(),
             length,
-            value_lifo: RecursiveLIFO::new(ctx.clone(), length),
+            input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
             batch_validator: RecursiveBatchValidator::new(ctx.clone(), length),
         };
     }
@@ -33,24 +34,25 @@ impl WeightedMovingAverageComponent {
     pub fn next(&mut self, value: Option<f64>) -> Option<f64> {
         self.ctx.assert();
 
-        let (first_value, last_value, is_filled) = self.value_lifo.next(value);
+        self.input_cache.next(value);
         let is_valid = self.batch_validator.next(value);
 
         if !self.ctx.get().at_length(self.length) || !is_valid {
             return None;
         }
 
-        let values = self.value_lifo.values_with_first();
-        let mut weight: f64 = 0.0;
-        let mut sum: f64 = 0.0;
-        let mut norm: f64 = 0.0;
+        let values = self.input_cache.all();
 
-        for i in 0..values.len() {
-            let value = values[values.len() - 1 - i].unwrap();
-            weight = ((self.length - i) * self.length) as f64;
-            norm += weight;
-            sum += weight * value;
-        }
+        let (sum, norm) = values
+            .iter()
+            .rev()
+            .enumerate()
+            .fold((0.0, 0.0), |acc, (i, value)| {
+                let value = value.unwrap();
+                let weight = ((self.length - i) * self.length) as f64;
+                let weighted_value = value * weight;
+                (acc.0 + weighted_value, acc.1 + weight)
+            });
 
         let wma = sum / norm;
 

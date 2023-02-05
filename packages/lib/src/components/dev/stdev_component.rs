@@ -1,5 +1,8 @@
 use crate::{
-    components::{component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO},
+    components::{
+        component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO,
+        value_cache::fixed_value_cache_component::FixedValueCacheComponent,
+    },
     math::comparison::FloatComparison,
     ta::moving_average::{
         rma_component::RunningMovingAverageComponent, sma_component::SimpleMovingAverageComponent,
@@ -11,7 +14,7 @@ pub struct StandardDeviationComponent {
     pub is_biased: bool,
     ctx: ComponentContext,
     sma: SimpleMovingAverageComponent,
-    value_lifo: RecursiveLIFO,
+    input_cache: FixedValueCacheComponent,
 }
 
 impl StandardDeviationComponent {
@@ -26,7 +29,7 @@ impl StandardDeviationComponent {
             length,
             is_biased,
             sma: SimpleMovingAverageComponent::new(ctx.clone(), length),
-            value_lifo: RecursiveLIFO::new(ctx.clone(), length),
+            input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
         };
     }
 
@@ -49,35 +52,33 @@ impl StandardDeviationComponent {
             }
         }
 
-        let avg = self.sma.next(value);
-        let (first_value, last_value, is_filled) = self.value_lifo.next(value);
+        self.input_cache.next(value);
 
-        if last_value.is_none() || avg.is_none() {
+        let mean = self.sma.next(value);
+
+        if mean.is_none() {
             return None;
         }
 
-        let mut sum_of_square_deviations: f64 = 0.0;
-        let avg = -avg.unwrap();
+        let mean = -mean.unwrap();
 
-        if let Some(first_value) = first_value {
-            let sum = Self::compute_sum(first_value, avg);
-            sum_of_square_deviations += sum.powf(2.0);
-        }
-
-        let values = self.value_lifo.values();
-
-        for i in 0..self.length - 1 {
-            let _value = values[i];
-            if let Some(_value) = _value {
-                let sum = Self::compute_sum(_value, avg);
-                sum_of_square_deviations += sum.powf(2.0);
-            }
-        }
+        let values = self.input_cache.all();
+        let sum = values
+            .iter()
+            .map(|v| {
+                if let Some(v) = v {
+                    let sum = Self::compute_sum(*v, mean);
+                    sum.powf(2.0)
+                } else {
+                    0.0
+                }
+            })
+            .sum::<f64>();
 
         let stdev = if self.is_biased {
-            (sum_of_square_deviations / self.length as f64).sqrt()
+            (sum / self.length as f64).sqrt()
         } else {
-            (sum_of_square_deviations / (self.length - 1) as f64).sqrt()
+            (sum / (self.length - 1) as f64).sqrt()
         };
 
         return Some(stdev);

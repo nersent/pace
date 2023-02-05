@@ -1,13 +1,14 @@
 use crate::components::{
     batch_validator::recursive_batch_validator::RecursiveBatchValidator,
     component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO,
+    value_cache::fixed_value_cache_component::FixedValueCacheComponent,
 };
 
 pub struct RecursivePercentRank {
     length: usize,
     ctx: ComponentContext,
     count: f64,
-    value_lifo: RecursiveLIFO,
+    input_cache: FixedValueCacheComponent,
 }
 
 impl RecursivePercentRank {
@@ -17,22 +18,24 @@ impl RecursivePercentRank {
             ctx: ctx.clone(),
             length,
             count: 0.0,
-            value_lifo: RecursiveLIFO::new(ctx.clone(), length + 1),
+            input_cache: FixedValueCacheComponent::new(ctx.clone(), length + 1),
         };
     }
 
     pub fn next(&mut self, value: Option<f64>) -> Option<f64> {
         self.ctx.assert();
 
+        self.input_cache.next(value);
+
         if value.is_none() || !self.ctx.get().at_length(self.length + 1) {
-            self.value_lifo.next(value);
             return None;
         }
 
         let last_value = value.unwrap();
         let mut count: f64 = 0.0;
 
-        let values = self.value_lifo.values();
+        let values = self.input_cache.all();
+        let values = &values[0..values.len() - 1];
 
         let count = values
             .iter()
@@ -45,8 +48,6 @@ impl RecursivePercentRank {
             .count() as f64;
 
         let percent = count / self.length as f64 * 100.0;
-
-        self.value_lifo.next(value);
 
         return Some(percent);
     }

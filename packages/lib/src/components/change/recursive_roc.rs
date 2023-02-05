@@ -1,9 +1,12 @@
-use crate::components::{component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO};
+use crate::components::{
+    component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO,
+    value_cache::fixed_value_cache_component::FixedValueCacheComponent,
+};
 
 pub struct RecursiveRateOfChange {
     length: usize,
     ctx: ComponentContext,
-    lifo: RecursiveLIFO,
+    input_cache: FixedValueCacheComponent,
 }
 
 impl RecursiveRateOfChange {
@@ -12,7 +15,7 @@ impl RecursiveRateOfChange {
         return RecursiveRateOfChange {
             ctx: ctx.clone(),
             length,
-            lifo: RecursiveLIFO::new(ctx.clone(), length + 1),
+            input_cache: FixedValueCacheComponent::new(ctx.clone(), length + 1),
         };
     }
 
@@ -20,7 +23,11 @@ impl RecursiveRateOfChange {
         self.ctx.assert();
         let ctx = self.ctx.get();
 
-        let (first_value, last_value, is_filled) = self.lifo.next(value);
+        self.input_cache.next(value);
+
+        let first_value = self.input_cache.first();
+        let last_value = self.input_cache.last();
+        let is_filled = self.input_cache.is_filled();
 
         if !is_filled || first_value.is_none() || last_value.is_none() {
             return None;

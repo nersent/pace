@@ -1,4 +1,7 @@
-use crate::components::{component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO};
+use crate::components::{
+    component_context::ComponentContext, lifo::recursive_lifo::RecursiveLIFO,
+    value_cache::fixed_value_cache_component::FixedValueCacheComponent,
+};
 
 use super::stoch::compute_stoch;
 
@@ -6,8 +9,8 @@ pub struct RecursiveStoch {
     length: usize,
     ctx: ComponentContext,
     prev_stoch: Option<f64>,
-    high_lifo: RecursiveLIFO,
-    low_lifo: RecursiveLIFO,
+    high_input_cache: FixedValueCacheComponent,
+    low_input_cache: FixedValueCacheComponent,
 }
 
 impl RecursiveStoch {
@@ -17,26 +20,25 @@ impl RecursiveStoch {
             ctx: ctx.clone(),
             length,
             prev_stoch: None,
-            high_lifo: RecursiveLIFO::new(ctx.clone(), length + 1),
-            low_lifo: RecursiveLIFO::new(ctx.clone(), length + 1),
+            high_input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
+            low_input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
         };
     }
 
     pub fn next(&mut self, value: Option<f64>, high: Option<f64>, low: Option<f64>) -> Option<f64> {
-        self.ctx.assert();
-        let ctx = self.ctx.get();
+        self.ctx.on_next();
 
-        self.high_lifo.next(high);
-        self.low_lifo.next(low);
+        self.high_input_cache.next(high);
+        self.low_input_cache.next(low);
 
-        if !ctx.at_length(self.length) {
+        if !self.ctx.at_length(self.length) {
             return None;
         }
 
         let stoch = compute_stoch(
             value,
-            self.high_lifo.values(),
-            self.low_lifo.values(),
+            self.high_input_cache.all(),
+            self.low_input_cache.all(),
             self.prev_stoch,
         );
         self.prev_stoch = stoch;
