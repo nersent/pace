@@ -1,3 +1,4 @@
+use chrono::{DateTime, NaiveDateTime};
 use std::{rc::Rc, sync::Arc, time::Duration};
 
 use super::{
@@ -77,6 +78,12 @@ impl ExecutionContext {
 
     pub fn time(&self) -> Option<Duration> {
         return self.asset_data_provider.get_time(self.current_tick);
+    }
+
+    pub fn datetime(&self) -> Option<NaiveDateTime> {
+        return self
+            .time()
+            .map(|time| NaiveDateTime::from_timestamp_millis(time.as_millis() as i64).unwrap());
     }
 
     pub fn hl2(&self) -> Option<f64> {

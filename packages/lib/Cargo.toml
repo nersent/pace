@@ -6,6 +6,10 @@ edition = "2021"
 [profile.release]
 lto = "fat"
 
+[lib]
+name = "pace"
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 polars = { version = "0.26.1", features = ["parquet", "lazy"] }
 itertools = "0.10.5"
@@ -13,4 +17,4 @@ similar-asserts = "1.4.2"
 similar = "2.2.1"
 colored = "2.0.0"
 pyo3 = { version = "0.18.0", features = ["extension-module", "macros"] }
-
+chrono = "0.4.23"
