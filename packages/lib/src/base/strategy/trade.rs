@@ -115,5 +115,8 @@ pub fn compute_pnl(current_equity: f64, initial_equity: f64) -> f64 {
 }
 
 pub fn compute_return(current_equity: f64, previous_equity: f64) -> f64 {
+    if previous_equity == 0.0 {
+        return 0.0;
+    }
     return (current_equity / previous_equity) - 1.0;
 }
