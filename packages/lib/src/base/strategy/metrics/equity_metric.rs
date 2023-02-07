@@ -77,8 +77,14 @@ impl EquityMetric {
             }
         }
 
-        let fixed_returns = compute_return(equity, self.current_equity);
-        let returns = fixed_returns;
+        // computed from equity before trade was opened and current equity (trade pnL)
+        let returns = compute_return(equity, self.current_equity);
+        // computed from previous equity and current equity (trade pnL)
+        let fixed_returns = compute_return(
+            equity,
+            self.prev_equity.unwrap_or(self.config.initial_capital),
+        );
+        let returns = returns;
         let mean_returns = self.mean_returns.next(returns);
         let stdev_returns = self.stdev.next(returns);
         let pnl = self
