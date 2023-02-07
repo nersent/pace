@@ -1,6 +1,6 @@
 #[derive(Debug, PartialEq, Clone)]
 pub enum Timeframe {
-    OneDay,
-    FourHours,
-    OneHour,
+    OneDay = 0,
+    FourHours = 1,
+    OneHour = 2,
 }

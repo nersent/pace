@@ -80,7 +80,10 @@ impl StrategyExecutionContext {
                 {
                     current_trade.entry_price = filled_order.fill_price;
                     current_trade.entry_tick = filled_order.fill_tick;
-                } else if current_trade.entry_price.is_some() && !current_trade.is_closed {
+                } else if current_trade.entry_price.is_some()
+                    && !current_trade.is_closed
+                    && current_trade.direction != filled_order.direction
+                {
                     current_trade.is_closed = true;
                     current_trade.exit_price = filled_order.fill_price;
                     current_trade.exit_tick = filled_order.fill_tick;
@@ -93,9 +96,11 @@ impl StrategyExecutionContext {
                 }
             } else {
                 if current_trade.entry_price.is_some() && !current_trade.is_closed {
-                    current_trade.is_closed = true;
-                    current_trade.exit_price = filled_order.fill_price;
-                    current_trade.exit_tick = filled_order.fill_tick;
+                    if current_trade.direction != filled_order.direction {
+                        current_trade.is_closed = true;
+                        current_trade.exit_price = filled_order.fill_price;
+                        current_trade.exit_tick = filled_order.fill_tick;
+                    }
                 } else {
                     if current_trade.entry_tick.is_none() {
                         current_trade.entry_price = filled_order.fill_price;

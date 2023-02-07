@@ -152,14 +152,14 @@ mod tests {
                 None,
                 // 2
                 Some(TradeDirection::Short),
-                // 3
-                None,
+                // 3; Duplicated
+                Some(TradeDirection::Short),
                 // 4
                 Some(TradeDirection::Long),
-                // 5
-                None,
-                // 6
-                None,
+                // 5; Duplicated
+                Some(TradeDirection::Long),
+                // 6; Duplicated
+                Some(TradeDirection::Long),
                 // 7
                 Some(TradeDirection::Short),
                 // 8
@@ -168,42 +168,42 @@ mod tests {
                 Some(TradeDirection::Short),
                 // 10
                 None,
-                // 11
-                None,
+                // 11; Duplicated
+                Some(TradeDirection::Short),
                 // 12
                 None,
-                // 13
-                None,
+                // 13; Duplicated
+                Some(TradeDirection::Short),
                 // 14
                 Some(TradeDirection::Long),
-                // 15
-                None,
-                // 16
-                None,
-                // 17
-                None,
+                // 15; Duplicated
+                Some(TradeDirection::Long),
+                // 16; Duplicated
+                Some(TradeDirection::Long),
+                // 17; Duplicated
+                Some(TradeDirection::Long),
                 // 18
                 None,
                 // 19
                 Some(TradeDirection::Short),
                 // 20
                 None,
-                // 21
-                None,
+                // 21; Duplicated
+                Some(TradeDirection::Short),
                 // 22
                 None,
-                // 23
-                None,
+                // 23; Duplicated
+                Some(TradeDirection::Short),
                 // 24
                 Some(TradeDirection::Long),
-                // 25
-                None,
+                // 25; Duplicated
+                Some(TradeDirection::Long),
                 // 26
                 None,
                 // 27
                 None,
-                // 28
-                None,
+                // 28; Duplicated
+                Some(TradeDirection::Long),
             ],
             &[
                 // 0
@@ -1505,14 +1505,14 @@ mod tests {
                 None,
                 // 2
                 Some(TradeDirection::Short),
-                // 3
-                None,
+                // 3; Duplicated
+                Some(TradeDirection::Short),
                 // 4
                 Some(TradeDirection::Long),
                 // 5
                 None,
-                // 6
-                None,
+                // 6; Duplicated
+                Some(TradeDirection::Long),
                 // 7
                 Some(TradeDirection::Short),
                 // 8
@@ -1521,26 +1521,26 @@ mod tests {
                 Some(TradeDirection::Short),
                 // 10
                 None,
-                // 11
-                None,
+                // 11; Duplicated
+                Some(TradeDirection::Short),
                 // 12
                 None,
-                // 13
-                None,
+                // 13; Duplicated
+                Some(TradeDirection::Short),
                 // 14
                 Some(TradeDirection::Long),
-                // 15
-                None,
+                // 15; Duplicated
+                Some(TradeDirection::Long),
                 // 16
                 None,
                 // 17
                 None,
-                // 18
-                None,
+                // 18; Duplicated
+                Some(TradeDirection::Long),
                 // 19
                 Some(TradeDirection::Short),
-                // 20
-                None,
+                // 20; Duplicated
+                Some(TradeDirection::Short),
                 // 21
                 None,
                 // 22
@@ -1555,8 +1555,8 @@ mod tests {
                 None,
                 // 27
                 None,
-                // 28
-                None,
+                // 28; Duplicated
+                Some(TradeDirection::Long),
             ],
             &[
                 // 0
@@ -2803,8 +2803,8 @@ mod tests {
                 None,
                 // 2
                 Some(TradeDirection::Short),
-                // 3
-                None,
+                // 3; Duplicated
+                Some(TradeDirection::Short),
                 // 4
                 Some(TradeDirection::Long),
                 // 5
@@ -2819,12 +2819,12 @@ mod tests {
                 Some(TradeDirection::Short),
                 // 10
                 None,
-                // 11
-                None,
-                // 12
-                None,
-                // 13
-                None,
+                // 11; Duplicated
+                Some(TradeDirection::Short),
+                // 12; Duplicated
+                Some(TradeDirection::Short),
+                // 13; Duplicated
+                Some(TradeDirection::Short),
                 // 14
                 Some(TradeDirection::Long),
                 // 15
@@ -2835,16 +2835,16 @@ mod tests {
                 Some(TradeDirection::Long),
                 // 18
                 None,
-                // 19
-                None,
+                // 19; Duplicated
+                Some(TradeDirection::Long),
                 // 20
                 None,
-                // 21
-                None,
+                // 21; Duplicated
+                Some(TradeDirection::Long),
                 // 22
                 None,
-                // 23
-                None,
+                // 23; Duplicated
+                Some(TradeDirection::Long),
                 // 24
                 Some(TradeDirection::Short),
                 // 25
@@ -2855,8 +2855,8 @@ mod tests {
                 Some(TradeDirection::Short),
                 // 28
                 None,
-                // 29
-                None,
+                // 29; Duplicated
+                Some(TradeDirection::Short),
                 // 30
                 Some(TradeDirection::Long),
                 // 31
@@ -2867,10 +2867,10 @@ mod tests {
                 Some(TradeDirection::Long),
                 // 34
                 None,
-                // 35
-                None,
-                // 36
-                None,
+                // 35; Duplicated
+                Some(TradeDirection::Long),
+                // 36; Duplicated
+                Some(TradeDirection::Long),
                 // 37
                 Some(TradeDirection::Short),
                 // 38
@@ -4268,8 +4268,8 @@ mod tests {
                 None,
                 // 2
                 Some(TradeDirection::Short),
-                // 3
-                None,
+                // 3; Duplicated
+                Some(TradeDirection::Short),
                 // 4
                 Some(TradeDirection::Long),
                 // 5
@@ -4284,12 +4284,12 @@ mod tests {
                 Some(TradeDirection::Short),
                 // 10
                 None,
-                // 11
-                None,
+                // 11; Duplicated
+                Some(TradeDirection::Short),
                 // 12
                 None,
-                // 13
-                None,
+                // 13; Duplicated
+                Some(TradeDirection::Short),
                 // 14
                 Some(TradeDirection::Long),
                 // 15
@@ -4298,18 +4298,18 @@ mod tests {
                 None,
                 // 17
                 Some(TradeDirection::Long),
-                // 18
-                None,
+                // 18; Duplicated
+                Some(TradeDirection::Long),
                 // 19
                 None,
-                // 20
-                None,
-                // 21
-                None,
+                // 20; Duplicated
+                Some(TradeDirection::Long),
+                // 21; Duplicated
+                Some(TradeDirection::Long),
                 // 22
                 None,
-                // 23
-                None,
+                // 23; Duplicated
+                Some(TradeDirection::Long),
                 // 24
                 Some(TradeDirection::Short),
                 // 25
@@ -4318,10 +4318,10 @@ mod tests {
                 None,
                 // 27
                 Some(TradeDirection::Short),
-                // 28
-                None,
-                // 29
-                None,
+                // 28; Duplicated
+                Some(TradeDirection::Short),
+                // 29; Duplicated
+                Some(TradeDirection::Short),
                 // 30
                 Some(TradeDirection::Long),
                 // 31
@@ -4332,8 +4332,8 @@ mod tests {
                 Some(TradeDirection::Long),
                 // 34
                 None,
-                // 35
-                None,
+                // 35; Duplicated
+                Some(TradeDirection::Long),
                 // 36
                 None,
                 // 37
