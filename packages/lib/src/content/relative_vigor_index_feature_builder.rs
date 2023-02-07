@@ -37,8 +37,8 @@ pub struct RelativeVigorIndexFeature {
 impl Feature for RelativeVigorIndexFeature {
     fn flatten(&self) -> HashMap<String, Option<f64>> {
         let mut map = HashMap::from([
-            (String::from("raw_rvi"), self.raw_rvi),
-            (String::from("raw_rvi_s"), self.raw_rvi_s),
+            (String::from("rvi_raw"), self.raw_rvi),
+            (String::from("rvi_s_raw"), self.raw_rvi_s),
             (String::from("rvi"), self.rvi),
             (String::from("sig"), self.sig),
             (String::from("trend"), self.trend),

@@ -23,8 +23,8 @@ pub struct AroonFeature {
 impl Feature for AroonFeature {
     fn flatten(&self) -> HashMap<String, Option<f64>> {
         let mut map = HashMap::from([
-            (String::from("raw_up"), self.raw_up),
-            (String::from("raw_down"), self.raw_down),
+            (String::from("up_raw"), self.raw_up),
+            (String::from("down_raw"), self.raw_down),
             (String::from("up"), self.up),
             (String::from("down"), self.down),
             (String::from("trend"), self.trend),

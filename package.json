@@ -5,7 +5,7 @@
   "author": "xnerhu <xnerhu@gmail.com>",
   "scripts": {
     "dev": "cargo watch -x run",
-    "build": "cargo build --release",
+    "build": "cross-env RUSTFLAGS=\"-C embed-bitcode -C target-cpu=native\" cargo build --release",
     "test": "cargo nextest run",
     "test:trace": "cross-env RUST_BACKTRACE=1 yarn test",
     "lint": "cargo fmt --all -- --check && cargo clippy -- -D warnings",

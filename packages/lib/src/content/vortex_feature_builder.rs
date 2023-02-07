@@ -38,8 +38,8 @@ pub struct VortexFeature {
 impl Feature for VortexFeature {
     fn flatten(&self) -> HashMap<String, Option<f64>> {
         let mut map = HashMap::from([
-            (String::from("raw_plus"), self.raw_plus),
-            (String::from("raw_minus"), self.raw_minus),
+            (String::from("plus_raw"), self.raw_plus),
+            (String::from("minus_raw"), self.raw_minus),
             (String::from("plus"), self.plus),
             (String::from("minus"), self.minus),
             (String::from("trend"), self.trend),

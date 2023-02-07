@@ -58,7 +58,7 @@ impl FeatureComposer {
         return map;
     }
 
-    pub fn to_df(&self) -> DataFrame {
+    pub fn to_df_strip(&self, suffixes: &[&str]) -> DataFrame {
         let map = self.flatten();
         let mut columns: Vec<Series> = Vec::new();
 
@@ -69,7 +69,11 @@ impl FeatureComposer {
         });
         let mut keys = keys
             .into_iter()
-            .filter(|s| !first_order_keys.contains(s))
+            .filter(|key| !first_order_keys.contains(key))
+            .collect::<Vec<_>>();
+        let mut keys = keys
+            .into_iter()
+            .filter(|key| !suffixes.iter().any(|suffix| key.ends_with(suffix)))
             .collect::<Vec<_>>();
         keys.sort();
         keys = [&first_order_keys[..], &keys[..]].concat();
@@ -83,5 +87,9 @@ impl FeatureComposer {
         let df: PolarsResult<DataFrame> = DataFrame::new(columns);
 
         return df.unwrap();
+    }
+
+    pub fn to_df(&self) -> DataFrame {
+        return self.to_df_strip(&[]);
     }
 }

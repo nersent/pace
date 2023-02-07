@@ -54,7 +54,7 @@ impl ComponentContext {
         return ComponentContext::new(Rc::clone(&self.execution_context));
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg_attr(not(debug_assertions), allow(dead_code))]
     pub fn assert(&mut self) {
         let current_tick = self.get().current_tick;
         if let Some(last_computation_tick) = self.last_computation_tick {
@@ -68,7 +68,7 @@ impl ComponentContext {
         self.last_computation_tick = Some(current_tick);
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg_attr(not(debug_assertions), allow(dead_code))]
     fn _assert(&mut self, current_tick: usize) {
         if let Some(tick) = self.tick {
             assert!(

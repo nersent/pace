@@ -153,4 +153,13 @@ impl ExecutionContext {
     pub fn at_length(&self, length: usize) -> bool {
         return self.current_tick >= length - 1;
     }
+
+    pub fn is_ohlcv_valid(&self) -> bool {
+        return self.open().is_some()
+            && self.high().is_some()
+            && self.low().is_some()
+            && self.close().is_some()
+            && self.volume().is_some()
+            && self.time().is_some();
+    }
 }

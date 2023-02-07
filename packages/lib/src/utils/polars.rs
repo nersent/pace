@@ -1,9 +1,14 @@
-use std::{path::Path, time::Duration};
+use std::{ffi::OsStr, path::Path, time::Duration};
 
 use polars::{
-    prelude::{CsvReader, DataFrame, DataType, IsFloat, ParquetReader, SerReader, TimeUnit},
+    prelude::{
+        CsvReader, CsvWriter, DataFrame, DataType, IsFloat, ParquetReader, ParquetWriter,
+        SerReader, SerWriter, TimeUnit,
+    },
     series::Series,
 };
+
+use super::fs::get_filename_extension;
 
 pub trait SeriesCastUtils {
     fn to_f64(&self) -> Vec<Option<f64>>;
@@ -19,7 +24,13 @@ impl SeriesCastUtils for Series {
             .f64()
             .unwrap()
             .into_iter()
-            .map(|val| if val.unwrap().is_nan() { None } else { val })
+            .map(|val| {
+                if val.is_none() || val.unwrap().is_nan() {
+                    None
+                } else {
+                    val
+                }
+            })
             .collect::<Vec<_>>();
     }
 
@@ -30,7 +41,13 @@ impl SeriesCastUtils for Series {
             .i32()
             .unwrap()
             .into_iter()
-            .map(|val| if val.unwrap().is_nan() { None } else { val })
+            .map(|val| {
+                if val.is_none() || val.unwrap().is_nan() {
+                    None
+                } else {
+                    val
+                }
+            })
             .collect::<Vec<_>>();
     }
 
@@ -42,7 +59,7 @@ impl SeriesCastUtils for Series {
             .unwrap()
             .into_iter()
             .map(|val| {
-                if val.unwrap().is_nan() {
+                if val.is_none() || val.unwrap().is_nan() {
                     None
                 } else {
                     Some(Duration::from_secs_f64(val.unwrap()))
@@ -123,4 +140,47 @@ impl DataFrameUtils for DataFrame {
             .collect();
         return arr;
     }
+}
+
+pub fn read_df_csv(path: &Path) -> DataFrame {
+    let mut file = std::fs::File::open(path).unwrap();
+    let df = CsvReader::new(&mut file).finish().unwrap();
+    return df;
+}
+
+pub fn read_df_parquet(path: &Path) -> DataFrame {
+    let mut file = std::fs::File::open(path).unwrap();
+    let df = ParquetReader::new(&mut file).finish().unwrap();
+    return df;
+}
+
+pub fn read_df(path: &Path) -> DataFrame {
+    let extension = get_filename_extension(path);
+    match extension {
+        Some("parquet") => read_df_parquet(path),
+        Some("csv") => read_df_csv(path),
+        Some(&_) => panic!("Unsupported file type"),
+        None => panic!("Unsupported file type"),
+    }
+}
+
+pub fn save_df(df: &mut DataFrame, path: &Path) {
+    let extension = get_filename_extension(path);
+
+    match extension {
+        Some("parquet") => save_df_parquet(df, path),
+        Some("csv") => save_df_csv(df, path),
+        Some(&_) => panic!("Unsupported file type"),
+        None => panic!("Unsupported file type"),
+    };
+}
+
+pub fn save_df_csv(df: &mut DataFrame, path: &Path) {
+    let mut file = std::fs::File::create(path).unwrap();
+    CsvWriter::new(&mut file).finish(df).unwrap();
+}
+
+pub fn save_df_parquet(df: &mut DataFrame, path: &Path) {
+    let mut file = std::fs::File::create(path).unwrap();
+    ParquetWriter::new(&mut file).finish(df).unwrap();
 }

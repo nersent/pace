@@ -12,7 +12,10 @@ use crate::{
             trade::{Trade, TradeDirection},
         },
     },
-    utils::{comparison::FloatComparison, csv::read_csv, polars::SeriesCastUtils},
+    utils::{
+        comparison::FloatComparison,
+        polars::{read_df, SeriesCastUtils},
+    },
 };
 
 use super::component_context::ComponentContext;
@@ -36,7 +39,7 @@ impl Fixture {
             path = Path::new("../../").join(path);
         }
 
-        let df = read_csv(&path);
+        let df = read_df(&path);
         let ctx = ComponentContext::build_from_df(&df, "TEST", Timeframe::OneDay);
         return (df, ctx);
     }

@@ -9,24 +9,20 @@
     unused
 )]
 
-use std::path::Path;
-
-use crate::base::components::testing::Fixture;
-
 mod base;
 mod content;
 mod example_strategy;
 mod ml;
 mod utils;
 
-fn generate_ml_dataset() {
-    let (df, ctx) = Fixture::raw("ml/fixtures/btc_1d.csv");
-    ml::dataset_ml::generate_ml_dataset(ctx, Path::new(".out/dataset_ml.csv"));
-    println!("[process] exit");
-}
+use std::path::Path;
+
+use ml::dataset_ml::generate_ml_datasets;
+
+use crate::base::components::testing::Fixture;
 
 fn main() {
-    example_strategy::run_example_strategy();
+    // example_strategy::run_example_strategy();
     // let (_df, cctx, expected) =
     //     Fixture::load("components/change/tests/fixtures/prank/btc_1d_length_14_close.csv");
     // let mut target = RecursivePercentRank::new(cctx.clone(), 14);
@@ -42,5 +38,5 @@ fn main() {
     //     }
     // }
 
-    // generate_ml_dataset();
+    generate_ml_datasets();
 }
