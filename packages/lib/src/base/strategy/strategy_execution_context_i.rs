@@ -73,19 +73,55 @@ impl StrategyExecutionContext {
 
             let current_trade = self.trades.last_mut().unwrap();
 
-            if current_trade.direction == filled_order.direction {
-                current_trade.entry_price = filled_order.fill_price;
-                current_trade.entry_tick = filled_order.fill_tick;
+            if self.config.continous {
+                if current_trade.entry_tick.is_none()
+                    && current_trade.direction == filled_order.direction
+                {
+                    current_trade.entry_price = filled_order.fill_price;
+                    current_trade.entry_tick = filled_order.fill_tick;
+                } else if current_trade.entry_price.is_some() && !current_trade.is_closed {
+                    current_trade.is_closed = true;
+                    current_trade.exit_price = filled_order.fill_price;
+                    current_trade.exit_tick = filled_order.fill_tick;
+
+                    let mut opposite_direction_trade = Trade::new(filled_order.direction);
+                    opposite_direction_trade.entry_price = filled_order.fill_price;
+                    opposite_direction_trade.entry_tick = filled_order.fill_tick;
+
+                    self.trades.push(opposite_direction_trade);
+                }
             } else {
-                current_trade.is_closed = true;
-                current_trade.exit_price = filled_order.fill_price;
-                current_trade.exit_tick = filled_order.fill_tick;
+                if current_trade.entry_price.is_some() && !current_trade.is_closed {
+                    current_trade.is_closed = true;
+                    current_trade.exit_price = filled_order.fill_price;
+                    current_trade.exit_tick = filled_order.fill_tick;
+                } else {
+                    if current_trade.entry_tick.is_none() {
+                        current_trade.entry_price = filled_order.fill_price;
+                        current_trade.entry_tick = filled_order.fill_tick;
+                    } else if current_trade.is_closed {
+                        let mut trade = Trade::new(filled_order.direction);
+                        trade.entry_price = filled_order.fill_price;
+                        trade.entry_tick = filled_order.fill_tick;
+                        self.trades.push(trade);
+                    }
+                }
 
-                let mut opposite_direction_trade = Trade::new(filled_order.direction);
-                opposite_direction_trade.entry_price = filled_order.fill_price;
-                opposite_direction_trade.entry_tick = filled_order.fill_tick;
-
-                self.trades.push(opposite_direction_trade);
+                // if current_trade.direction == filled_order.direction {
+                //     if current_trade.entry_tick.is_none() {
+                //         current_trade.entry_price = filled_order.fill_price;
+                //         current_trade.entry_tick = filled_order.fill_tick;
+                //     } else if current_trade.is_closed {
+                //         let mut trade = Trade::new(filled_order.direction);
+                //         trade.entry_price = filled_order.fill_price;
+                //         trade.entry_tick = filled_order.fill_tick;
+                //         self.trades.push(trade);
+                //     }
+                // } else if current_trade.entry_price.is_some() && !current_trade.is_closed {
+                //     current_trade.is_closed = true;
+                //     current_trade.exit_price = filled_order.fill_price;
+                //     current_trade.exit_tick = filled_order.fill_tick;
+                // }
             }
         }
 
