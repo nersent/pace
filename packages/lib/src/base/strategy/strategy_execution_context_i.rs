@@ -27,7 +27,6 @@ impl ComponentDefault for StrategyExecutionContextConfig {
 pub struct StrategyExecutionContext {
     pub config: StrategyExecutionContextConfig,
     pub trades: Vec<Trade>,
-    current_trade: Option<Trade>,
     ctx: ComponentContext,
     orderbook: OrderBook,
 }
@@ -44,7 +43,6 @@ impl StrategyExecutionContext {
                 },
             ),
             config,
-            current_trade: None,
         };
     }
 
@@ -69,11 +67,11 @@ impl StrategyExecutionContext {
         let filled_order = filled_orders.first();
 
         if let Some(filled_order) = filled_order {
-            if self.current_trade.is_none() {
-                self.current_trade = Some(Trade::new(filled_order.direction));
+            if self.trades.is_empty() {
+                self.trades.push(Trade::new(filled_order.direction));
             }
 
-            let current_trade = self.current_trade.as_mut().unwrap();
+            let current_trade = self.trades.last_mut().unwrap();
 
             if current_trade.direction == filled_order.direction {
                 current_trade.entry_price = filled_order.fill_price;
@@ -82,18 +80,15 @@ impl StrategyExecutionContext {
                 current_trade.is_closed = true;
                 current_trade.exit_price = filled_order.fill_price;
                 current_trade.exit_tick = filled_order.fill_tick;
-                self.trades.push(*current_trade);
 
-                let mut current_trade = Trade::new(filled_order.direction);
-                current_trade.entry_price = filled_order.fill_price;
-                current_trade.entry_tick = filled_order.fill_tick;
+                let mut opposite_direction_trade = Trade::new(filled_order.direction);
+                opposite_direction_trade.entry_price = filled_order.fill_price;
+                opposite_direction_trade.entry_tick = filled_order.fill_tick;
 
-                self.current_trade = Some(current_trade);
-
-                return self.current_trade.as_ref();
+                self.trades.push(opposite_direction_trade);
             }
         }
 
-        return self.current_trade.as_ref();
+        return self.trades.last();
     }
 }
