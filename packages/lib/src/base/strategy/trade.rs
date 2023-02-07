@@ -76,18 +76,21 @@ impl Trade {
         }
     }
 
-    pub fn to_colored_string(&self) -> ColoredString {
+    pub fn to_colored_string(&self, current_tick: usize) -> ColoredString {
         if !self.is_closed {
             if self.direction == TradeDirection::Long {
                 return "▲ [LONG]".green().bold();
             } else {
                 return "▼ [SHORT]".red().bold();
             }
-        } else if self.direction == TradeDirection::Long {
-            return format!("{} {}", "▼".red(), "[LONG_EXIT]".green()).bold();
-        } else {
-            return format!("{} {}", "▲".green(), "[SHORT_EXIT]".red()).bold();
+        } else if current_tick == self.exit_tick.unwrap() {
+            if self.direction == TradeDirection::Long {
+                return format!("{} {}", "▼".red(), "[LONG_EXIT]".green()).bold();
+            } else {
+                return format!("{} {}", "▲".green(), "[SHORT_EXIT]".red()).bold();
+            }
         }
+        return "No Trade".bright_black();
     }
 }
 

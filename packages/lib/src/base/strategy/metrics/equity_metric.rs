@@ -54,6 +54,7 @@ impl EquityMetric {
         self.ctx.assert();
 
         let ctx = self.ctx.get();
+        let tick = ctx.current_tick;
         let current_price = ctx.close().unwrap();
         let mut equity = self.current_equity;
         let mut _pnl = 0.0;
@@ -74,11 +75,6 @@ impl EquityMetric {
                 _pnl = trade.pnl(trade_fill_size, current_price).unwrap_or(0.0);
                 equity += _pnl;
             }
-
-            if trade.is_closed {
-                self.trade_fill_size = None;
-                self.current_equity = equity;
-            }
         }
 
         let fixed_returns = compute_return(equity, self.current_equity);
@@ -91,6 +87,13 @@ impl EquityMetric {
             .unwrap_or(0.0);
 
         self.prev_equity = Some(equity);
+
+        if let Some(trade) = trade {
+            if trade.is_closed {
+                self.trade_fill_size = None;
+                self.current_equity = equity;
+            }
+        }
 
         return Equity {
             equity,

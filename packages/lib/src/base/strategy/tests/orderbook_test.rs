@@ -7,7 +7,7 @@ mod tests {
         components::{component_context::ComponentContext, testing::ComponentTestSnapshot},
         execution_context::ExecutionContext,
         strategy::{
-            orderbook_i::{Order, OrderBook, OrderBookConfig},
+            orderbook::{Order, OrderBook, OrderBookConfig},
             trade::{
                 compute_fill_size, compute_pnl, compute_return, compute_trade_pnl, Trade,
                 TradeDirection,

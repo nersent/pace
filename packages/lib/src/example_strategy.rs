@@ -33,8 +33,8 @@ pub fn run_example_strategy() -> u128 {
     let mut strategy_ctx = StrategyExecutionContext::new(
         ctx.clone(),
         StrategyExecutionContextConfig {
-            slippage: 1,
             on_bar_close: false,
+            continous: false,
         },
     );
 
@@ -100,29 +100,25 @@ pub fn run_example_strategy() -> u128 {
         let total_closed_trades = total_closed_trades_metric.next(current_trade);
 
         println!(
-              "\n{}: {}{} | {}\n{}\n{}\n{}\n{}",
-              format!("[{}]", tick).bright_cyan().bold(),
-              format!("{:?}", ctx.close().unwrap_or(0.0)).blue(),
-              if current_trade.is_none() || current_trade.unwrap().entry_price.is_none() {
-                  "".to_string()
-              } else {
-                  format!(" | {}", current_trade.unwrap().to_colored_string()).to_string()
-              },
-              format!(
-                  "{}",
-                   ctx.datetime().unwrap().format("%d-%m-%Y %H:%M")
-              )
-              .bright_black(),
-              format!(
-                  "Equity: {:0.2} | Returns: {:0.2} | Mean returns: {:0.2} | Stdev Returns: {:0.2} | Fill size: {:?} | pnL: {} | Trade pnL: {:0.2} | Fixed Returns: {:0.2}",
-                  equity.equity, equity.returns, equity.returns_mean, equity.returns_stdev, equity_metric.trade_fill_size, equity.pnl, equity.trade_pnl, equity.fixed_returns
-              )
-              .bright_black(),
-              format!("Sharpe: {:0.2}", sharpe_ratio).bright_black(),
-              format!("Omega: {:0.2}", omega_ratio).bright_black(),
-              format!("Total closed trades: {}", total_closed_trades).bright_black(),
+            "\n{}: {}{} | {}\n{}\n{}\n{}\n{}",
+            format!("[{}]", tick).bright_cyan().bold(),
+            format!("{:?}", ctx.close().unwrap_or(0.0)).blue(),
+            format!(" | {}", current_trade.map(|x| x.to_colored_string(tick)).unwrap_or("No trade".bright_black())).to_string(),
+            format!(
+                "{}",
+                 ctx.datetime().unwrap().format("%d-%m-%Y %H:%M")
+            )
+            .bright_black(),
+            format!(
+                "Equity: {:0.2} | Returns: {:0.2} | Mean returns: {:0.2} | Stdev Returns: {:0.2} | Fill size: {:?} | pnL: {} | Trade pnL: {:0.2} | Fixed Returns: {:0.2}",
+                equity.equity, equity.returns, equity.returns_mean, equity.returns_stdev, equity_metric.trade_fill_size, equity.pnl, equity.trade_pnl, equity.fixed_returns
+            )
+            .bright_black(),
+            format!("Sharpe: {:0.2}", sharpe_ratio).bright_black(),
+            format!("Omega: {:0.2}", omega_ratio).bright_black(),
+            format!("Total closed trades: {}", total_closed_trades).bright_black(),
 
-          );
+        );
 
         if (tick > 100) {
             break;

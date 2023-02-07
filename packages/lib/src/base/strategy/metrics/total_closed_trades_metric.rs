@@ -15,9 +15,11 @@ impl TotalClosedTradesMetric {
 
     pub fn next(&mut self, trade: Option<&Trade>) -> usize {
         self.ctx.assert();
+        let ctx = self.ctx.get();
+        let tick = ctx.current_tick;
 
         if let Some(trade) = trade {
-            if trade.is_closed {
+            if trade.is_closed && trade.exit_tick.unwrap() == tick {
                 self.sum += 1;
             }
         }

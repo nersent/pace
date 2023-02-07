@@ -22,21 +22,6 @@ use ml::dataset_ml::generate_ml_datasets;
 use crate::base::components::testing::Fixture;
 
 fn main() {
-    // example_strategy::run_example_strategy();
-    // let (_df, cctx, expected) =
-    //     Fixture::load("components/change/tests/fixtures/prank/btc_1d_length_14_close.csv");
-    // let mut target = RecursivePercentRank::new(cctx.clone(), 14);
-    // for cctx in cctx {
-    //     let ctx = cctx.get();
-    //     let output = target.next(ctx.close());
-    //     println!(
-    //         "[{}]: {:?} | {:?}",
-    //         ctx.current_tick, output, expected[ctx.current_tick]
-    //     );
-    //     if ctx.current_tick > 35 {
-    //         break;
-    //     }
-    // }
-
-    generate_ml_datasets();
+    example_strategy::run_example_strategy();
+    // generate_ml_datasets();
 }

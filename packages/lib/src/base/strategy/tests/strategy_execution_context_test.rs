@@ -7,8 +7,7 @@ mod tests {
         components::{component_context::ComponentContext, testing::ComponentTestSnapshot},
         execution_context::ExecutionContext,
         strategy::{
-            orderbook_i::{Order, OrderBook, OrderBookConfig},
-            strategy_execution_context_i::{
+            strategy_execution_context::{
                 StrategyExecutionContext, StrategyExecutionContextConfig,
             },
             trade::{
