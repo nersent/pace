@@ -40,7 +40,7 @@ pub fn trade_direction_from_f64(value: Option<f64>) -> Option<TradeDirection> {
     };
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Trade {
     pub direction: TradeDirection,
     pub is_closed: bool,
@@ -83,12 +83,10 @@ impl Trade {
             } else {
                 return "▼ [SHORT]".red().bold();
             }
+        } else if self.direction == TradeDirection::Long {
+            return format!("{} {}", "▼".red(), "[LONG_EXIT]".green()).bold();
         } else {
-            if self.direction == TradeDirection::Long {
-                return format!("{} {}", "▼".red(), "[LONG_EXIT]".green()).bold();
-            } else {
-                return format!("{} {}", "▲".green(), "[SHORT_EXIT]".red()).bold();
-            }
+            return format!("{} {}", "▲".green(), "[SHORT_EXIT]".red()).bold();
         }
     }
 }

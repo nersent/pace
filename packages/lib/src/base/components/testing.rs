@@ -6,7 +6,11 @@ use polars::prelude::DataFrame;
 use crate::{
     base::{
         asset::timeframe::Timeframe,
-        strategy::{polars::SeriesCastUtilsForStrategy, trade::TradeDirection},
+        strategy::{
+            orderbook_i::Order,
+            polars::SeriesCastUtilsForStrategy,
+            trade::{Trade, TradeDirection},
+        },
     },
     utils::{comparison::FloatComparison, csv::read_csv, polars::SeriesCastUtils},
 };
@@ -237,6 +241,74 @@ impl ComponentTestSnapshot<(Option<f64>, Option<f64>, Option<f64>, Option<f64>)>
                 _ => false,
             };
             return is_first_valid && is_second_valid && is_third_valid && is_fourth_valid;
+        })
+    }
+}
+
+impl ComponentTestSnapshot<(Vec<Order>, Vec<Order>)> {
+    pub fn assert(&self, expected: &[Option<(Vec<Order>, Vec<Order>)>]) {
+        self.assert_iter(expected, |actual, expected| {
+            if actual.0.len() != expected.0.len() || actual.1.len() != expected.1.len() {
+                return false;
+            }
+            for (i, actual_order) in actual.0.iter().enumerate() {
+                let expected_order = expected.0[i];
+                if *actual_order != expected_order {
+                    return false;
+                }
+            }
+            for (i, actual_order) in actual.1.iter().enumerate() {
+                let expected_order = expected.1[i];
+                if *actual_order != expected_order {
+                    return false;
+                }
+            }
+            return true;
+        })
+    }
+}
+
+impl ComponentTestSnapshot<Trade> {
+    pub fn assert(&self, expected: &[Option<Trade>]) {
+        self.assert_iter(expected, |actual, expected| {
+            return actual == expected;
+        })
+    }
+}
+
+impl ComponentTestSnapshot<(Option<Trade>, Vec<Trade>)> {
+    pub fn assert(&self, expected: &[Option<(Option<Trade>, Vec<Trade>)>]) {
+        self.assert_iter(expected, |actual, expected| {
+            if actual.0 != expected.0 {
+                return false;
+            }
+            if actual.1.len() != expected.1.len() {
+                return false;
+            }
+            for (i, actual_trade) in actual.1.iter().enumerate() {
+                let expected_trade = expected.1[i];
+                if *actual_trade != expected_trade {
+                    return false;
+                }
+            }
+            return true;
+        })
+    }
+}
+
+impl ComponentTestSnapshot<Vec<Trade>> {
+    pub fn assert(&self, expected: &[Option<Vec<Trade>>]) {
+        self.assert_iter(expected, |actual, expected| {
+            if actual.len() != expected.len() {
+                return false;
+            }
+            for (i, actual_trade) in actual.iter().enumerate() {
+                let expected_trade = expected[i];
+                if *actual_trade != expected_trade {
+                    return false;
+                }
+            }
+            return true;
         })
     }
 }
