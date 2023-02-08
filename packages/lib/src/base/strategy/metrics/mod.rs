@@ -1,4 +1,5 @@
 pub mod equity_metric;
+pub mod metric;
 pub mod omega_ratio;
 pub mod omega_ratio_metric;
 pub mod sharpe_ratio;

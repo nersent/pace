@@ -14,20 +14,22 @@ use pyo3::prelude::*;
 
 #[pyclass(name = "AssetDataProvider")]
 pub struct PyAssetDataProvider {
-    asset: Arc<dyn AssetDataProvider + 'static + Send + Sync>,
+    pub asset: Arc<dyn AssetDataProvider + 'static + Send + Sync>,
 }
 
 #[pymethods]
 impl PyAssetDataProvider {
     #[new]
-    pub fn new(path: String, asset_name: String) -> Self {
+    pub fn new(path: String, asset_name: String, timeframe: usize) -> Self {
+        let timeframe = Timeframe::try_from(timeframe).unwrap();
+
         let path = Path::new(&path);
 
         let df = read_df(&path);
         let asset = Arc::from(InMemoryAssetDataProvider::from_df(
             &df,
             &asset_name,
-            Timeframe::OneDay,
+            timeframe,
         ));
 
         return Self { asset };
@@ -37,9 +39,9 @@ impl PyAssetDataProvider {
         return self.asset.get_asset_name().to_string();
     }
 
-    // pub fn get_timeframe(&self) -> String {
-    //     return self.asset.get_timeframe().to_string();
-    // }
+    pub fn get_timeframe(&self) -> usize {
+        return Timeframe::try_into(*self.asset.get_timeframe()).unwrap();
+    }
 
     pub fn get_start_tick(&self) -> usize {
         return self.asset.get_start_tick();

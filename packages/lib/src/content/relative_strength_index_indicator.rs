@@ -1,6 +1,11 @@
+use pyo3::types::PyDict;
+
 use crate::base::{
     asset::source::{Source, SourceKind},
-    components::{component_context::ComponentContext, component_default::ComponentDefault},
+    components::{
+        component_context::ComponentContext, component_default::ComponentDefault,
+        python::ComponentFromPyDict,
+    },
     ta::rsi_component::{RelativeStrengthIndexComponent, RelativeStrengthIndexComponentMetadata},
 };
 
@@ -11,7 +16,7 @@ pub struct RelativeStrengthIndexIndicatorConfig {
 
 impl ComponentDefault for RelativeStrengthIndexIndicatorConfig {
     fn default(ctx: ComponentContext) -> Self {
-        return RelativeStrengthIndexIndicatorConfig {
+        return Self {
             length: 14,
             src: Source::from_kind(ctx, SourceKind::Close),
         };
@@ -26,7 +31,7 @@ pub struct RelativeStrengthIndexIndicator {
 
 impl RelativeStrengthIndexIndicator {
     pub fn new(ctx: ComponentContext, config: RelativeStrengthIndexIndicatorConfig) -> Self {
-        return RelativeStrengthIndexIndicator {
+        return Self {
             ctx: ctx.clone(),
             rsi: RelativeStrengthIndexComponent::new(ctx.clone(), config.length),
             config,

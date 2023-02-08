@@ -92,6 +92,35 @@ impl Trade {
         }
         return "No Trade".bright_black();
     }
+
+    pub fn get_triangle_colored_string(&self, current_tick: usize) -> ColoredString {
+        if !self.is_closed && self.entry_tick.is_some() && self.entry_tick.unwrap() == current_tick
+        {
+            if self.direction == TradeDirection::Long {
+                return "▲".green().bold();
+            } else {
+                return "▼".red().bold();
+            }
+        } else if self.exit_tick.is_some() && current_tick == self.exit_tick.unwrap() {
+            if self.direction == TradeDirection::Long {
+                return "▼".red().bold();
+            } else {
+                return "▲".green().bold();
+            }
+        }
+        if self.exit_tick.is_none() {
+            if self.direction == TradeDirection::Long {
+                return "—".green().bold();
+            } else {
+                return "—".red().bold();
+            }
+        }
+        if self.direction == TradeDirection::Long {
+            return "—".black().bold();
+        } else {
+            return "—".black().bold();
+        }
+    }
 }
 
 pub fn compute_trade_pnl(

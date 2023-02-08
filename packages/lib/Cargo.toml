@@ -11,6 +11,8 @@ panic = "abort"
 [lib]
 name = "pace"
 crate-type = ["cdylib", "rlib"]
+version = "0.0.1"
+edition = "2021"
 
 [dependencies]
 polars = { version = "0.26.1", features = ["parquet", "lazy"] }

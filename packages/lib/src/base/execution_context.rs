@@ -20,6 +20,11 @@ impl ExecutionContext {
         start_tick: usize,
         end_tick: usize,
     ) -> Self {
+        assert!(
+            start_tick < end_tick,
+            "ExecutionContext: start_tick must be less than end_tick"
+        );
+
         return ExecutionContext {
             current_tick: start_tick,
             start_tick,
@@ -41,6 +46,14 @@ impl ExecutionContext {
             asset_data_provider,
             is_running: false,
         };
+    }
+
+    pub fn start_tick(&self) -> usize {
+        return self.start_tick;
+    }
+
+    pub fn end_tick(&self) -> usize {
+        return self.end_tick;
     }
 
     pub fn count_ticks(&self) -> usize {

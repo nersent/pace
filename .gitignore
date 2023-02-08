@@ -8,3 +8,5 @@ node_modules
 build
 output.csv
 .input
+yarn-error.log
+py_venv

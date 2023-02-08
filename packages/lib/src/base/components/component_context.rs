@@ -6,9 +6,14 @@ use std::{
 };
 
 use polars::prelude::DataFrame;
+use pyo3::PyRef;
 
 use crate::base::{
-    asset::{in_memory_asset_data_provider::InMemoryAssetDataProvider, timeframe::Timeframe},
+    asset::{
+        asset_data_provider::{self, AssetDataProvider},
+        in_memory_asset_data_provider::InMemoryAssetDataProvider,
+        timeframe::Timeframe,
+    },
     execution_context::ExecutionContext,
 };
 
@@ -39,6 +44,13 @@ impl ComponentContext {
         let execution_context = ExecutionContext::from_asset(Arc::from(
             InMemoryAssetDataProvider::from_df(df, asset_name, timeframe),
         ));
+        return Self::build(execution_context);
+    }
+
+    pub fn from_asset_data_provider(
+        asset_data_provider: Arc<dyn AssetDataProvider + 'static + Send + Sync>,
+    ) -> ComponentContext {
+        let execution_context = ExecutionContext::from_asset(asset_data_provider);
         return Self::build(execution_context);
     }
 

@@ -48,3 +48,4 @@ $ yarn install
 - https://www.forrestthewoods.com/blog/should-small-rust-structs-be-passed-by-copy-or-by-borrow/
 - https://www.slideshare.net/ColleenFarrelly/machine-learning-by-analogy-59094152
 - https://kevinlynagh.com/notes/match-vs-lookup/
+- https://www.reddit.com/r/rust/comments/vzzrfk/closure_optimization/

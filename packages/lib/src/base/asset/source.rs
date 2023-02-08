@@ -36,3 +36,21 @@ impl Source {
         }
     }
 }
+
+impl TryFrom<usize> for SourceKind {
+    type Error = String;
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(SourceKind::Open),
+            1 => Ok(SourceKind::High),
+            2 => Ok(SourceKind::Low),
+            3 => Ok(SourceKind::Close),
+            4 => Ok(SourceKind::Volume),
+            5 => Ok(SourceKind::OHLC4),
+            6 => Ok(SourceKind::HLC3),
+            7 => Ok(SourceKind::HL2),
+            _ => Err(format!("Invalid source kind: {}", value)),
+        }
+    }
+}

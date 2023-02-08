@@ -1,0 +1,6 @@
+{
+  "watch": ["packages"],
+  "ext": "rs,py,json",
+  "ignore": [],
+  "exec": "yarn maturin:dev && yarn run:py:env"
+}

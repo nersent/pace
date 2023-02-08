@@ -10,11 +10,20 @@
 )]
 
 use pyo3::prelude::*;
+// use python::py_asset_data_provider::PyAssetDataProvider;
+
+// use crate::python::py_strategies::run_relative_strength_index_strategy;
+mod base;
+mod content;
+mod example_strategy;
+mod ml;
+// mod python;
+mod utils;
 
 #[pymodule]
 fn pace(py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    // m.add_class::<PyAssetDataProviderManager>()?;
-    // m.add_function(wrap_pyfunction!(chuj, m)?)?;
+    // m.add_class::<PyAssetDataProvider>()?;
+    // m.add_function(wrap_pyfunction!(run_relative_strength_index_strategy, m)?)?;
 
     Ok(())
 }

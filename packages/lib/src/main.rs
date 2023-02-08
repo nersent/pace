@@ -13,7 +13,6 @@ mod base;
 mod content;
 mod example_strategy;
 mod ml;
-mod python;
 mod utils;
 
 use std::path::Path;

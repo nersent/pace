@@ -47,8 +47,17 @@ impl StrategyExecutionContext {
         };
     }
 
+    pub fn start_tick(&self) -> usize {
+        return self.ctx.get().start_tick();
+    }
+
+    pub fn end_tick(&self) -> usize {
+        return self.ctx.get().end_tick();
+    }
+
     pub fn next(&mut self, direction: Option<TradeDirection>) -> Option<&Trade> {
-        self.ctx.assert();
+        self.ctx.on_next();
+
         let ctx = self.ctx.get();
 
         if let Some(direction) = direction {

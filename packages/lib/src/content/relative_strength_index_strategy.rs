@@ -1,5 +1,10 @@
+use pyo3::types::PyDict;
+
 use crate::base::{
-    components::{component_context::ComponentContext, component_default::ComponentDefault},
+    components::{
+        component_context::ComponentContext, component_default::ComponentDefault,
+        python::ComponentFromPyDict,
+    },
     strategy::trade::TradeDirection,
     ta::{
         cross::CrossMode, cross_component::CrossComponent,
