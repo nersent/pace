@@ -69,7 +69,7 @@ pub fn run_example_strategy() -> u128 {
         RelativeStrengthIndexStrategyConfig::default(ctx.clone()),
     );
 
-    // let start_time = Instant::now();
+    let start_time = Instant::now();
 
     let mut runner = StrategyRunner::new(
         ctx.clone(),
@@ -80,11 +80,12 @@ pub fn run_example_strategy() -> u128 {
                 continous: true,
             },
         ),
-        StrategyRunnerConfig {
-            print: true,
-            start_tick: Some(0),
-            end_tick: Some(30),
-        },
+        StrategyRunnerConfig::default(ctx.clone()),
+        // StrategyRunnerConfig {
+        //     print: true,
+        //     start_tick: Some(0),
+        //     end_tick: Some(30),
+        // },
     );
 
     let result = runner.run(|| {
@@ -93,7 +94,7 @@ pub fn run_example_strategy() -> u128 {
 
         let mut trade: Option<TradeDirection> = None;
 
-        if false {
+        if true {
             let rsi = rsi_indicator.next();
             let rsi_trade = rsi_strategy.next(rsi);
 
@@ -167,10 +168,10 @@ pub fn run_example_strategy() -> u128 {
     //     }
     // }
 
-    return 0;
-    // let end_time = Instant::now();
-    // let elapsed_time = end_time - start_time;
-    // let elapsed_time = elapsed_time.as_micros();
+    // return 0;
+    let end_time = Instant::now();
+    let elapsed_time = end_time - start_time;
+    let elapsed_time = elapsed_time.as_micros();
 
-    // return elapsed_time;
+    return elapsed_time;
 }
