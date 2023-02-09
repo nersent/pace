@@ -77,8 +77,10 @@ impl EquityMetric {
                     self.prev_trade_direction.unwrap() == TradeDirection::Long,
                 );
                 current_capital += trade_pnl;
+                self.capital_before_trade = current_capital;
+                self.prev_trade_direction = None;
 
-                // println!("[STATUS] AT EXIT")
+                println!("[STATUS] AT EXIT")
             }
 
             if trade.is_at_entry(tick) {
@@ -86,9 +88,10 @@ impl EquityMetric {
                     current_capital,
                     trade.entry_price.unwrap(),
                 ));
-                self.capital_before_trade = current_capital;
+
                 self.prev_trade_fill_price = Some(price);
-                // println!("[STATUS] AT ENTRY")
+                println!("[STATUS] AT ENTRY");
+                self.prev_trade_direction = Some(trade.direction);
             }
 
             if !is_at_exit && trade.is_active() {
@@ -97,11 +100,9 @@ impl EquityMetric {
                     .unwrap_or(0.0);
                 current_capital += trade_pnl;
             }
-
-            self.prev_trade_direction = Some(trade.direction);
         }
 
-        // println!("{} | {}", current_capital, self.prev_capital);
+        println!("{} | {}", current_capital, self.prev_capital);
 
         let returns = compute_return(current_capital, self.prev_capital);
         let returns_mean = self.mean_returns.next(returns);
