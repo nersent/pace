@@ -315,3 +315,21 @@ impl ComponentTestSnapshot<Vec<Trade>> {
         })
     }
 }
+
+impl ComponentTestSnapshot<(f64, f64)> {
+    pub fn assert(&self, expected: &[Option<(f64, f64)>]) {
+        self.assert_iter(expected, |actual, expected| {
+            return actual.0.compare(expected.0) && actual.1.compare(expected.1);
+        })
+    }
+}
+
+impl ComponentTestSnapshot<(f64, f64, f64)> {
+    pub fn assert(&self, expected: &[Option<(f64, f64, f64)>]) {
+        self.assert_iter(expected, |actual, expected| {
+            return actual.0.compare(expected.0)
+                && actual.1.compare(expected.1)
+                && actual.2.compare(expected.2);
+        })
+    }
+}

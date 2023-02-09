@@ -92,14 +92,14 @@ impl EquityMetric {
             .map(|prev_equity| compute_pnl(equity, self.current_equity))
             .unwrap_or(0.0);
 
-        self.prev_equity = Some(equity);
-
         if let Some(trade) = trade {
             if trade.is_closed {
                 self.trade_fill_size = None;
                 self.current_equity = equity;
             }
         }
+
+        self.prev_equity = Some(equity);
 
         return Equity {
             equity,

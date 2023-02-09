@@ -76,6 +76,18 @@ impl Trade {
         }
     }
 
+    pub fn is_at_entry(&self, current_tick: usize) -> bool {
+        return self.entry_tick.is_some() && self.entry_tick.unwrap() == current_tick;
+    }
+
+    pub fn is_at_exit(&self, current_tick: usize) -> bool {
+        return self.exit_tick.is_some() && self.exit_tick.unwrap() == current_tick;
+    }
+
+    pub fn is_active(&self) -> bool {
+        return self.entry_tick.is_some() && !self.is_closed;
+    }
+
     pub fn to_colored_string(&self, current_tick: usize) -> ColoredString {
         if !self.is_closed {
             if self.direction == TradeDirection::Long {
