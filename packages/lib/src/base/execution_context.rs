@@ -3,7 +3,7 @@ use std::{rc::Rc, sync::Arc, time::Duration};
 
 use super::{
     asset::asset_data_provider::AssetDataProvider,
-    ta::ma::{compute_hl2, compute_hlc3},
+    ta::ma::{compute_hl2, compute_hlc3, compute_ohlc4},
 };
 
 pub struct ExecutionContext {
@@ -69,6 +69,12 @@ impl ExecutionContext {
         return self.current_tick <= self.end_tick;
     }
 
+    pub fn is_up(&self) -> bool {
+        let open = self.open().unwrap();
+        let close = self.close().unwrap();
+        return close >= open;
+    }
+
     pub fn open(&self) -> Option<f64> {
         return self.asset_data_provider.get_open(self.current_tick);
     }
@@ -99,12 +105,25 @@ impl ExecutionContext {
             .map(|time| NaiveDateTime::from_timestamp_millis(time.as_millis() as i64).unwrap());
     }
 
+    pub fn ohlc4(&self) -> Option<f64> {
+        let open = self.open();
+        let high = self.high();
+        let low = self.low();
+        let close = self.close();
+        match (open, high, low, close) {
+            (Some(open), Some(high), Some(low), Some(close)) => {
+                Some(compute_ohlc4(open, high, low, close))
+            }
+            _ => None,
+        }
+    }
+
     pub fn hl2(&self) -> Option<f64> {
         let high = self.high();
         let low = self.low();
         match (high, low) {
-            (Some(high), Some(low)) => return Some(compute_hl2(high, low)),
-            _ => return None,
+            (Some(high), Some(low)) => Some(compute_hl2(high, low)),
+            _ => None,
         }
     }
 
@@ -113,8 +132,8 @@ impl ExecutionContext {
         let low = self.low();
         let close = self.close();
         match (high, low, close) {
-            (Some(high), Some(low), Some(close)) => return Some(compute_hlc3(high, low, close)),
-            _ => return None,
+            (Some(high), Some(low), Some(close)) => Some(compute_hlc3(high, low, close)),
+            _ => None,
         }
     }
 

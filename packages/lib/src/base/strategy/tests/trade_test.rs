@@ -89,38 +89,38 @@ mod tests {
         assert_eq!(compute_trade_pnl(1.5, 10.0, 20.0, false), -15.0);
     }
 
-    #[test]
-    fn trade_pnl_no_entry_price() {
-        let mut trade = Trade::new(TradeDirection::Long);
-        trade.entry_price = None;
-        assert_eq!(trade.pnl(1.5, 20.0), None);
-    }
+    // #[test]
+    // fn trade_pnl_no_entry_price() {
+    //     let mut trade = Trade::new(TradeDirection::Long);
+    //     trade.entry_price = None;
+    //     assert_eq!(trade.pnl(1.5, 20.0), None);
+    // }
 
     #[test]
     fn trade_pnl_long_profit() {
         let mut trade = Trade::new(TradeDirection::Long);
         trade.entry_price = Some(10.0);
-        assert_eq!(trade.pnl(1.5, 20.0), Some(15.0));
+        assert_eq!(trade.pnl(1.5, 20.0), 15.0);
     }
 
     #[test]
     fn trade_pnl_long_loss() {
         let mut trade = Trade::new(TradeDirection::Long);
         trade.entry_price = Some(20.0);
-        assert_eq!(trade.pnl(1.5, 10.0), Some(-15.0));
+        assert_eq!(trade.pnl(1.5, 10.0), -15.0);
     }
 
     #[test]
     fn trade_pnl_short_profit() {
         let mut trade = Trade::new(TradeDirection::Short);
         trade.entry_price = Some(20.0);
-        assert_eq!(trade.pnl(1.5, 10.0), Some(15.0));
+        assert_eq!(trade.pnl(1.5, 10.0), 15.0);
     }
 
     #[test]
     fn trade_pnl_short_loss() {
         let mut trade = Trade::new(TradeDirection::Short);
         trade.entry_price = Some(10.0);
-        assert_eq!(trade.pnl(1.5, 20.0), Some(-15.0));
+        assert_eq!(trade.pnl(1.5, 20.0), -15.0);
     }
 }

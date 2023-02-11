@@ -10,3 +10,12 @@ output.csv
 .input
 yarn-error.log
 py_venv
+path.txt
+cargo-flamegraph.stacks
+flamegraph.svg
+stacks.folded
+plot_capital.png
+plot_omega_ratio.png
+plot_sharpe_ratio.png
+plot_returns.png
+history.json

@@ -11,8 +11,8 @@ pub struct FixedValueCacheComponent {
 impl FixedValueCacheComponent {
     pub fn new(ctx: ComponentContext, length: usize) -> Self {
         return FixedValueCacheComponent {
-            ctx,
-            values: Vec::new(),
+            ctx: ctx.clone(),
+            values: Vec::with_capacity(ctx.get().count_ticks()),
             length,
         };
     }

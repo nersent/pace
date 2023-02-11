@@ -13,8 +13,8 @@ pub enum SourceKind {
 }
 
 pub struct Source {
+    pub kind: SourceKind,
     ctx: ComponentContext,
-    kind: SourceKind,
 }
 
 impl Source {
@@ -30,7 +30,7 @@ impl Source {
             SourceKind::Low => ctx.low(),
             SourceKind::Close => ctx.close(),
             SourceKind::Volume => ctx.volume(),
-            SourceKind::OHLC4 => todo!(),
+            SourceKind::OHLC4 => ctx.ohlc4(),
             SourceKind::HLC3 => ctx.hlc3(),
             SourceKind::HL2 => ctx.hl2(),
         }

@@ -1,9 +1,20 @@
-use crate::base::components::component_context::ComponentContext;
+use crate::base::{
+    components::{component_context::ComponentContext, component_default::ComponentDefault},
+    strategy::strategy_context::StrategyMetrics,
+};
 
 use super::{equity_metric::Equity, omega_ratio::compute_omega_ratio};
 
 pub struct OmegaRatioMetricConfig {
     pub risk_free_rate: f64,
+}
+
+impl ComponentDefault for OmegaRatioMetricConfig {
+    fn default(ctx: ComponentContext) -> Self {
+        return Self {
+            risk_free_rate: 0.0,
+        };
+    }
 }
 
 pub struct OmegaRatioMetric {
@@ -23,10 +34,8 @@ impl OmegaRatioMetric {
         };
     }
 
-    pub fn next(&mut self, equity: &Equity) -> f64 {
+    pub fn next(&mut self, returns: f64) -> f64 {
         self.ctx.assert();
-
-        let returns = equity.returns;
 
         if returns > 0.0 {
             self.positive_returns_sum += returns;

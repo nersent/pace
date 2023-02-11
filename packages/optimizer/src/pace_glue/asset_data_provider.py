@@ -13,3 +13,6 @@ class AssetDataProvider():
 
     def get_timeframe(self) -> Timeframe:
         return self._asset_data_provider.get_timeframe()
+
+    def get(self):
+        return self._asset_data_provider

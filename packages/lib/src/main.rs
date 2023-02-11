@@ -42,7 +42,8 @@ fn benchmark_example_strategy() {
 }
 
 fn main() {
-    benchmark_example_strategy();
+    example_strategy::run_example_strategy_refactor();
+    // benchmark_example_strategy();
     // example_strategy::run_example_strategy();
     // generate_ml_datasets();
 }

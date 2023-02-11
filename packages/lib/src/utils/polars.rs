@@ -8,12 +8,15 @@ use polars::{
     series::Series,
 };
 
+use crate::base::strategy::trade::{trade_direction_from_f64, TradeDirection};
+
 use super::fs::get_filename_extension;
 
 pub trait SeriesCastUtils {
     fn to_f64(&self) -> Vec<Option<f64>>;
     fn to_i32(&self) -> Vec<Option<i32>>;
     fn to_duration(&self) -> Vec<Option<Duration>>;
+    fn to_trade_direction(&self) -> Vec<Option<TradeDirection>>;
 }
 
 impl SeriesCastUtils for Series {
@@ -63,6 +66,23 @@ impl SeriesCastUtils for Series {
                     None
                 } else {
                     Some(Duration::from_secs_f64(val.unwrap()))
+                }
+            })
+            .collect::<Vec<_>>();
+    }
+
+    fn to_trade_direction(&self) -> Vec<Option<TradeDirection>> {
+        return self
+            .cast(&DataType::Float64)
+            .unwrap()
+            .f64()
+            .unwrap()
+            .into_iter()
+            .map(|val| {
+                if val.is_none() || val.unwrap().is_nan() {
+                    None
+                } else {
+                    trade_direction_from_f64(val)
                 }
             })
             .collect::<Vec<_>>();

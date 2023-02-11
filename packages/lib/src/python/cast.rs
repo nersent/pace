@@ -51,6 +51,10 @@ impl PyAnyCast for PyAny {
 
 impl FromPyRef<PyAssetDataProvider> for ComponentContext {
     fn from_py_ref(asset_data_provider: PyRef<'_, PyAssetDataProvider>) -> Self {
-        return Self::from_asset_data_provider(Arc::from(asset_data_provider.asset));
+        return Self::from_asset_data_provider(Arc::clone(&asset_data_provider.asset));
     }
+}
+
+pub trait ToPyDict {
+    fn to_py_dict(self) -> PyDict;
 }

@@ -88,6 +88,10 @@ impl<T: std::fmt::Debug> ComponentTestSnapshot<T> {
         self.debug_mode();
     }
 
+    pub fn actual(&mut self, value: Vec<Option<T>>) {
+        self.actual = value;
+    }
+
     pub fn push(&mut self, value: Option<T>) {
         self.actual.push(value);
     }
