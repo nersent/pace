@@ -16,7 +16,8 @@ impl MeanComponent {
     }
 
     pub fn next(&mut self, value: f64) -> f64 {
-        self.ctx.assert();
+        // self.ctx.on_next();
+
         self.sum += value;
         self.n += 1;
         return self.sum / self.n as f64;

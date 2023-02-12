@@ -19,7 +19,7 @@ impl WelfordsVarianceComponent {
     }
 
     pub fn next(&mut self, value: f64) -> Option<f64> {
-        self.ctx.on_next();
+        // self.ctx.on_next();
 
         self.n += 1;
 

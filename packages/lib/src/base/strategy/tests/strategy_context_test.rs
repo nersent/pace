@@ -5645,16 +5645,17 @@ mod tests {
         trades: &[Option<TradeDirection>],
         expected: &[Option<(f64, f64, f64)>],
     ) {
-        let mut snapshot = ComponentTestSnapshot::<(f64, f64, f64)>::new();
-        for cctx in cctx {
-            let ctx = cctx.get();
-            let tick = ctx.current_tick;
-            let trade_direction = trades[tick];
-            target.next(trade_direction);
-            let metrics = &target.metrics;
-            snapshot.push(Some((metrics.equity, metrics.open_profit, metrics.returns)));
-        }
-        snapshot.assert(expected);
+        todo!("dipskon");
+        // let mut snapshot = ComponentTestSnapshot::<(f64, f64, f64)>::new();
+        // for cctx in cctx {
+        //     let ctx = cctx.get();
+        //     let tick = ctx.current_tick;
+        //     let trade_direction = trades[tick];
+        //     target.next(trade_direction);
+        //     let metrics = &target.metrics;
+        //     snapshot.push(Some((metrics.equity, metrics.open_profit, metrics.returns)));
+        // }
+        // snapshot.assert(expected);
     }
 
     #[test]

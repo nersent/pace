@@ -41,9 +41,10 @@ pub struct StrategyMetrics {
     pub open_profit: f64,
     pub net_profit: f64,
     pub equity: f64,
-    pub returns: f64,
-    pub returns_mean: f64,
-    pub returns_stdev: f64,
+    // pub returns: f64,
+    // pub realized_returns: f64,
+    // pub returns_mean: f64,
+    // pub returns_stdev: f64,
 }
 
 pub struct StrategyContext {
@@ -52,12 +53,11 @@ pub struct StrategyContext {
     ctx: ComponentContext,
     unfilled_trade_direction: Option<TradeDirection>,
     pub metrics: StrategyMetrics,
-    returns_stdev: WelfordsStandardDeviationComponent,
-    returns_mean: MeanComponent,
+    // returns_stdev: WelfordsStandardDeviationComponent,
+    // returns_mean: MeanComponent,
     trade_fill_size: f64,
     prev_equity: f64,
-    prev_open_profit: f64,
-    last_negative_equity_tick: Option<usize>,
+    pub on_close_trade: bool,
 }
 
 impl StrategyContext {
@@ -71,17 +71,17 @@ impl StrategyContext {
                 open_profit: 0.0,
                 net_profit: 0.0,
                 equity: config.initial_capital,
-                returns: 0.0,
-                returns_mean: 0.0,
-                returns_stdev: 0.0,
+                // returns: 0.0,
+                // realized_returns: 0.0,
+                // returns_mean: 0.0,
+                // returns_stdev: 0.0,
             },
-            returns_stdev: WelfordsStandardDeviationComponent::new(ctx.clone()),
-            returns_mean: MeanComponent::new(ctx.clone()),
+            // returns_stdev: WelfordsStandardDeviationComponent::new(ctx.clone()),
+            // returns_mean: MeanComponent::new(ctx.clone()),
             trade_fill_size: 1.0,
-            prev_open_profit: 0.0,
             prev_equity: config.initial_capital,
+            on_close_trade: false,
             config,
-            last_negative_equity_tick: None,
         };
     }
 
@@ -131,8 +131,18 @@ impl StrategyContext {
 
                     let trade_pnl =
                         last_trade.pnl(self.trade_fill_size, last_trade.exit_price.unwrap());
+
+                    // self.prev_net_profit = self.metrics.net_profit;
+
                     self.metrics.net_profit += trade_pnl;
                     self.metrics.open_profit = 0.0;
+
+                    let equity = self.metrics.net_profit;
+
+                    // self.metrics.returns =
+                    //     compute_return(self.config.initial_capital, self.prev_net_profit);
+                    // self.metrics.returns_mean = self.returns_mean.next(self.metrics.returns);
+                    // self.metrics.returns_stdev = self.returns_stdev.next(self.metrics.returns);
                 }
             } else {
                 create_new_trade = true;
@@ -178,9 +188,13 @@ impl StrategyContext {
         self.metrics.equity =
             self.metrics.initial_capital + self.metrics.net_profit + self.metrics.open_profit;
 
-        self.metrics.returns = compute_return(self.metrics.equity, self.prev_equity);
-        self.metrics.returns_mean = self.returns_mean.next(self.metrics.returns);
-        self.metrics.returns_stdev = self.returns_stdev.next(self.metrics.returns);
+        self.on_close_trade = close_trade;
+
+        // self.metrics.returns = compute_return(self.metrics.equity, self.prev_equity);
+        // self.metrics.returns_mean = self.returns_mean.next(self.metrics.returns);
+        // self.metrics.returns_stdev = self.returns_stdev.next(self.metrics.returns);
+
+        // self.metrics.returns = compute_return(self.metrics.equity, self.prev_equity);
         // if let Some(last_trade) = &mut last_trade {
         //     if calculate_open_profit && !last_trade.is_closed {
         //         self.metrics.returns =
@@ -206,6 +220,5 @@ impl StrategyContext {
         // };
 
         self.prev_equity = self.metrics.equity;
-        self.prev_open_profit = self.metrics.net_profit;
     }
 }

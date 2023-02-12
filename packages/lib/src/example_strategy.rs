@@ -6,6 +6,7 @@ use crate::base::{
     strategy::{
         metrics::omega_ratio_metric::OmegaRatioMetric,
         strategy_context::{StrategyContext, StrategyContextConfig},
+        strategy_runner::{StrategyRunner, StrategyRunnerConfig, StrategyRunnerMetricsConfig},
         trade::TradeDirection,
     },
 };
@@ -133,8 +134,32 @@ pub fn run_example_strategy_refactor() {
         },
     );
 
-    for cctx in ctx {
-        let ctx = cctx.get();
+    let mut runner = StrategyRunner::new(
+        ctx.clone(),
+        StrategyContext::new(
+            ctx.clone(),
+            StrategyContextConfig {
+                on_bar_close: false,
+                continous: true,
+                buy_with_equity: false,
+                initial_capital: 1000.0,
+            },
+        ),
+        // StrategyRunnerConfig::default(ctx.clone()),
+        StrategyRunnerConfig {
+            print: true,
+            start_tick: None,
+            end_tick: Some(10),
+            metrics: StrategyRunnerMetricsConfig {
+                omega_ratio: None,
+                sharpe_ratio: None,
+                track: false,
+            },
+        },
+    );
+
+    let res = runner.run(|| {
+        let ctx = ctx.get();
         let tick = ctx.current_tick;
 
         let long_ticks = [4];
@@ -148,10 +173,28 @@ pub fn run_example_strategy_refactor() {
             trade = Some(TradeDirection::Short);
         }
 
-        strategy_ctx.next(trade);
+        return trade;
+    });
 
-        if tick > 30 {
-            break;
-        }
-    }
+    // for cctx in ctx {
+    //     let ctx = cctx.get();
+    //     let tick = ctx.current_tick;
+
+    //     let long_ticks = [4];
+    //     let short_ticks = [2, 3, 7];
+
+    //     let mut trade: Option<TradeDirection> = None;
+
+    //     if long_ticks.contains(&tick) {
+    //         trade = Some(TradeDirection::Long);
+    //     } else if short_ticks.contains(&tick) {
+    //         trade = Some(TradeDirection::Short);
+    //     }
+
+    //     strategy_ctx.next(trade);
+
+    //     if tick > 30 {
+    //         break;
+    //     }
+    // }
 }

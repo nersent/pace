@@ -35,7 +35,7 @@ impl OmegaRatioMetric {
     }
 
     pub fn next(&mut self, returns: f64) -> f64 {
-        self.ctx.assert();
+        // self.ctx.assert();
 
         if returns > 0.0 {
             self.positive_returns_sum += returns;

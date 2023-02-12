@@ -17,7 +17,7 @@ impl WelfordsStandardDeviationComponent {
     }
 
     pub fn next(&mut self, value: f64) -> f64 {
-        self.ctx.assert();
+        // self.ctx.on_next();
         let variance = self.variance.next(value);
         return variance.map(|v| v.sqrt()).unwrap_or(0.0);
     }

@@ -30,7 +30,7 @@ impl SharpeRatioMetric {
     }
 
     pub fn next(&mut self, returns_mean: f64, returns_stdev: f64) -> f64 {
-        self.ctx.assert();
+        // self.ctx.assert();
 
         let sharpe_ratio =
             compute_sharpe_ratio(returns_mean, returns_stdev, self.config.risk_free_rate);

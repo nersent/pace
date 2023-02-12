@@ -37,6 +37,7 @@ class StrategyRunnerMetrics(TypedDict):
     returns: float
     sharpe_ratio: Optional[float]
     omega_ratio: Optional[float]
+    total_closed_trades: int
 
 
 class TradeDirection(int, Enum):
@@ -69,6 +70,7 @@ def cast_to_strategy_metrics(res) -> StrategyRunnerMetrics:
         "returns": res.returns,
         "sharpe_ratio": res.sharpe_ratio,
         "omega_ratio": res.omega_ratio,
+        "total_closed_trades": res.total_closed_trades
     }
 
 

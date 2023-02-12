@@ -1,4 +1,5 @@
 import json
+from math import sqrt
 import sys
 import time
 from os import path
@@ -141,9 +142,20 @@ if (__name__ == "__main__"):
     pbar = tqdm(total=generations)
 
     def run(params):
-        omega_ratio = unwrap_or(rsi_model.run(
-            asset, params)["metrics"]["sharpe_ratio"], 0.0)
-        return omega_ratio
+        # score = unwrap_or(rsi_model.run(
+        #     asset, params)["metrics"]["equity"], 0.0)
+        res = rsi_model.run(asset, params)
+        metrics = res["metrics"]
+
+        omega = unwrap_or(metrics["omega_ratio"], 0.0)
+        closed_trades = metrics["total_closed_trades"]
+        omega = min(omega, 100.0) * sqrt(min(closed_trades, 30))
+
+        score = omega
+
+        # score = unwrap_or(rsi_model.run(
+        #     asset, params)["metrics"]["sharpe_ratio"], 0.0)
+        return score
 
     strategy_optimizer = GeneticAlgorithmOptimizer(
         params=RelativeStrengthIndexModelParams(),

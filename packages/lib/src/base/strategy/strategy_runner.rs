@@ -49,8 +49,15 @@ use super::{
 };
 use crate::{
     base::{
-        components::{component_context::ComponentContext, component_default::ComponentDefault},
-        strategy::metrics::equity_metric::Equity,
+        components::{
+            common::{
+                mean_component::MeanComponent,
+                welfords_stdev_component::WelfordsStandardDeviationComponent,
+            },
+            component_context::ComponentContext,
+            component_default::ComponentDefault,
+        },
+        strategy::{metrics::equity_metric::Equity, trade::compute_return},
     },
     content::{
         relative_strength_index_indicator::RelativeStrengthIndexIndicator,
@@ -130,7 +137,7 @@ pub struct StrategyRunnerMetrics {
     #[pyo3(get)]
     pub omega_ratio: Option<f64>,
     #[pyo3(get)]
-    pub total_closed_trades: Option<usize>,
+    pub total_closed_trades: usize,
 }
 
 pub struct StrategyRunner {
@@ -140,6 +147,8 @@ pub struct StrategyRunner {
     already_run: bool,
     strategy_start_tick: usize,
     strategy_end_tick: usize,
+    returns_stdev: WelfordsStandardDeviationComponent,
+    returns_mean: MeanComponent,
 }
 
 impl StrategyRunner {
@@ -157,6 +166,8 @@ impl StrategyRunner {
             already_run: false,
             strategy_start_tick,
             strategy_end_tick,
+            returns_stdev: WelfordsStandardDeviationComponent::new(ctx.clone()),
+            returns_mean: MeanComponent::new(ctx.clone()),
             config,
         };
     }
@@ -259,11 +270,13 @@ impl StrategyRunner {
                 returns: 0.0,
                 sharpe_ratio: None,
                 omega_ratio: None,
-                total_closed_trades: None,
+                total_closed_trades: 0,
             },
             metrics_history: vec![],
             trades: vec![],
         };
+
+        let mut prev_equity = self.strategy_ctx.config.initial_capital;
 
         for tick in start..end + 1 {
             self.ctx.get_mutable().current_tick = tick;
@@ -276,31 +289,64 @@ impl StrategyRunner {
 
                 self.strategy_ctx.next(trade_direction);
 
-                let metrics = &self.strategy_ctx.metrics;
+                if self.strategy_ctx.on_close_trade {
+                    let metrics = &self.strategy_ctx.metrics;
 
-                res.metrics.equity = metrics.equity;
-                res.metrics.open_profit = metrics.open_profit;
-                res.metrics.net_profit = metrics.net_profit;
-                res.metrics.returns = metrics.returns;
+                    res.metrics.equity = metrics.equity;
+                    res.metrics.open_profit = metrics.open_profit;
+                    res.metrics.net_profit = metrics.net_profit;
 
-                if let Some(sharpe_ratio_metric) = &mut self.config.metrics.sharpe_ratio {
-                    res.metrics.sharpe_ratio = Some(
-                        sharpe_ratio_metric.next(metrics.returns_mean, metrics.returns_stdev)
-                            * f64::sqrt(365.0),
+                    res.metrics.total_closed_trades += 1;
+
+                    res.metrics.returns = compute_return(
+                        metrics.net_profit + self.strategy_ctx.config.initial_capital,
+                        prev_equity,
                     );
+                    let returns_mean = self.returns_mean.next(res.metrics.returns);
+                    let returns_stdev = self.returns_stdev.next(res.metrics.returns);
+
+                    prev_equity = metrics.net_profit + self.strategy_ctx.config.initial_capital;
+
+                    if let Some(sharpe_ratio_metric) = &mut self.config.metrics.sharpe_ratio {
+                        res.metrics.sharpe_ratio = Some(
+                            sharpe_ratio_metric.next(returns_mean, returns_stdev)
+                                * f64::sqrt(365.0),
+                        );
+                    }
+
+                    if let Some(omega_ratio_metric) = &mut self.config.metrics.omega_ratio {
+                        res.metrics.omega_ratio =
+                            Some(omega_ratio_metric.next(res.metrics.returns) * f64::sqrt(365.0));
+                    }
+                    // println!("[{}]: {:?}", tick, res.metrics);
+
+                    if self.config.metrics.track {
+                        res.metrics_history.push(res.metrics.clone());
+                    }
+                } else {
+                    // self.returns_mean.next(0.0);
+                    // self.returns_stdev.next(0.0);
                 }
 
-                if let Some(omega_ratio_metric) = &mut self.config.metrics.omega_ratio {
-                    res.metrics.omega_ratio = Some(omega_ratio_metric.next(metrics.returns));
-                }
+                // res.metrics.equity = metrics.equity;
+                // res.metrics.open_profit = metrics.open_profit;
+                // res.metrics.net_profit = metrics.net_profit;
+                // res.metrics.returns = metrics.returns;
+
+                // if let Some(sharpe_ratio_metric) = &mut self.config.metrics.sharpe_ratio {
+                //     res.metrics.sharpe_ratio = Some(
+                //         sharpe_ratio_metric.next(metrics.returns_mean, metrics.returns_stdev)
+                //             * f64::sqrt(365.0),
+                //     );
+                // }
+
+                // if let Some(omega_ratio_metric) = &mut self.config.metrics.omega_ratio {
+                //     res.metrics.omega_ratio = Some(omega_ratio_metric.next(metrics.returns));
+                // }
 
                 // if self.config.print {
                 //     Self::print(self.ctx.clone(), trade, &res);
                 // }
-
-                if self.config.metrics.track {
-                    res.metrics_history.push(res.metrics.clone());
-                }
             }
         }
 
