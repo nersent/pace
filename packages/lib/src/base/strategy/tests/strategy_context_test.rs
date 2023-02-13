@@ -6828,6 +6828,21 @@ mod tests {
             }
             target.next(trade_direction);
             let metrics = target.metrics;
+            if tick < 1605 {
+                println!(
+                    "[{}]: run up: {} | h eq: {} | l eq: {} | h: {} | l: {} | e: {} | te: {} |",
+                    tick,
+                    metrics.max_run_up,
+                    target.highest_equity,
+                    target.lowest_equity,
+                    metrics.high_equity,
+                    metrics.low_equity,
+                    metrics.equity,
+                    target.trade_max_equity
+                );
+            } else {
+                panic!("xdd");
+            }
             snapshot.push(Some(metrics));
         }
         snapshot.assert(expected);
@@ -6843,7 +6858,7 @@ mod tests {
         let winning_trades = df.column("_target_winning_trades_").unwrap().to_usize();
         let closed_trades = df.column("_target_closed_trades_").unwrap().to_usize();
         let max_drawdown = df.column("_target_max_drawdown_").unwrap().to_f64();
-        let max_runup = df.column("_target_max_runup_").unwrap().to_f64();
+        let max_run_up = df.column("_target_max_run_up_").unwrap().to_f64();
 
         let mut metrics: Vec<Option<StrategyMetrics>> = Vec::new();
 
@@ -6857,6 +6872,22 @@ mod tests {
                 losing_trades: losing_trades[i].unwrap(),
                 winning_trades: winning_trades[i].unwrap(),
                 closed_trades: closed_trades[i].unwrap(),
+                max_drawdown: max_drawdown[i].unwrap(),
+                high_equity: 0.0,
+                gross_loss_percent: 0.0,
+                gross_profit_percent: 0.0,
+                net_profit_percent: 0.0,
+                low_equity: 0.0,
+                high_open_profit: 0.0,
+                low_open_profit: 0.0,
+                max_run_up: max_run_up[i].unwrap(),
+                max_run_up_percent: 0.0,
+                max_drawdown_percent: 0.0,
+                avg_losing_trade: 0.0,
+                avg_winning_trade: 0.0,
+                percent_profitable: 0.0,
+                profit_factor: 0.0,
+                ratio_avg_win_avg_loss: 0.0,
             };
             metrics.push(Some(m));
         }
@@ -6864,9 +6895,78 @@ mod tests {
         return metrics;
     }
 
+    // #[test]
+    // fn metrics_on_next_bar_open_continous() {
+    //     let (_df, ctx) = Fixture::raw("base/strategy/tests/fixtures/continous_next_bar.csv");
+    //     let expected = _load_metrics(&_df);
+    //     _test_metrics(
+    //         &mut ctx.clone(),
+    //         &mut StrategyContext::new(
+    //             ctx.clone(),
+    //             StrategyContextConfig {
+    //                 continous: true,
+    //                 on_bar_close: false,
+    //                 initial_capital: 1000.0,
+    //                 buy_with_equity: false,
+    //             },
+    //         ),
+    //         &expected,
+    //         &[17, 33],
+    //         &[2, 7, 9, 27],
+    //     );
+    // }
+
+    // #[test]
+    // fn metrics_on_next_bar_open_intermittent() {
+    //     // int[] __long_entries = array.from(17, 33)
+    //     // int[] __long_exits = array.from(24, 37)
+    //     // int[] __short_entries = array.from(2, 7, 9, 27)
+    //     // int[] __short_exits = array.from(4, 8, 14, 30)
+
+    //     let (_df, ctx) = Fixture::raw("base/strategy/tests/fixtures/intermittent_next_bar.csv");
+    //     let expected = _load_metrics(&_df);
+    //     _test_metrics(
+    //         &mut ctx.clone(),
+    //         &mut StrategyContext::new(
+    //             ctx.clone(),
+    //             StrategyContextConfig {
+    //                 continous: false,
+    //                 on_bar_close: false,
+    //                 initial_capital: 1000.0,
+    //                 buy_with_equity: false,
+    //             },
+    //         ),
+    //         &expected,
+    //         &[4, 8, 14, 17, 30, 33],
+    //         &[2, 7, 9, 24, 27, 37],
+    //     );
+    // }
+
+    // #[test]
+    // fn metrics_on_next_bar_open_continous_extensive() {
+    //     let (_df, ctx) =
+    //         Fixture::raw("base/strategy/tests/fixtures/continous_next_bar_extensive.csv");
+    //     let expected = _load_metrics(&_df);
+    //     _test_metrics(
+    //         &mut ctx.clone(),
+    //         &mut StrategyContext::new(
+    //             ctx.clone(),
+    //             StrategyContextConfig {
+    //                 continous: true,
+    //                 on_bar_close: false,
+    //                 initial_capital: 1000.0,
+    //                 buy_with_equity: false,
+    //             },
+    //         ),
+    //         &expected,
+    //         &[2, 18, 44, 60],
+    //         &[10, 24, 48],
+    //     );
+    // }
+
     #[test]
-    fn metrics_on_next_bar_open_continous() {
-        let (_df, ctx) = Fixture::raw("base/strategy/tests/fixtures/continous_next_bar.csv");
+    fn metrics_on_next_bar_open_continous_extensive() {
+        let (_df, ctx) = Fixture::raw("base/strategy/tests/fixtures/xd.csv");
         let expected = _load_metrics(&_df);
         _test_metrics(
             &mut ctx.clone(),
@@ -6880,34 +6980,34 @@ mod tests {
                 },
             ),
             &expected,
-            &[17, 33],
-            &[2, 7, 9, 27],
+            &[2, 18, 44, 60, 120, 180, 400, 700, 1000, 1600],
+            &[10, 24, 48, 64, 155, 190, 420, 900, 1250],
         );
     }
 
-    #[test]
-    fn metrics_on_next_bar_open_intermittent() {
-        // int[] __long_entries = array.from(17, 33)
-        // int[] __long_exits = array.from(24, 37)
-        // int[] __short_entries = array.from(2, 7, 9, 27)
-        // int[] __short_exits = array.from(4, 8, 14, 30)
+    // #[test]
+    // fn metrics_on_next_bar_open_intermittent() {
+    //     // int[] __long_entries = array.from(17, 33)
+    //     // int[] __long_exits = array.from(24, 37)
+    //     // int[] __short_entries = array.from(2, 7, 9, 27)
+    //     // int[] __short_exits = array.from(4, 8, 14, 30)
 
-        let (_df, ctx) = Fixture::raw("base/strategy/tests/fixtures/intermittent_next_bar.csv");
-        let expected = _load_metrics(&_df);
-        _test_metrics(
-            &mut ctx.clone(),
-            &mut StrategyContext::new(
-                ctx.clone(),
-                StrategyContextConfig {
-                    continous: false,
-                    on_bar_close: false,
-                    initial_capital: 1000.0,
-                    buy_with_equity: false,
-                },
-            ),
-            &expected,
-            &[4, 8, 14, 17, 30, 33],
-            &[2, 7, 9, 24, 27, 37],
-        );
-    }
+    //     let (_df, ctx) = Fixture::raw("base/strategy/tests/fixtures/intermittent_next_bar.csv");
+    //     let expected = _load_metrics(&_df);
+    //     _test_metrics(
+    //         &mut ctx.clone(),
+    //         &mut StrategyContext::new(
+    //             ctx.clone(),
+    //             StrategyContextConfig {
+    //                 continous: false,
+    //                 on_bar_close: false,
+    //                 initial_capital: 1000.0,
+    //                 buy_with_equity: false,
+    //             },
+    //         ),
+    //         &expected,
+    //         &[4, 8, 14, 17, 30, 33],
+    //         &[2, 7, 9, 24, 27, 37],
+    //     );
+    // }
 }

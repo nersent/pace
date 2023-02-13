@@ -337,6 +337,8 @@ impl ComponentTestSnapshot<StrategyMetrics> {
                 && actual.gross_profit.compare(expected.gross_profit)
                 && actual.gross_loss.compare(expected.gross_loss)
                 && actual.equity.compare(expected.equity)
+                && actual.max_drawdown.compare(expected.max_drawdown)
+                && actual.max_run_up.compare(expected.max_run_up)
                 && actual.closed_trades == expected.closed_trades
                 && actual.winning_trades == expected.winning_trades
                 && actual.losing_trades == expected.losing_trades;
