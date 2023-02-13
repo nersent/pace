@@ -68,16 +68,22 @@ def export_strategy_to_pinescript(
     for trade in trades:
         if trade["direction"] == TradeDirection.LONG.value:
             long_entries.append(trade["entry_tick"] + offset)
-            # long_exits.append(trade["exit_timestamp"])
+            if trade["exit_tick"] is not None:
+                long_exits.append(trade["exit_tick"] + offset)
         else:
             short_entries.append(trade["entry_tick"] + offset)
-            # short_exits.append(trade["exit_timestamp"])
+            if trade["exit_tick"] is not None:
+                short_exits.append(trade["exit_tick"] + offset)
 
     ps_long_entries = pinescript_declare_array_from(
         "__long_entries", long_entries)
+    ps_long_exits = pinescript_declare_array_from(
+        "__long_exits", long_exits)
     ps_short_entries = pinescript_declare_array_from(
         "__short_entries", short_entries)
-    source += f"\n{ps_long_entries}{ps_short_entries}\n\n"
+    ps_short_exits = pinescript_declare_array_from(
+        "__short_exits", short_exits)
+    source += f"\n{ps_long_entries}{ps_long_exits}{ps_short_entries}{ps_short_exits}\n\n"
 
     if render_capital:
         capital_history = np.array(list(
@@ -95,9 +101,13 @@ def export_strategy_to_pinescript(
     source += f"// ------------------------------- \n"
 
     source += f"if array.indexof(__long_entries, bar_index) != -1\n"
-    source += f"    strategy.entry(\"long\", strategy.long)\n"
+    source += f"    strategy.entry(\"long_entry\", strategy.long)\n"
+    source += f"if array.indexof(__long_exits, bar_index) != -1\n"
+    source += f"    strategy.close(\"long_entry\", \"long_exit\")\n"
     source += f"if array.indexof(__short_entries, bar_index) != -1\n"
-    source += f"    strategy.entry(\"short\", strategy.short)\n"
+    source += f"    strategy.entry(\"short_entry\", strategy.short)\n"
+    source += f"if array.indexof(__short_exits, bar_index) != -1\n"
+    source += f"    strategy.close(\"short_entry\", \"short_exit\")\n"
 
     if render_capital:
         source += "plot(__capital / strategy.initial_capital, title=\"Capital\", color=#ff0000, linewidth=1)\n"
@@ -121,7 +131,7 @@ if (__name__ == "__main__"):
 
     runner_config: StrategyRunnerConfig = {
         "on_bar_close": False,
-        "continous": True,
+        "continous": False,
         "print": False,
         "initial_capital": 1000.0,
         "buy_with_equity": False,
@@ -133,44 +143,11 @@ if (__name__ == "__main__"):
                 "risk_free_rate": 0.0,
             },
         },
-        "start_tick": 2327,
+        "start_tick": 0,
     }
 
-    generations = 100000
+    # generations = 100000
     rsi_model = RelativeStrengthIndexModel(runner_config)
-
-    pbar = tqdm(total=generations)
-
-    def run(params):
-        # score = unwrap_or(rsi_model.run(
-        #     asset, params)["metrics"]["equity"], 0.0)
-        res = rsi_model.run(asset, params)
-        metrics = res["metrics"]
-
-        omega = unwrap_or(metrics["omega_ratio"], 0.0)
-        closed_trades = metrics["total_closed_trades"]
-        omega = min(omega, 100.0) * sqrt(min(closed_trades, 30))
-
-        score = omega
-
-        # score = unwrap_or(rsi_model.run(
-        #     asset, params)["metrics"]["sharpe_ratio"], 0.0)
-        return score
-
-    strategy_optimizer = GeneticAlgorithmOptimizer(
-        params=RelativeStrengthIndexModelParams(),
-        generations=generations,
-        criterion=lambda params: run(params),
-        # criterion=lambda params: unwrap_or(rsi_model.run(
-        #     asset, params)["metrics"]["equity"]["capital"], 0.0),
-        on_generation=lambda _, __: pbar.update(1),
-        # save_solutions=True,
-        print_genome=True,
-    )
-
-    best_params = strategy_optimizer.run()
-    # best_params = {'length': 94, 'src': 0,
-    #                'threshold_overbought': 52.0, 'threshold_oversold': 44.0}
 
     rsi_model = RelativeStrengthIndexModel(always_merger.merge(runner_config, {
         "metrics": {
@@ -178,61 +155,111 @@ if (__name__ == "__main__"):
         }
     }))
 
+    best_params = {'length': 6, 'src': 0,
+                   'threshold_overbought': 70.0, 'threshold_oversold': 30.0}
+
     result = rsi_model.run(asset, best_params)
-
-    print(best_params)
-    print(result['metrics'])
-
-    timestamps = np.array(list(
-        (map(lambda r: r["time"], result["metrics_history"]))))
-    timestamps = pd.to_datetime(timestamps, unit="ms")
-
-    equity_history = np.array(list(
-        (map(lambda r: r["equity"], result["metrics_history"]))))
-
-    returns_history = list(
-        (map(lambda r: r["returns"], result["metrics_history"])))
-
-    omega_ratio_history = np.array(list(
-        (map(lambda r: r["omega_ratio"], result["metrics_history"]))))
-
-    sharpe_ratio_history = np.array(list(
-        (map(lambda r: r["sharpe_ratio"], result["metrics_history"]))))
 
     with open("history_dupsko.json", "w") as file:
         json.dump(result, file, indent=4)
 
-    plt.plot(timestamps, equity_history)
-    plt.xlabel("Time")
-    plt.ylabel("Equity Curve")
-    plt.savefig("plot_capital.png")
-    plt.clf()
-
-    plt.plot(timestamps, returns_history)
-    plt.xlabel("Time")
-    plt.ylabel("Returns")
-    plt.savefig("plot_returns.png")
-    plt.clf()
-
-    plt.plot(timestamps, omega_ratio_history)
-    plt.xlabel("Time")
-    plt.ylabel("Omega Ratio")
-    plt.savefig("plot_omega_ratio.png")
-    plt.clf()
-
-    plt.plot(timestamps, sharpe_ratio_history)
-    plt.xlabel("Time")
-    plt.ylabel("Sharpe Ratio")
-    plt.savefig("plot_sharpe_ratio.png")
-    plt.clf()
-
-    plt.close()
-
-    trades = result["trades"]
-
-    res: StrategyRunnerResult = json.load(open("history_dupsko.json"))
     export_strategy_to_pinescript(
-        res, title="RSI", initial_capital=1000.0, start_tick=0, render_returns=False, render_capital=True)
+        result, title="RSI", initial_capital=1000.0, start_tick=0, render_returns=False, render_capital=False)
+
+    # pbar = tqdm(total=generations)
+
+    # def run(params):
+    #     # score = unwrap_or(rsi_model.run(
+    #     #     asset, params)["metrics"]["equity"], 0.0)
+    #     res = rsi_model.run(asset, params)
+    #     metrics = res["metrics"]
+
+    #     omega = unwrap_or(metrics["omega_ratio"], 0.0)
+    #     closed_trades = metrics["total_closed_trades"]
+    #     omega = min(omega, 100.0) * sqrt(min(closed_trades, 30))
+
+    #     score = omega
+
+    #     # score = unwrap_or(rsi_model.run(
+    #     #     asset, params)["metrics"]["sharpe_ratio"], 0.0)
+    #     return score
+
+    # strategy_optimizer = GeneticAlgorithmOptimizer(
+    #     params=RelativeStrengthIndexModelParams(),
+    #     generations=generations,
+    #     criterion=lambda params: run(params),
+    #     # criterion=lambda params: unwrap_or(rsi_model.run(
+    #     #     asset, params)["metrics"]["equity"]["capital"], 0.0),
+    #     on_generation=lambda _, __: pbar.update(1),
+    #     # save_solutions=True,
+    #     print_genome=True,
+    # )
+
+    # best_params = strategy_optimizer.run()
+    # best_params = {'length': 94, 'src': 0,
+    #                'threshold_overbought': 52.0, 'threshold_oversold': 44.0}
+
+    # rsi_model = RelativeStrengthIndexModel(always_merger.merge(runner_config, {
+    #     "metrics": {
+    #         "track": True,
+    #     }
+    # }))
+
+    # result = rsi_model.run(asset, best_params)
+
+    # print(best_params)
+    # print(result['metrics'])
+
+    # timestamps = np.array(list(
+    #     (map(lambda r: r["time"], result["metrics_history"]))))
+    # timestamps = pd.to_datetime(timestamps, unit="ms")
+
+    # equity_history = np.array(list(
+    #     (map(lambda r: r["equity"], result["metrics_history"]))))
+
+    # returns_history = list(
+    #     (map(lambda r: r["returns"], result["metrics_history"])))
+
+    # omega_ratio_history = np.array(list(
+    #     (map(lambda r: r["omega_ratio"], result["metrics_history"]))))
+
+    # sharpe_ratio_history = np.array(list(
+    #     (map(lambda r: r["sharpe_ratio"], result["metrics_history"]))))
+
+    # with open("history_dupsko.json", "w") as file:
+    #     json.dump(result, file, indent=4)
+
+    # plt.plot(timestamps, equity_history)
+    # plt.xlabel("Time")
+    # plt.ylabel("Equity Curve")
+    # plt.savefig("plot_capital.png")
+    # plt.clf()
+
+    # plt.plot(timestamps, returns_history)
+    # plt.xlabel("Time")
+    # plt.ylabel("Returns")
+    # plt.savefig("plot_returns.png")
+    # plt.clf()
+
+    # plt.plot(timestamps, omega_ratio_history)
+    # plt.xlabel("Time")
+    # plt.ylabel("Omega Ratio")
+    # plt.savefig("plot_omega_ratio.png")
+    # plt.clf()
+
+    # plt.plot(timestamps, sharpe_ratio_history)
+    # plt.xlabel("Time")
+    # plt.ylabel("Sharpe Ratio")
+    # plt.savefig("plot_sharpe_ratio.png")
+    # plt.clf()
+
+    # plt.close()
+
+    # trades = result["trades"]
+
+    # res: StrategyRunnerResult = json.load(open("history_dupsko.json"))
+    # export_strategy_to_pinescript(
+    #     res, title="RSI", initial_capital=1000.0, start_tick=0, render_returns=False, render_capital=False)
 
     # strategy_optimizer.ga_instance.plot_fitness()
     # strategy_optimizer.ga_instance.plot_result()

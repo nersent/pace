@@ -5,14 +5,10 @@ use crate::{
         components::{component_context::ComponentContext, component_default::ComponentDefault},
         strategy::{
             metrics::{
-                equity_metric::{Equity, EquityMetric, EquityMetricConfig},
                 omega_ratio_metric::{OmegaRatioMetric, OmegaRatioMetricConfig},
                 sharpe_ratio_metric::{SharpeRatioMetric, SharpeRatioMetricConfig},
             },
             strategy_context::{StrategyContext, StrategyContextConfig},
-            strategy_execution_context::{
-                StrategyExecutionContext, StrategyExecutionContextConfig,
-            },
             strategy_runner::{
                 StrategyRunner, StrategyRunnerConfig, StrategyRunnerMetricsConfig,
                 StrategyRunnerResult,

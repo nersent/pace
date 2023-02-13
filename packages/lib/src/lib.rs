@@ -9,7 +9,7 @@
     unused
 )]
 
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyDict};
 use python::py_asset_data_provider::PyAssetDataProvider;
 
 use crate::python::py_strategies::run_relative_strength_index;

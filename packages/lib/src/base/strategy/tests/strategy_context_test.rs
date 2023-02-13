@@ -2,6 +2,8 @@
 mod tests {
     use std::{path::Path, sync::Arc};
 
+    use polars::prelude::DataFrame;
+
     use crate::{
         base::{
             asset::in_memory_asset_data_provider::InMemoryAssetDataProvider,
@@ -11,10 +13,7 @@ mod tests {
             },
             execution_context::ExecutionContext,
             strategy::{
-                strategy_context::{StrategyContext, StrategyContextConfig},
-                strategy_execution_context::{
-                    StrategyExecutionContext, StrategyExecutionContextConfig,
-                },
+                strategy_context::{StrategyContext, StrategyContextConfig, StrategyMetrics},
                 trade::{
                     compute_fill_size, compute_pnl, compute_return, compute_trade_pnl, Trade,
                     TradeDirection,
@@ -5645,17 +5644,21 @@ mod tests {
         trades: &[Option<TradeDirection>],
         expected: &[Option<(f64, f64, f64)>],
     ) {
-        todo!("dipskon");
-        // let mut snapshot = ComponentTestSnapshot::<(f64, f64, f64)>::new();
-        // for cctx in cctx {
-        //     let ctx = cctx.get();
-        //     let tick = ctx.current_tick;
-        //     let trade_direction = trades[tick];
-        //     target.next(trade_direction);
-        //     let metrics = &target.metrics;
-        //     snapshot.push(Some((metrics.equity, metrics.open_profit, metrics.returns)));
-        // }
-        // snapshot.assert(expected);
+        // remove last f64
+        let expected = expected
+            .iter()
+            .map(|x| x.as_ref().map(|(a, b, _)| (*a, *b)))
+            .collect::<Vec<_>>();
+        let mut snapshot = ComponentTestSnapshot::<(f64, f64)>::new();
+        for cctx in cctx {
+            let ctx = cctx.get();
+            let tick = ctx.current_tick;
+            let trade_direction = trades[tick];
+            target.next(trade_direction);
+            let metrics = &target.metrics;
+            snapshot.push(Some((metrics.equity, metrics.open_profit)));
+        }
+        snapshot.assert(&expected);
     }
 
     #[test]
@@ -6809,34 +6812,62 @@ mod tests {
     fn _test_metrics(
         cctx: &mut ComponentContext,
         target: &mut StrategyContext,
-        trades: &[Option<TradeDirection>],
-        expected: &[Option<(Option<f64>, Option<f64>, Option<f64>)>],
+        expected: &[Option<StrategyMetrics>],
+        long_entries: &[usize],
+        short_entries: &[usize],
     ) {
-        let mut snapshot = ComponentTestSnapshot::<(Option<f64>, Option<f64>, Option<f64>)>::new();
+        let mut snapshot = ComponentTestSnapshot::<StrategyMetrics>::new();
         for cctx in cctx {
             let ctx = cctx.get();
             let tick = ctx.current_tick;
-            let trade_direction = trades[tick];
+            let mut trade_direction: Option<TradeDirection> = None;
+            if long_entries.contains(&tick) {
+                trade_direction = Some(TradeDirection::Long);
+            } else if short_entries.contains(&tick) {
+                trade_direction = Some(TradeDirection::Short);
+            }
             target.next(trade_direction);
-            let metrics = &target.metrics;
-            snapshot.push(Some((
-                Some(metrics.equity),
-                Some(metrics.open_profit),
-                Some(metrics.net_profit),
-            )));
+            let metrics = target.metrics;
+            snapshot.push(Some(metrics));
         }
         snapshot.assert(expected);
+    }
+
+    fn _load_metrics(df: &DataFrame) -> Vec<Option<StrategyMetrics>> {
+        let equity = df.column("_target_equity_").unwrap().to_f64();
+        let open_profit = df.column("_target_open_profit_").unwrap().to_f64();
+        let net_profit = df.column("_target_net_profit_").unwrap().to_f64();
+        let gross_profit = df.column("_target_gross_profit_").unwrap().to_f64();
+        let gross_loss = df.column("_target_gross_loss_").unwrap().to_f64();
+        let losing_trades = df.column("_target_losing_trades_").unwrap().to_usize();
+        let winning_trades = df.column("_target_winning_trades_").unwrap().to_usize();
+        let closed_trades = df.column("_target_closed_trades_").unwrap().to_usize();
+        let max_drawdown = df.column("_target_max_drawdown_").unwrap().to_f64();
+        let max_runup = df.column("_target_max_runup_").unwrap().to_f64();
+
+        let mut metrics: Vec<Option<StrategyMetrics>> = Vec::new();
+
+        for i in 0..equity.len() {
+            let m = StrategyMetrics {
+                equity: equity[i].unwrap(),
+                open_profit: open_profit[i].unwrap(),
+                net_profit: net_profit[i].unwrap(),
+                gross_profit: gross_profit[i].unwrap(),
+                gross_loss: gross_loss[i].unwrap(),
+                losing_trades: losing_trades[i].unwrap(),
+                winning_trades: winning_trades[i].unwrap(),
+                closed_trades: closed_trades[i].unwrap(),
+            };
+            metrics.push(Some(m));
+        }
+
+        return metrics;
     }
 
     #[test]
     fn metrics_on_next_bar_open_continous() {
         let (_df, ctx) = Fixture::raw("base/strategy/tests/fixtures/continous_next_bar.csv");
-        let trades = _df.column("trade").unwrap().to_trade_direction();
-        let expected = _df.merge_three_columns(
-            "_target_equity_",
-            "_target_openprofit_",
-            "_target_netprofit_",
-        );
+        let expected = _load_metrics(&_df);
         _test_metrics(
             &mut ctx.clone(),
             &mut StrategyContext::new(
@@ -6848,8 +6879,35 @@ mod tests {
                     buy_with_equity: false,
                 },
             ),
-            &trades,
             &expected,
+            &[17, 33],
+            &[2, 7, 9, 27],
+        );
+    }
+
+    #[test]
+    fn metrics_on_next_bar_open_intermittent() {
+        // int[] __long_entries = array.from(17, 33)
+        // int[] __long_exits = array.from(24, 37)
+        // int[] __short_entries = array.from(2, 7, 9, 27)
+        // int[] __short_exits = array.from(4, 8, 14, 30)
+
+        let (_df, ctx) = Fixture::raw("base/strategy/tests/fixtures/intermittent_next_bar.csv");
+        let expected = _load_metrics(&_df);
+        _test_metrics(
+            &mut ctx.clone(),
+            &mut StrategyContext::new(
+                ctx.clone(),
+                StrategyContextConfig {
+                    continous: false,
+                    on_bar_close: false,
+                    initial_capital: 1000.0,
+                    buy_with_equity: false,
+                },
+            ),
+            &expected,
+            &[4, 8, 14, 17, 30, 33],
+            &[2, 7, 9, 24, 27, 37],
         );
     }
 }

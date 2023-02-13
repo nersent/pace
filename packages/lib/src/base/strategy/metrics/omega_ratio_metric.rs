@@ -3,7 +3,7 @@ use crate::base::{
     strategy::strategy_context::StrategyMetrics,
 };
 
-use super::{equity_metric::Equity, omega_ratio::compute_omega_ratio};
+use super::omega_ratio::compute_omega_ratio;
 
 pub struct OmegaRatioMetricConfig {
     pub risk_free_rate: f64,
@@ -35,7 +35,7 @@ impl OmegaRatioMetric {
     }
 
     pub fn next(&mut self, returns: f64) -> f64 {
-        // self.ctx.assert();
+        self.ctx.on_next();
 
         if returns > 0.0 {
             self.positive_returns_sum += returns;

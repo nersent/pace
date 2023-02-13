@@ -15,6 +15,7 @@ use super::fs::get_filename_extension;
 pub trait SeriesCastUtils {
     fn to_f64(&self) -> Vec<Option<f64>>;
     fn to_i32(&self) -> Vec<Option<i32>>;
+    fn to_usize(&self) -> Vec<Option<usize>>;
     fn to_duration(&self) -> Vec<Option<Duration>>;
     fn to_trade_direction(&self) -> Vec<Option<TradeDirection>>;
 }
@@ -49,6 +50,23 @@ impl SeriesCastUtils for Series {
                     None
                 } else {
                     val
+                }
+            })
+            .collect::<Vec<_>>();
+    }
+
+    fn to_usize(&self) -> Vec<Option<usize>> {
+        return self
+            .cast(&DataType::UInt64)
+            .unwrap()
+            .u64()
+            .unwrap()
+            .into_iter()
+            .map(|val| {
+                if val.is_none() || val.unwrap().is_nan() {
+                    None
+                } else {
+                    val.map(|x| x as usize)
                 }
             })
             .collect::<Vec<_>>();

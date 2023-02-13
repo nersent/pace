@@ -17,30 +17,43 @@ use crate::base::{
     execution_context::ExecutionContext,
 };
 
+pub struct ComponentContextConfig {
+    pub intermittent: bool,
+}
+
 pub struct ComponentContext {
+    pub config: ComponentContextConfig,
     tick: Option<usize>,
     last_computation_tick: Option<usize>,
     execution_context: Rc<RefCell<ExecutionContext>>,
 }
 
 impl ComponentContext {
-    pub fn new(execution_context: Rc<RefCell<ExecutionContext>>) -> ComponentContext {
-        return ComponentContext {
+    pub fn new(execution_context: Rc<RefCell<ExecutionContext>>) -> Self {
+        return Self {
             execution_context,
             tick: None,
             last_computation_tick: None,
+            config: ComponentContextConfig {
+                intermittent: false,
+            },
         };
     }
 
-    pub fn build(execution_context: ExecutionContext) -> ComponentContext {
-        return ComponentContext::new(Rc::new(RefCell::new(execution_context)));
+    pub fn new_intermittent(execution_context: Rc<RefCell<ExecutionContext>>) -> Self {
+        return Self {
+            execution_context,
+            tick: None,
+            last_computation_tick: None,
+            config: ComponentContextConfig { intermittent: true },
+        };
     }
 
-    pub fn build_from_df(
-        df: &DataFrame,
-        asset_name: &str,
-        timeframe: Timeframe,
-    ) -> ComponentContext {
+    pub fn build(execution_context: ExecutionContext) -> Self {
+        return Self::new(Rc::new(RefCell::new(execution_context)));
+    }
+
+    pub fn build_from_df(df: &DataFrame, asset_name: &str, timeframe: Timeframe) -> Self {
         let execution_context = ExecutionContext::from_asset(Arc::from(
             InMemoryAssetDataProvider::from_df(df, asset_name, timeframe),
         ));
@@ -49,7 +62,7 @@ impl ComponentContext {
 
     pub fn from_asset_data_provider(
         asset_data_provider: Arc<dyn AssetDataProvider + 'static + Send + Sync>,
-    ) -> ComponentContext {
+    ) -> Self {
         let execution_context = ExecutionContext::from_asset(asset_data_provider);
         return Self::build(execution_context);
     }
@@ -62,8 +75,8 @@ impl ComponentContext {
         return self.execution_context.borrow_mut();
     }
 
-    pub fn clone(&self) -> ComponentContext {
-        return ComponentContext::new(Rc::clone(&self.execution_context));
+    pub fn clone(&self) -> Self {
+        return Self::new(Rc::clone(&self.execution_context));
     }
 
     #[cfg_attr(not(debug_assertions), allow(dead_code))]
@@ -82,13 +95,15 @@ impl ComponentContext {
 
     #[cfg_attr(not(debug_assertions), allow(dead_code))]
     fn _assert(&mut self, current_tick: usize) {
-        if let Some(tick) = self.tick {
-            assert!(
-                tick + 1 == current_tick,
-                "Component tries to compute value for {}, but last computation was for {}",
-                current_tick,
-                tick
-            );
+        if !self.config.intermittent {
+            if let Some(tick) = self.tick {
+                assert!(
+                    tick + 1 == current_tick,
+                    "Component tries to compute value for {}, but last computation was for {}",
+                    current_tick,
+                    tick
+                );
+            }
         }
     }
 

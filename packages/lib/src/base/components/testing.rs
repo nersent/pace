@@ -9,6 +9,7 @@ use crate::{
         strategy::{
             orderbook::Order,
             polars::SeriesCastUtilsForStrategy,
+            strategy_context::StrategyMetrics,
             trade::{Trade, TradeDirection},
         },
     },
@@ -324,6 +325,21 @@ impl ComponentTestSnapshot<(f64, f64)> {
     pub fn assert(&self, expected: &[Option<(f64, f64)>]) {
         self.assert_iter(expected, |actual, expected| {
             return actual.0.compare(expected.0) && actual.1.compare(expected.1);
+        })
+    }
+}
+
+impl ComponentTestSnapshot<StrategyMetrics> {
+    pub fn assert(&self, expected: &[Option<StrategyMetrics>]) {
+        self.assert_iter(expected, |actual, expected| {
+            return actual.open_profit.compare(expected.open_profit)
+                && actual.net_profit.compare(expected.net_profit)
+                && actual.gross_profit.compare(expected.gross_profit)
+                && actual.gross_loss.compare(expected.gross_loss)
+                && actual.equity.compare(expected.equity)
+                && actual.closed_trades == expected.closed_trades
+                && actual.winning_trades == expected.winning_trades
+                && actual.losing_trades == expected.losing_trades;
         })
     }
 }

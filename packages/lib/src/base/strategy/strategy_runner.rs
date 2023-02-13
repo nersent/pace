@@ -37,14 +37,10 @@ use polars::export::rayon::vec;
 
 use super::{
     metrics::{
-        equity_metric::{EquityMetric, EquityMetricConfig},
-        metric::{MetricComponentResultUnion, MetricComponentUnion},
         omega_ratio_metric::{OmegaRatioMetric, OmegaRatioMetricConfig},
         sharpe_ratio_metric::{SharpeRatioMetric, SharpeRatioMetricConfig},
-        total_closed_trades_metric::TotalClosedTradesMetric,
     },
     strategy_context::StrategyContext,
-    strategy_execution_context::StrategyExecutionContext,
     trade::{Trade, TradeDirection},
 };
 use crate::{
@@ -57,7 +53,7 @@ use crate::{
             component_context::ComponentContext,
             component_default::ComponentDefault,
         },
-        strategy::{metrics::equity_metric::Equity, trade::compute_return},
+        strategy::{metrics::profit::compute_profit_factor, trade::compute_return},
     },
     content::{
         relative_strength_index_indicator::RelativeStrengthIndexIndicator,
@@ -131,13 +127,25 @@ pub struct StrategyRunnerMetrics {
     #[pyo3(get)]
     pub net_profit: f64,
     #[pyo3(get)]
+    pub gross_profit: f64,
+    #[pyo3(get)]
+    pub gross_loss: f64,
+    #[pyo3(get)]
+    pub profit_factor: f64,
+    #[pyo3(get)]
     pub returns: f64,
+    #[pyo3(get)]
+    pub total_closed_trades: usize,
+    #[pyo3(get)]
+    pub number_of_winning_trades: usize,
+    #[pyo3(get)]
+    pub number_of_losing_trades: usize,
+    #[pyo3(get)]
+    pub percent_profitable: f64,
     #[pyo3(get)]
     pub sharpe_ratio: Option<f64>,
     #[pyo3(get)]
     pub omega_ratio: Option<f64>,
-    #[pyo3(get)]
-    pub total_closed_trades: usize,
 }
 
 pub struct StrategyRunner {
@@ -270,7 +278,13 @@ impl StrategyRunner {
                 returns: 0.0,
                 sharpe_ratio: None,
                 omega_ratio: None,
+                gross_loss: 0.0,
                 total_closed_trades: 0,
+                gross_profit: 0.0,
+                number_of_losing_trades: 0,
+                number_of_winning_trades: 0,
+                percent_profitable: 0.0,
+                profit_factor: 0.0,
             },
             metrics_history: vec![],
             trades: vec![],
@@ -295,8 +309,14 @@ impl StrategyRunner {
                     res.metrics.equity = metrics.equity;
                     res.metrics.open_profit = metrics.open_profit;
                     res.metrics.net_profit = metrics.net_profit;
-
-                    res.metrics.total_closed_trades += 1;
+                    res.metrics.gross_profit = metrics.gross_profit;
+                    res.metrics.gross_loss = metrics.gross_loss;
+                    // res.metrics.percent_profitable = metrics.percent_profitable;
+                    // res.metrics.number_of_winning_trades = metrics.number_of_winning_trades;
+                    // res.metrics.number_of_losing_trades = metrics.number_of_losing_trades;
+                    res.metrics.profit_factor =
+                        compute_profit_factor(metrics.gross_profit, metrics.gross_loss);
+                    // res.metrics.total_closed_trades = metrics.total_closed_trades;
 
                     res.metrics.returns = compute_return(
                         metrics.net_profit + self.strategy_ctx.config.initial_capital,
