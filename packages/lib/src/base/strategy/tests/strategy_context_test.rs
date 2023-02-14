@@ -20,7 +20,10 @@ mod tests {
                 },
             },
         },
-        utils::polars::{DataFrameUtils, SeriesCastUtils},
+        utils::{
+            comparison::FloatComparison,
+            polars::{DataFrameUtils, SeriesCastUtils},
+        },
     };
 
     fn _test(
@@ -6809,14 +6812,134 @@ mod tests {
         );
     }
 
+    #[derive(Debug)]
+    struct TestMetricsPayload {
+        net_profit: f64,
+        net_profit_percent: f64,
+        open_profit: f64,
+        gross_profit: f64,
+        gross_profit_percent: f64,
+        gross_loss: f64,
+        gross_loss_percent: f64,
+        equity: f64,
+        closed_trades: usize,
+        winning_trades: usize,
+        losing_trades: usize,
+        //
+        max_drawdown: f64,
+        max_run_up: f64,
+        //
+        profit_factor: f64,
+        percent_profitable: f64,
+        avg_winning_trade: f64,
+        avg_losing_trade: f64,
+        avg_trade: f64,
+        avg_winning_losing_trade_ratio: f64,
+        long_net_profit: f64,
+        long_net_profit_percent: f64,
+        short_net_profit: f64,
+        short_net_profit_percent: f64,
+        long_short_net_profit_ratio: f64,
+        equity_max_drawdown_percent: f64,
+        intra_trade_max_drawdown_percent: f64,
+    }
+
+    impl TestMetricsPayload {
+        fn from_metrics(metrics: &StrategyMetrics) -> Self {
+            Self {
+                net_profit: metrics.net_profit,
+                net_profit_percent: metrics.net_profit_percent,
+                open_profit: metrics.open_profit,
+                gross_profit: metrics.gross_profit,
+                gross_profit_percent: metrics.gross_profit_percent,
+                gross_loss: metrics.gross_loss,
+                gross_loss_percent: metrics.gross_loss_percent,
+                equity: metrics.equity,
+                closed_trades: metrics.closed_trades,
+                winning_trades: metrics.winning_trades,
+                losing_trades: metrics.losing_trades,
+                //
+                max_drawdown: metrics.max_drawdown,
+                max_run_up: metrics.max_run_up,
+                //
+                profit_factor: metrics.profit_factor,
+                percent_profitable: metrics.percent_profitable,
+                avg_winning_trade: metrics.avg_winning_trade,
+                avg_losing_trade: metrics.avg_losing_trade,
+                avg_trade: metrics.avg_trade,
+                avg_winning_losing_trade_ratio: metrics.avg_winning_losing_trade_ratio,
+                long_net_profit: metrics.long_net_profit,
+                long_net_profit_percent: metrics.long_net_profit_percent,
+                short_net_profit: metrics.short_net_profit,
+                short_net_profit_percent: metrics.short_net_profit_percent,
+                long_short_net_profit_ratio: metrics.long_short_net_profit_ratio,
+                equity_max_drawdown_percent: metrics.equity_max_drawdown_percent,
+                intra_trade_max_drawdown_percent: metrics.intra_trade_max_drawdown_percent,
+            }
+        }
+    }
+
+    impl ComponentTestSnapshot<TestMetricsPayload> {
+        pub fn assert(&self, expected: &[Option<TestMetricsPayload>]) {
+            self.assert_iter(expected, |actual, expected| {
+                return actual.net_profit.compare(expected.net_profit)
+                    && actual
+                        .net_profit_percent
+                        .compare(expected.net_profit_percent)
+                    && actual.open_profit.compare(expected.open_profit)
+                    && actual.gross_profit.compare(expected.gross_profit)
+                    && actual
+                        .gross_profit_percent
+                        .compare(expected.gross_profit_percent)
+                    && actual.gross_loss.compare(expected.gross_loss)
+                    && actual
+                        .gross_loss_percent
+                        .compare(expected.gross_loss_percent)
+                    && actual.equity.compare(expected.equity)
+                    && actual.closed_trades == expected.closed_trades
+                    && actual.winning_trades == expected.winning_trades
+                    && actual.losing_trades == expected.losing_trades
+                    && actual.max_drawdown.compare(expected.max_drawdown)
+                    && actual.max_run_up.compare(expected.max_run_up)
+                    && actual.profit_factor.compare(expected.profit_factor)
+                    && actual
+                        .percent_profitable
+                        .compare(expected.percent_profitable)
+                    && actual.avg_winning_trade.compare(expected.avg_winning_trade)
+                    && actual.avg_losing_trade.compare(expected.avg_losing_trade)
+                    && actual
+                        .avg_winning_losing_trade_ratio
+                        .compare(expected.avg_winning_losing_trade_ratio)
+                    && actual.avg_trade.compare(expected.avg_trade)
+                    && actual.long_net_profit.compare(expected.long_net_profit)
+                    && actual
+                        .long_net_profit_percent
+                        .compare(expected.long_net_profit_percent)
+                    && actual.short_net_profit.compare(expected.short_net_profit)
+                    && actual
+                        .short_net_profit_percent
+                        .compare(expected.short_net_profit_percent)
+                    && actual
+                        .long_short_net_profit_ratio
+                        .compare(expected.long_short_net_profit_ratio)
+                    && actual
+                        .equity_max_drawdown_percent
+                        .compare(expected.equity_max_drawdown_percent)
+                    && actual
+                        .intra_trade_max_drawdown_percent
+                        .compare(expected.intra_trade_max_drawdown_percent);
+            })
+        }
+    }
+
     fn _test_metrics(
         cctx: &mut ComponentContext,
         target: &mut StrategyContext,
-        expected: &[Option<StrategyMetrics>],
+        expected: &[Option<TestMetricsPayload>],
         long_entries: &[usize],
         short_entries: &[usize],
     ) {
-        let mut snapshot = ComponentTestSnapshot::<StrategyMetrics>::new();
+        let mut snapshot = ComponentTestSnapshot::<TestMetricsPayload>::new();
         for cctx in cctx {
             let ctx = cctx.get();
             let tick = ctx.current_tick;
@@ -6828,66 +6951,127 @@ mod tests {
             }
             target.next(trade_direction);
             let metrics = target.metrics;
-            if tick < 1605 {
-                println!(
-                    "[{}]: run up: {} | h eq: {} | l eq: {} | h: {} | l: {} | e: {} | te: {} |",
-                    tick,
-                    metrics.max_run_up,
-                    target.highest_equity,
-                    target.lowest_equity,
-                    metrics.high_equity,
-                    metrics.low_equity,
-                    metrics.equity,
-                    target.trade_max_equity
-                );
-            } else {
-                panic!("xdd");
-            }
-            snapshot.push(Some(metrics));
+            // if tick < 705 {
+            //     println!("[{}]: {}", tick, metrics.intra_max_drawdown_percent * 100.0);
+            // } else {
+            //     panic!("xdd");
+            // }
+            let payload = TestMetricsPayload::from_metrics(&metrics);
+            snapshot.push(Some(payload));
         }
         snapshot.assert(expected);
     }
 
-    fn _load_metrics(df: &DataFrame) -> Vec<Option<StrategyMetrics>> {
-        let equity = df.column("_target_equity_").unwrap().to_f64();
-        let open_profit = df.column("_target_open_profit_").unwrap().to_f64();
+    fn _load_metrics(df: &DataFrame) -> Vec<Option<TestMetricsPayload>> {
         let net_profit = df.column("_target_net_profit_").unwrap().to_f64();
+        let net_profit_percent = df.column("_target_net_profit_percent_").unwrap().to_f64();
+        let open_profit = df.column("_target_open_profit_").unwrap().to_f64();
         let gross_profit = df.column("_target_gross_profit_").unwrap().to_f64();
+        let gross_profit_percent = df.column("_target_gross_profit_percent_").unwrap().to_f64();
         let gross_loss = df.column("_target_gross_loss_").unwrap().to_f64();
+        let gross_loss_percent = df.column("_target_gross_loss_percent_").unwrap().to_f64();
+        let equity = df.column("_target_equity_").unwrap().to_f64();
+        let closed_trades = df.column("_target_closed_trades_").unwrap().to_usize();
         let losing_trades = df.column("_target_losing_trades_").unwrap().to_usize();
         let winning_trades = df.column("_target_winning_trades_").unwrap().to_usize();
-        let closed_trades = df.column("_target_closed_trades_").unwrap().to_usize();
+        //
         let max_drawdown = df.column("_target_max_drawdown_").unwrap().to_f64();
         let max_run_up = df.column("_target_max_run_up_").unwrap().to_f64();
+        //
+        let profit_factor = df.column("_target_profit_factor_").unwrap().to_f64();
+        let percent_profitable = df.column("_target_percent_profitable_").unwrap().to_f64();
+        let avg_trade = df.column("_target_avg_trade_").unwrap().to_f64();
+        let avg_winning_trade = df.column("_target_avg_winning_trade_").unwrap().to_f64();
+        let avg_losing_trade = df.column("_target_avg_losing_trade_").unwrap().to_f64();
+        let avg_win_loss_trade_ratio = df.column("_target_avg_win_loss_ratio_").unwrap().to_f64();
+        let long_net_profit = df.column("_target_long_net_profit_").unwrap().to_f64();
+        let long_net_profit_percent = df
+            .column("_target_long_net_profit_percent_")
+            .unwrap()
+            .to_f64();
+        let short_net_profit = df.column("_target_short_net_profit_").unwrap().to_f64();
+        let short_net_profit_percent = df
+            .column("_target_short_net_profit_percent_")
+            .unwrap()
+            .to_f64();
+        let long_short_net_profit = df
+            .column("_target_long_short_net_profit_ratio_")
+            .unwrap()
+            .to_f64();
+        let equity_max_drawdown_percent = df
+            .column("_target_equity_max_drawdown_percent_")
+            .unwrap()
+            .to_f64();
+        let intra_trade_max_drawdown_percent = df
+            .column("_target_intra_trade_max_drawdown_percent_")
+            .unwrap()
+            .to_f64();
 
-        let mut metrics: Vec<Option<StrategyMetrics>> = Vec::new();
+        // let max_drawdown = df.column("_target_max_drawdown_").unwrap().to_f64();
+        // let max_run_up = df.column("_target_max_run_up_").unwrap().to_f64();
+
+        let mut metrics: Vec<Option<TestMetricsPayload>> = Vec::new();
 
         for i in 0..equity.len() {
-            let m = StrategyMetrics {
-                equity: equity[i].unwrap(),
-                open_profit: open_profit[i].unwrap(),
+            let m = TestMetricsPayload {
                 net_profit: net_profit[i].unwrap(),
+                net_profit_percent: net_profit_percent[i].unwrap_or(1.0),
+                open_profit: open_profit[i].unwrap(),
                 gross_profit: gross_profit[i].unwrap(),
+                gross_profit_percent: gross_profit_percent[i].unwrap_or(0.0),
                 gross_loss: gross_loss[i].unwrap(),
+                gross_loss_percent: gross_loss_percent[i].unwrap_or(0.0),
+                equity: equity[i].unwrap(),
+                closed_trades: closed_trades[i].unwrap(),
                 losing_trades: losing_trades[i].unwrap(),
                 winning_trades: winning_trades[i].unwrap(),
-                closed_trades: closed_trades[i].unwrap(),
-                max_drawdown: max_drawdown[i].unwrap(),
-                high_equity: 0.0,
-                gross_loss_percent: 0.0,
-                gross_profit_percent: 0.0,
-                net_profit_percent: 0.0,
-                low_equity: 0.0,
-                high_open_profit: 0.0,
-                low_open_profit: 0.0,
-                max_run_up: max_run_up[i].unwrap(),
-                max_run_up_percent: 0.0,
-                max_drawdown_percent: 0.0,
-                avg_losing_trade: 0.0,
-                avg_winning_trade: 0.0,
-                percent_profitable: 0.0,
-                profit_factor: 0.0,
-                ratio_avg_win_avg_loss: 0.0,
+                //
+                max_drawdown: max_drawdown[i].unwrap_or(0.0),
+                max_run_up: max_run_up[i].unwrap_or(0.0),
+                //
+                profit_factor: profit_factor[i].unwrap_or(0.0),
+                percent_profitable: percent_profitable[i].unwrap_or(0.0),
+                avg_trade: avg_trade[i].unwrap_or(0.0),
+                avg_losing_trade: avg_losing_trade[i].unwrap_or(0.0),
+                avg_winning_losing_trade_ratio: avg_win_loss_trade_ratio[i].unwrap_or(0.0),
+                avg_winning_trade: avg_winning_trade[i].unwrap_or(0.0),
+                long_net_profit: long_net_profit[i].unwrap_or(0.0),
+                long_net_profit_percent: long_net_profit_percent[i].unwrap_or(0.0),
+                short_net_profit: short_net_profit[i].unwrap_or(0.0),
+                short_net_profit_percent: short_net_profit_percent[i].unwrap_or(0.0),
+                long_short_net_profit_ratio: long_short_net_profit[i].unwrap_or(0.0),
+                equity_max_drawdown_percent: equity_max_drawdown_percent[i].unwrap_or(0.0),
+                intra_trade_max_drawdown_percent: intra_trade_max_drawdown_percent[i]
+                    .unwrap_or(0.0),
+                // equity: equity[i].unwrap(),
+                // open_profit: open_profit[i].unwrap(),
+                // net_profit: net_profit[i].unwrap(),
+                // gross_profit: gross_profit[i].unwrap(),
+                // gross_loss: gross_loss[i].unwrap(),
+                // max_drawdown: max_drawdown[i].unwrap(),
+                // equity_curve: 0.0,
+                // high_equity: 0.0,
+                // gross_loss_percent: 0.0,
+                // gross_profit_percent: 0.0,
+                // net_profit_percent: 0.0,
+                // low_equity: 0.0,
+                // high_open_profit: 0.0,
+                // low_open_profit: 0.0,
+                // intra_trade_max_drawdown: 0.0,
+                // max_run_up: max_run_up[i].unwrap(),
+                // max_run_up_percent: 0.0,
+                // max_drawdown_percent: 0.0,
+                // avg_losing_trade: 0.0,
+                // avg_winning_trade: 0.0,
+                // percent_profitable: 0.0,
+                // profit_factor: 0.0,
+                // ratio_avg_win_avg_loss: 0.0,
+                // long_net_profit: 0.0,
+                // short_net_profit: 0.0,
+                // long_short_net_profit_ratio: 0.0,
+                // equity_max_drawdown: 0.0,
+                // intra_max_drawdown_percent: 0.0,
+                // ..StrategyMetrics::default(1000.0),
             };
             metrics.push(Some(m));
         }
@@ -6966,7 +7150,7 @@ mod tests {
 
     #[test]
     fn metrics_on_next_bar_open_continous_extensive() {
-        let (_df, ctx) = Fixture::raw("base/strategy/tests/fixtures/xd.csv");
+        let (_df, ctx) = Fixture::raw("base/strategy/tests/fixtures/aha.csv");
         let expected = _load_metrics(&_df);
         _test_metrics(
             &mut ctx.clone(),
