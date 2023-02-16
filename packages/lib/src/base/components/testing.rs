@@ -45,6 +45,26 @@ impl Fixture {
         return (df, ctx);
     }
 
+    pub fn raw_df(path: &str) -> DataFrame {
+        let mut path = Path::new(file!())
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join(path);
+
+        let test_mode = std::env::var("NEXTEST").is_ok();
+
+        if (test_mode) {
+            path = Path::new("../../").join(path);
+        }
+
+        let df = read_df(&path);
+        return df;
+    }
+
     pub fn load_with_target(
         path: &str,
         target: &str,

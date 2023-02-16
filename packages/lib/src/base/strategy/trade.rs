@@ -167,9 +167,9 @@ pub fn compute_return(current_equity: f64, previous_equity: f64) -> f64 {
     if previous_equity == 0.0 || current_equity == 0.0 {
         return 0.0;
     }
-    if current_equity < 0.0 || previous_equity < 0.0 {
-        return 0.0;
-    }
+    // if current_equity < 0.0 || previous_equity < 0.0 {
+    //     return 0.0;
+    // }
     // if current_equity < 0.0 && previous_equity < 0.0 {
     //     return 1.0 - (current_equity / previous_equity);
     // }

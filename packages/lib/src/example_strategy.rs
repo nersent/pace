@@ -1,16 +1,32 @@
-use colored::Colorize;
-use std::time::Instant;
-
-use crate::base::{
-    components::testing::Fixture,
-    strategy::{
-        metrics::omega_ratio_metric::OmegaRatioMetric,
-        strategy_context::{StrategyContext, StrategyContextConfig},
-        strategy_runner::{StrategyRunner, StrategyRunnerConfig, StrategyRunnerMetricsConfig},
-        trade::TradeDirection,
+use crate::{
+    base::{
+        asset::{
+            asset_data_provider::AssetDataProvider,
+            source::{Source, SourceKind},
+        },
+        components::{component_context::ComponentContext, testing::Fixture},
+        strategy::{
+            metrics::omega_ratio_metric::OmegaRatioMetric,
+            strategy_context::{StrategyContext, StrategyContextConfig},
+            strategy_runner::{
+                StrategyRunner, StrategyRunnerConfig, StrategyRunnerMetricsConfig,
+                StrategyRunnerResult,
+            },
+            trade::TradeDirection,
+        },
+    },
+    content::{
+        relative_strength_index_indicator::{
+            RelativeStrengthIndexIndicator, RelativeStrengthIndexIndicatorConfig,
+        },
+        relative_strength_index_strategy::{
+            RelativeStrengthIndexStrategy, RelativeStrengthIndexStrategyConfig,
+        },
     },
 };
-
+use colored::Colorize;
+use rand::Rng;
+use std::{sync::Arc, time::Instant};
 pub fn run_example_strategy() -> u128 {
     return 0;
     // let (df, ctx) = Fixture::raw("ml/fixtures/btc_1d.csv");
@@ -121,18 +137,24 @@ pub fn run_example_strategy() -> u128 {
     // return elapsed_time;
 }
 
-pub fn run_example_strategy_refactor() {
-    let (df, ctx) = Fixture::raw("ml/fixtures/btc_1d.csv");
+pub fn run_example_strategy_refactor(
+    asset_data_provider: Arc<dyn AssetDataProvider + 'static + Send + Sync>,
+) -> (StrategyRunnerResult, (bool, f64, f64, f64, f64)) {
+    let ctx = ComponentContext::from_asset_data_provider(asset_data_provider);
 
-    let mut strategy_ctx = StrategyContext::new(
-        ctx.clone(),
-        StrategyContextConfig {
-            on_bar_close: true,
-            continous: false,
-            initial_capital: 1000.0,
-            buy_with_equity: false,
-        },
-    );
+    let mut rng = rand::thread_rng();
+
+    let continous = rng.gen_bool(0.5);
+    let rsi_length = rng.gen_range(2..500);
+    let rsi_oversold = rng.gen_range(0.0..50.0);
+    let rsi_overbought = rng.gen_range(50.0..100.0);
+    let rsi_source_kind = rng.gen_range(0..8);
+
+    // let continous = false;
+    // let rsi_length = 14;
+    // let rsi_oversold = 30.0;
+    // let rsi_overbought = 70.0;
+    // let rsi_source_kind = 3;
 
     let mut runner = StrategyRunner::new(
         ctx.clone(),
@@ -140,7 +162,7 @@ pub fn run_example_strategy_refactor() {
             ctx.clone(),
             StrategyContextConfig {
                 on_bar_close: false,
-                continous: true,
+                continous: continous,
                 buy_with_equity: false,
                 initial_capital: 1000.0,
             },
@@ -148,8 +170,9 @@ pub fn run_example_strategy_refactor() {
         // StrategyRunnerConfig::default(ctx.clone()),
         StrategyRunnerConfig {
             print: true,
-            start_tick: None,
-            end_tick: Some(10),
+            start_tick: Some(2295),
+            end_tick: None,
+            // end_tick: Some(1605),
             metrics: StrategyRunnerMetricsConfig {
                 omega_ratio: None,
                 sharpe_ratio: None,
@@ -158,24 +181,49 @@ pub fn run_example_strategy_refactor() {
         },
     );
 
+    let i_config = RelativeStrengthIndexIndicatorConfig {
+        length: rsi_length,
+        src: Source::from_kind(ctx.clone(), SourceKind::try_from(rsi_source_kind).unwrap()),
+    };
+    let s_config = RelativeStrengthIndexStrategyConfig {
+        threshold_overbought: rsi_overbought,
+        threshold_oversold: rsi_oversold,
+    };
+
+    let indicator = &mut RelativeStrengthIndexIndicator::new(ctx.clone(), i_config);
+    let strategy = &mut RelativeStrengthIndexStrategy::new(ctx.clone(), s_config);
+
     let res = runner.run(|| {
-        let ctx = ctx.get();
-        let tick = ctx.current_tick;
+        return strategy.next(indicator.next());
+        // let ctx = ctx.get();
+        // let tick = ctx.current_tick;
 
-        let long_ticks = [4];
-        let short_ticks = [2, 3, 7];
+        // let long_ticks = [4];
+        // let short_ticks = [2, 3, 7];
 
-        let mut trade: Option<TradeDirection> = None;
+        // let long_ticks = [2, 18, 44, 60, 120, 180, 400, 700, 1000, 1600];
+        // let short_ticks = [10, 24, 48, 64, 155, 190, 420, 900, 1250];
 
-        if long_ticks.contains(&tick) {
-            trade = Some(TradeDirection::Long);
-        } else if short_ticks.contains(&tick) {
-            trade = Some(TradeDirection::Short);
-        }
+        // let mut trade: Option<TradeDirection> = None;
 
-        return trade;
+        // if long_ticks.contains(&tick) {
+        //     trade = Some(TradeDirection::Long);
+        // } else if short_ticks.contains(&tick) {
+        //     trade = Some(TradeDirection::Short);
+        // }
+
+        // return trade;
     });
 
+    let config = (
+        continous,
+        rsi_length as f64,
+        rsi_oversold,
+        rsi_overbought,
+        rsi_source_kind as f64,
+    );
+
+    return (res, config);
     // for cctx in ctx {
     //     let ctx = cctx.get();
     //     let tick = ctx.current_tick;

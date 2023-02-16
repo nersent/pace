@@ -893,6 +893,7 @@ dependencies = [
  "mimalloc",
  "polars",
  "pyo3",
+ "rand",
  "similar",
  "similar-asserts",
 ]

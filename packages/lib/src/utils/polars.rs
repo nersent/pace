@@ -10,7 +10,7 @@ use polars::{
 
 use crate::base::strategy::trade::{trade_direction_from_f64, TradeDirection};
 
-use super::fs::get_filename_extension;
+use super::fs::{ensure_dir, get_filename_extension};
 
 pub trait SeriesCastUtils {
     fn to_f64(&self) -> Vec<Option<f64>>;
@@ -214,11 +214,13 @@ pub fn save_df(df: &mut DataFrame, path: &Path) {
 }
 
 pub fn save_df_csv(df: &mut DataFrame, path: &Path) {
+    ensure_dir(path.parent().unwrap());
     let mut file = std::fs::File::create(path).unwrap();
     CsvWriter::new(&mut file).finish(df).unwrap();
 }
 
 pub fn save_df_parquet(df: &mut DataFrame, path: &Path) {
+    ensure_dir(path.parent().unwrap());
     let mut file = std::fs::File::create(path).unwrap();
     ParquetWriter::new(&mut file).finish(df).unwrap();
 }

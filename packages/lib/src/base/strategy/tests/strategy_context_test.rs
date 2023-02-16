@@ -6822,6 +6822,7 @@ mod tests {
         gross_loss: f64,
         gross_loss_percent: f64,
         equity: f64,
+        net_equity: f64,
         closed_trades: usize,
         winning_trades: usize,
         losing_trades: usize,
@@ -6842,6 +6843,7 @@ mod tests {
         long_short_net_profit_ratio: f64,
         equity_max_drawdown_percent: f64,
         intra_trade_max_drawdown_percent: f64,
+        net_equity_max_drawdown_percent: f64,
     }
 
     impl TestMetricsPayload {
@@ -6855,6 +6857,7 @@ mod tests {
                 gross_loss: metrics.gross_loss,
                 gross_loss_percent: metrics.gross_loss_percent,
                 equity: metrics.equity,
+                net_equity: metrics.net_equity,
                 closed_trades: metrics.closed_trades,
                 winning_trades: metrics.winning_trades,
                 losing_trades: metrics.losing_trades,
@@ -6875,6 +6878,7 @@ mod tests {
                 long_short_net_profit_ratio: metrics.long_short_net_profit_ratio,
                 equity_max_drawdown_percent: metrics.equity_max_drawdown_percent,
                 intra_trade_max_drawdown_percent: metrics.intra_trade_max_drawdown_percent,
+                net_equity_max_drawdown_percent: metrics.net_equity_max_drawdown_percent,
             }
         }
     }
@@ -6896,6 +6900,7 @@ mod tests {
                         .gross_loss_percent
                         .compare(expected.gross_loss_percent)
                     && actual.equity.compare(expected.equity)
+                    && actual.net_equity.compare(expected.net_equity)
                     && actual.closed_trades == expected.closed_trades
                     && actual.winning_trades == expected.winning_trades
                     && actual.losing_trades == expected.losing_trades
@@ -6927,7 +6932,10 @@ mod tests {
                         .compare(expected.equity_max_drawdown_percent)
                     && actual
                         .intra_trade_max_drawdown_percent
-                        .compare(expected.intra_trade_max_drawdown_percent);
+                        .compare(expected.intra_trade_max_drawdown_percent)
+                    && actual
+                        .net_equity_max_drawdown_percent
+                        .compare(expected.net_equity_max_drawdown_percent);
             })
         }
     }
@@ -7006,7 +7014,11 @@ mod tests {
             .column("_target_intra_trade_max_drawdown_percent_")
             .unwrap()
             .to_f64();
-
+        let net_equity = df.column("_target_net_equity_").unwrap().to_f64();
+        let net_equity_max_drawdown_percent = df
+            .column("_target_net_equity_max_drawdown_percent_")
+            .unwrap()
+            .to_f64();
         // let max_drawdown = df.column("_target_max_drawdown_").unwrap().to_f64();
         // let max_run_up = df.column("_target_max_run_up_").unwrap().to_f64();
 
@@ -7022,6 +7034,7 @@ mod tests {
                 gross_loss: gross_loss[i].unwrap(),
                 gross_loss_percent: gross_loss_percent[i].unwrap_or(0.0),
                 equity: equity[i].unwrap(),
+                net_equity: net_equity[i].unwrap(),
                 closed_trades: closed_trades[i].unwrap(),
                 losing_trades: losing_trades[i].unwrap(),
                 winning_trades: winning_trades[i].unwrap(),
@@ -7043,35 +7056,7 @@ mod tests {
                 equity_max_drawdown_percent: equity_max_drawdown_percent[i].unwrap_or(0.0),
                 intra_trade_max_drawdown_percent: intra_trade_max_drawdown_percent[i]
                     .unwrap_or(0.0),
-                // equity: equity[i].unwrap(),
-                // open_profit: open_profit[i].unwrap(),
-                // net_profit: net_profit[i].unwrap(),
-                // gross_profit: gross_profit[i].unwrap(),
-                // gross_loss: gross_loss[i].unwrap(),
-                // max_drawdown: max_drawdown[i].unwrap(),
-                // equity_curve: 0.0,
-                // high_equity: 0.0,
-                // gross_loss_percent: 0.0,
-                // gross_profit_percent: 0.0,
-                // net_profit_percent: 0.0,
-                // low_equity: 0.0,
-                // high_open_profit: 0.0,
-                // low_open_profit: 0.0,
-                // intra_trade_max_drawdown: 0.0,
-                // max_run_up: max_run_up[i].unwrap(),
-                // max_run_up_percent: 0.0,
-                // max_drawdown_percent: 0.0,
-                // avg_losing_trade: 0.0,
-                // avg_winning_trade: 0.0,
-                // percent_profitable: 0.0,
-                // profit_factor: 0.0,
-                // ratio_avg_win_avg_loss: 0.0,
-                // long_net_profit: 0.0,
-                // short_net_profit: 0.0,
-                // long_short_net_profit_ratio: 0.0,
-                // equity_max_drawdown: 0.0,
-                // intra_max_drawdown_percent: 0.0,
-                // ..StrategyMetrics::default(1000.0),
+                net_equity_max_drawdown_percent: net_equity_max_drawdown_percent[i].unwrap_or(0.0),
             };
             metrics.push(Some(m));
         }

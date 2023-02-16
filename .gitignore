@@ -19,3 +19,7 @@ plot_omega_ratio.png
 plot_sharpe_ratio.png
 plot_returns.png
 history.json
+xd.csv
+equity_returns.csv
+net_equity.csv
+metrics.csv

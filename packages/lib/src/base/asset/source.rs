@@ -54,3 +54,11 @@ impl TryFrom<usize> for SourceKind {
         }
     }
 }
+
+impl TryFrom<i32> for SourceKind {
+    type Error = String;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        return SourceKind::try_from(value as usize);
+    }
+}

@@ -43,6 +43,6 @@ impl OmegaRatioMetric {
             self.negative_returns_sum += returns.abs();
         }
 
-        return compute_omega_ratio(self.positive_returns_sum, self.negative_returns_sum);
+        return compute_omega_ratio(self.positive_returns_sum, self.negative_returns_sum, 0.0);
     }
 }

@@ -1,0 +1,125 @@
+//@version=5
+strategy(title='RSI', initial_capital=1000.0, currency='USD', overlay=false, pyramiding=0, risk_free_rate = 0.0)
+
+import EliCobra/CobraMetrics/1 as table
+
+disp_ind = input.string("Equity", title="Display",options=["Strategy", "Equity", "Open Profit", "Gross Profit", "Net Profit"])
+table.cobraTable()
+plot(table.curve(disp_ind))
+
+// --------- CONSTANTS ----------- 
+int __offset = -1
+int __start_tick = 0 + __offset
+int __end_tick = 4140 + __offset
+
+int[] __long_entries = array.from(2, 18, 44, 60, 120, 180, 400, 700, 1000, 1600)
+int[] __short_entries = array.from(10, 24, 48, 64, 155, 190, 420, 900, 1250)
+// int[] __long_entries = array.from(2, 18, 44, 60)
+// int[] __short_entries = array.from(10, 24, 48)
+
+// 
+// ------------------------------- 
+if array.indexof(__long_entries, bar_index) != -1
+    strategy.entry("long_entry", strategy.long)
+if array.indexof(__short_entries, bar_index) != -1
+    strategy.entry("short_entry", strategy.short)
+
+
+plot(volume, title='volume')
+
+
+plot(strategy.netprofit, title='_target_net_profit_')
+plot(strategy.netprofit / strategy.initial_capital, title='_target_net_profit_percent_')
+
+plot(strategy.openprofit, title='_target_open_profit_')
+
+plot(strategy.grossprofit, title='_target_gross_profit_')
+plot(strategy.grossprofit / strategy.initial_capital, title='_target_gross_profit_percent_')
+
+plot(strategy.grossloss, title='_target_gross_loss_')
+plot(strategy.grossloss / strategy.initial_capital, title='_target_gross_loss_percent_')
+
+plot(strategy.equity, title='_target_equity_')
+
+plot(strategy.closedtrades, title='_target_closed_trades_')
+plot(strategy.losstrades, title='_target_losing_trades_')
+plot(strategy.wintrades, title='_target_winning_trades_')
+
+plot(strategy.max_drawdown, title='_target_max_drawdown_')
+// plot(strategy.max_drawdown, title='_target_max_drawdown_percent_')
+
+plot(strategy.max_runup, title='_target_max_run_up_')
+// plot(strategy.max_runup, title='_target_max_run_up_percent_')
+
+plot(strategy.grossprofit/strategy.grossloss, title='_target_profit_factor_')
+plot(strategy.wintrades / strategy.closedtrades, title='_target_percent_profitable_')
+
+// plot(strategy.max_runup, title='_target_long_short_net_profit_ratio_')
+
+// plot(strategy.max_runup, title='_target_equity_max_drawdown_percent_')
+
+// plot(strategy.max_runup, title='_target_intra_trade_max_drawdown_percent_')
+
+long_profit() =>
+    long_profit = 0.0
+    for tradeNo = 0 to strategy.closedtrades-1
+        if strategy.closedtrades.size(tradeNo) > 0
+            long_profit := long_profit + (strategy.closedtrades.profit(tradeNo))
+    result = long_profit
+
+short_profit() =>
+    short_profit = 0.0
+    for tradeNo = 0 to strategy.closedtrades-1
+        if strategy.closedtrades.size(tradeNo) < 0
+            short_profit := short_profit + (strategy.closedtrades.profit(tradeNo))
+    result = short_profit
+
+long_total_profit = long_profit()
+short_total_profit = short_profit()
+net_profit_ls_ratio = long_total_profit/short_total_profit*(-1)
+
+plot(long_total_profit, "_target_long_net_profit_")
+plot(long_total_profit /strategy.initial_capital, "_target_long_net_profit_percent_")
+plot(short_total_profit, "_target_short_net_profit_")
+plot(short_total_profit /strategy.initial_capital, "_target_short_net_profit_percent_")
+
+plot(net_profit_ls_ratio, "_target_long_short_net_profit_ratio_")
+
+plot(strategy.netprofit / strategy.closedtrades, "_target_avg_trade_")
+plot(strategy.grossprofit / strategy.wintrades, "_target_avg_winning_trade_")
+plot(strategy.grossloss / strategy.losstrades, "_target_avg_losing_trade_")
+
+plot((strategy.grossprofit / strategy.wintrades) / (strategy.grossloss / strategy.losstrades), "_target_avg_win_loss_ratio_")
+
+maxEquityDrawDown() =>
+    float max_dd = 0.0
+    float max_eq = strategy.equity
+    max_eq := math.max(nz(max_eq[1]), strategy.equity)
+    max_dd := math.min(nz(max_dd[1]), strategy.equity/max_eq - 1)
+    max_dd
+
+plot(maxEquityDrawDown(), "_target_equity_max_drawdown_percent_")
+
+maxTradeDrawDown() =>
+    tradeEntryEquity = 0.0
+    maxDrawdownPercent = 0.0
+    for tradeNo = 0 to strategy.closedtrades-1
+        maxDrawdownPercent := math.max(maxDrawdownPercent, (strategy.closedtrades.max_drawdown(tradeNo)/(math.abs(strategy.closedtrades.size(tradeNo))*strategy.closedtrades.entry_price(tradeNo))))
+    result = maxDrawdownPercent
+
+plot(maxTradeDrawDown(), "_target_intra_trade_max_drawdown_percent_")
+
+
+netEquityMaxDrawdown() =>
+    ceq = strategy.netprofit + strategy.initial_capital
+    float max_dd = 0.0
+    float max_eq = ceq
+    max_eq := math.max(nz(max_eq[1]), ceq)
+    max_dd := math.min(nz(max_dd[1]), ceq/max_eq - 1)
+    max_dd
+
+plot(strategy.netprofit + strategy.initial_capital, "_target_net_equity_")
+plot(netEquityMaxDrawdown(), "_target_net_equity_max_drawdown_percent_")
+
+
+plot(bar_index, title='_tick_')

@@ -61,6 +61,8 @@ pub struct StrategyMetrics {
     pub gross_loss_percent: f64,
     /// Current equity (initial capital + net profit + open profit). In TradingView `strategy.equity`
     pub equity: f64,
+    /// Net current equity (initial capital + net profit)
+    pub net_equity: f64,
     /// Total number of closed tradesIn TradingView `strategy.closedtrades`
     pub closed_trades: usize,
     /// Total number of winning tradesIn TradingView `strategy.wintrades`
@@ -99,6 +101,8 @@ pub struct StrategyMetrics {
     /// Maximum drawdown that occured during trades.
     pub intra_trade_max_drawdown: f64,
     pub intra_trade_max_drawdown_percent: f64,
+    /// Maximum drawdown that occured on net equity (realized profits)
+    pub net_equity_max_drawdown_percent: f64,
 }
 
 impl StrategyMetrics {
@@ -112,6 +116,7 @@ impl StrategyMetrics {
             gross_loss: 0.0,
             gross_loss_percent: 0.0,
             equity: initial_capital,
+            net_equity: initial_capital,
             closed_trades: 0,
             winning_trades: 0,
             losing_trades: 0,
@@ -134,6 +139,7 @@ impl StrategyMetrics {
             equity_max_drawdown_percent: 0.0,
             intra_trade_max_drawdown: 0.0,
             intra_trade_max_drawdown_percent: 0.0,
+            net_equity_max_drawdown_percent: 0.0,
         };
     }
 }
@@ -157,6 +163,7 @@ pub struct StrategyContext {
     __highest_equity: f64,
     current_trade_highest_equity: f64,
     current_trade_max_drawdown: f64,
+    highest_net_equity: f64,
     // pub equity_curve: f64,
     // pub low_open_profit: f64,
     // pub high_open_profit: f64,
@@ -184,6 +191,7 @@ impl StrategyContext {
             __highest_equity: config.initial_capital,
             current_trade_highest_equity: config.initial_capital,
             current_trade_max_drawdown: 0.0,
+            highest_net_equity: config.initial_capital,
             config,
         };
     }
@@ -251,6 +259,14 @@ impl StrategyContext {
                     self.metrics.net_profit += trade_pnl;
                     self.metrics.open_profit = 0.0;
                     self.metrics.closed_trades += 1;
+                    self.metrics.net_equity = self.config.initial_capital + self.metrics.net_profit;
+
+                    self.highest_net_equity =
+                        f64::max(self.metrics.net_equity, self.highest_net_equity);
+                    self.metrics.net_equity_max_drawdown_percent = f64::min(
+                        self.metrics.net_equity / self.highest_net_equity - 1.0,
+                        self.metrics.net_equity_max_drawdown_percent,
+                    );
 
                     if last_trade.direction == TradeDirection::Long {
                         self.metrics.long_net_profit += trade_pnl;
