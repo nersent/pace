@@ -1,6 +1,6 @@
 use crate::components::{component::Component, component_context::ComponentContext};
 
-use super::{stats::stdev_from_var, var_component::VarComponent};
+use super::{common::stdev_from_var, var_component::VarComponent};
 
 pub struct StdevComponent {
     pub ctx: ComponentContext,

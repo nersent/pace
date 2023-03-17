@@ -2,7 +2,7 @@ use crate::components::{
     component::Component, component_context::ComponentContext, component_default::ComponentDefault,
 };
 
-use super::metrics::sharpe_ratio;
+use super::common::sharpe_ratio;
 
 pub struct SharpeRatioComponentConfig {
     pub risk_free_rate: f64,

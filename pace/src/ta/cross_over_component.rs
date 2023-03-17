@@ -1,6 +1,6 @@
 use crate::components::component_context::ComponentContext;
 
-use super::cross::compute_cross_over;
+use super::cross::cross_over;
 
 pub struct CrossOverComponent {
     pub ctx: ComponentContext,
@@ -19,9 +19,7 @@ impl CrossOverComponent {
 
     pub fn next(&mut self, a: Option<f64>, b: Option<f64>) -> bool {
         let cross = match (self.prev_a_value, self.prev_b_value, a, b) {
-            (Some(prev_a), Some(prev_b), Some(a), Some(b)) => {
-                compute_cross_over(a, b, prev_a, prev_b)
-            }
+            (Some(prev_a), Some(prev_b), Some(a), Some(b)) => cross_over(a, b, prev_a, prev_b),
             _ => false,
         };
 

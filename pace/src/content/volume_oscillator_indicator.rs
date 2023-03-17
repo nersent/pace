@@ -3,7 +3,7 @@ use crate::{
         component::Component, component_context::ComponentContext,
         component_default::ComponentDefault,
     },
-    pinescript::math::{ps_diff, ps_div},
+    pinescript::common::{ps_diff, ps_div},
     ta::{
         ma::MaKind,
         ma_component::{AnyMaComponent, MaComponent},

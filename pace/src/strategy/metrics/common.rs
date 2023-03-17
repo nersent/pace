@@ -99,3 +99,10 @@ pub fn max_drawdown_percent(max_dd: f64, net_equity_max: f64) -> f64 {
 pub fn max_run_up_percent(max_run_up: f64, bar_equity_max: f64) -> f64 {
     return max_run_up / bar_equity_max;
 }
+
+pub fn returns(current_equity: f64, previous_equity: f64) -> f64 {
+    if previous_equity == 0.0 || current_equity == 0.0 {
+        return 0.0;
+    }
+    return (current_equity / previous_equity) - 1.0;
+}

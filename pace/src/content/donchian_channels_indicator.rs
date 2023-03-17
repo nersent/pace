@@ -1,6 +1,6 @@
 use crate::{
     components::{component::Component, component_context::ComponentContext},
-    pinescript::math::ps_add,
+    pinescript::common::ps_add,
     ta::{highest_component::HighestComponent, lowest_component::LowestComponent},
 };
 

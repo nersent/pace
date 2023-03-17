@@ -5,7 +5,7 @@ use std::{
 
 use crate::components::component_context::ComponentContext;
 
-use super::trade::{compute_fill_size, Trade, TradeDirection};
+use super::trade::{fill_size, Trade, TradeDirection};
 
 pub struct StrategyOnTradeEntryEvent {
     pub trade: Trade,
@@ -142,7 +142,7 @@ impl StrategyContext {
                     let equity =
                         state.config.initial_capital + state.net_profit + state.open_profit;
 
-                    trade.fill_size = Some(compute_fill_size(equity, orderbook_price.unwrap()));
+                    trade.fill_size = Some(fill_size(equity, orderbook_price.unwrap()));
                 }
 
                 trade.entry_price = orderbook_price;

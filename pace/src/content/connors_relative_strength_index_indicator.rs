@@ -6,7 +6,7 @@ use crate::{
         src_component::{AnySrcComponent, SrcComponent},
         src_kind::SrcKind,
     },
-    pinescript::math::ps_nz,
+    pinescript::common::ps_nz,
     ta::{
         prank_component::PrankComponent, roc_component::RocComponent, rsi_component::RsiComponent,
     },

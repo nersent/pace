@@ -5,7 +5,7 @@ mod tests {
     use crate::{
         components::{component::Component, component_context::ComponentContext},
         data::in_memory_data_provider::InMemoryDataProvider,
-        stats::mean_component::MeanComponent,
+        statistics::mean_component::MeanComponent,
         testing::array_snapshot::ArraySnapshot,
     };
 

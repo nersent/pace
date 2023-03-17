@@ -6,7 +6,7 @@ use crate::{
         src_component::{AnySrcComponent, SrcComponent},
         src_kind::SrcKind,
     },
-    pinescript::math::{ps_abs, ps_diff, ps_max, ps_min},
+    pinescript::common::{ps_abs, ps_diff, ps_max, ps_min},
     ta::sum_component::SumComponent,
 };
 

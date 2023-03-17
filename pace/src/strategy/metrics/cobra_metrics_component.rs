@@ -2,23 +2,20 @@ use chrono::Datelike;
 
 use crate::{
     components::component::Component,
-    stats::{
+    statistics::{
         mean_component::MeanComponent, stdev_component::StdevComponent,
         welfords_stdev_component::WelfordsStdevComponent,
     },
-    strategy::{
-        strategy_context::StrategyContext,
-        trade::{compute_return, TradeDirection},
-    },
+    strategy::{strategy_context::StrategyContext, trade::TradeDirection},
     ta::sum_component::SumComponent,
 };
 
 use super::{
-    equity_metrics_component::EquityMetrics,
-    metrics::{
-        long_net_profit_ratio, omega_ratio, percent_profitable, profit_factor, sharpe_ratio,
-        sortino_ratio,
+    common::{
+        long_net_profit_ratio, omega_ratio, percent_profitable, profit_factor, returns,
+        sharpe_ratio, sortino_ratio,
     },
+    equity_metrics_component::EquityMetrics,
     omega_ratio_component::{OmegaRatioComponent, OmegaRatioComponentConfig},
     performance_metrics_component::PerformanceMetrics,
     sharpe_ratio_component::{SharpeRatioComponent, SharpeRatioComponentConfig},
@@ -138,7 +135,7 @@ impl Component<(&EquityMetrics, &PerformanceMetrics), ()> for CobraMetricsCompon
             self.current_trade_max_drawdown,
         );
 
-        let returns = compute_return(equity_metrics.equity, self.prev_equity);
+        let equity_returns = returns(equity_metrics.equity, self.prev_equity);
         self.prev_equity = equity_metrics.equity;
 
         if let Some(returns_start_year) = self.config.returns_start_year {
@@ -148,11 +145,11 @@ impl Component<(&EquityMetrics, &PerformanceMetrics), ()> for CobraMetricsCompon
             }
         }
 
-        let returns_mean = self.returns_mean.next(returns);
-        let returns_stdev = self.returns_stdev.next(returns);
+        let returns_mean = self.returns_mean.next(equity_returns);
+        let returns_stdev = self.returns_stdev.next(equity_returns);
 
-        let positive_returns = f64::max(0.0, returns);
-        let negative_returns = f64::min(0.0, returns).abs();
+        let positive_returns = f64::max(0.0, equity_returns);
+        let negative_returns = f64::min(0.0, equity_returns).abs();
         let negative_returns_stdev = self.negative_returns_stdev.next(negative_returns);
 
         self.positive_returns_sum += positive_returns;

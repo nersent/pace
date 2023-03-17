@@ -5,7 +5,7 @@ mod tests {
     use crate::{
         components::{component::Component, component_context::ComponentContext},
         data::in_memory_data_provider::InMemoryDataProvider,
-        stats::welfords_var_component::WelfordsVarComponent,
+        statistics::welfords_var_component::WelfordsVarComponent,
         testing::array_snapshot::ArraySnapshot,
     };
 

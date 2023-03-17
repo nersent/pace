@@ -1,6 +1,6 @@
 use crate::{
     components::{component::Component, component_context::ComponentContext},
-    pinescript::math::ps_div,
+    pinescript::common::ps_div,
     ta::sum_component::SumComponent,
 };
 

@@ -3,7 +3,7 @@ use crate::{
         component::Component, component_context::ComponentContext,
         component_default::ComponentDefault,
     },
-    pinescript::math::ps_div,
+    pinescript::common::ps_div,
     ta::{sum_component::SumComponent, swma_component::SwmaComponent},
 };
 

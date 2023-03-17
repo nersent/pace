@@ -3,7 +3,7 @@ mod components;
 mod content;
 mod data;
 mod pinescript;
-mod stats;
+mod statistics;
 mod strategy;
 mod ta;
 mod testing;

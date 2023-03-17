@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        stats::normalization::{
+        statistics::normalization::{
             clip_value, scale_value_centered, scale_value_down, scale_value_min_max, scale_value_up,
         },
         utils::comparison::FloatComparison,

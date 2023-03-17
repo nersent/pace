@@ -9,12 +9,12 @@ mod tests {
         strategy::{
             metrics::{
                 cobra_metrics_component::{CobraMetricsComponent, CobraMetricsComponentConfig},
-                equity_metrics_component::EquityMetricsComponent,
-                metrics::{
+                common::{
                     gross_loss_percent, gross_profit_percent, long_net_profit_percent,
                     max_drawdown_percent, max_run_up_percent, net_profit_percent,
                     short_net_profit_percent,
                 },
+                equity_metrics_component::EquityMetricsComponent,
                 performance_metrics_component::PerformanceMetricsComponent,
             },
             strategy_context::{StrategyContext, StrategyContextConfig},

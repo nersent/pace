@@ -1,17 +1,17 @@
 use crate::{
     components::component::Component,
     strategy::{
-        metrics::metrics::max_run_up_percent, strategy_context::StrategyContext,
+        metrics::common::max_run_up_percent, strategy_context::StrategyContext,
         trade::TradeDirection,
     },
 };
 
 use super::{
-    equity_metrics_component::EquityMetrics,
-    metrics::{
+    common::{
         avg_losing_trade, avg_trade, avg_win_loss_ratio, avg_winning_trade, percent_profitable,
         profit_factor,
     },
+    equity_metrics_component::EquityMetrics,
 };
 
 pub struct PerformanceMetrics {

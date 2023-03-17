@@ -1,4 +1,4 @@
-use super::cross::{compute_cross_over, compute_cross_under, CrossMode};
+use super::cross::{cross_over, cross_under, CrossMode};
 use crate::components::component_context::ComponentContext;
 
 pub struct CrossOverThresholdComponent {
@@ -19,7 +19,7 @@ impl CrossOverThresholdComponent {
     pub fn next(&mut self, value: Option<f64>) -> bool {
         let cross = match (self.prev_value, value) {
             (Some(prev_value), Some(value)) => {
-                compute_cross_over(value, self.threshold, prev_value, self.threshold)
+                cross_over(value, self.threshold, prev_value, self.threshold)
             }
             _ => false,
         };

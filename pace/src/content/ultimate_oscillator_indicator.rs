@@ -1,6 +1,6 @@
 use crate::{
     components::{component::Component, component_context::ComponentContext},
-    pinescript::math::{ps_diff, ps_div, ps_max, ps_min},
+    pinescript::common::{ps_diff, ps_div, ps_max, ps_min},
     ta::sum_component::SumComponent,
 };
 

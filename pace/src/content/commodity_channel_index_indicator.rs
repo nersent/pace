@@ -6,7 +6,7 @@ use crate::{
         src_component::{AnySrcComponent, SrcComponent},
         src_kind::SrcKind,
     },
-    pinescript::math::{ps_diff, ps_div},
+    pinescript::common::{ps_diff, ps_div},
     ta::{
         dev_component::DevComponent,
         ma::MaKind,

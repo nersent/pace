@@ -1,6 +1,6 @@
 use crate::components::{component_context::ComponentContext, component_default::ComponentDefault};
 
-use super::metrics::omega_ratio;
+use super::common::omega_ratio;
 
 pub struct OmegaRatioComponentConfig {
     pub risk_free_rate: f64,

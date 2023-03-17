@@ -4,7 +4,7 @@ use crate::components::{
 };
 
 use super::{
-    mean_component::MeanComponent, stats::variance, welfords_var_component::WelfordsVarComponent,
+    common::variance, mean_component::MeanComponent, welfords_var_component::WelfordsVarComponent,
 };
 
 pub struct VarComponent {
