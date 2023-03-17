@@ -1,23 +1,29 @@
 use crate::components::{
     component::Component, component_context::ComponentContext,
-    fixed_value_cache_component::FixedValueCacheComponent,
+    window_cache_component::WindowCacheComponent,
 };
 
 use super::bars::highest;
 
 /// Highest value for a given number of bars back.
+///
+/// Same as PineScript `ta.highest(src)`. Similar to `ta.highest(src, length)`, but `length` is fixed and set on initialization.
 pub struct HighestComponent {
     pub length: usize,
     pub ctx: ComponentContext,
-    input_cache: FixedValueCacheComponent,
+    input_cache: WindowCacheComponent<Option<f64>>,
 }
 
 impl HighestComponent {
     pub fn new(ctx: ComponentContext, length: usize) -> Self {
+        assert!(
+            length >= 1,
+            "HighestComponent must have a length of at least 1"
+        );
         return Self {
             ctx: ctx.clone(),
             length,
-            input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
+            input_cache: WindowCacheComponent::new(ctx.clone(), length),
         };
     }
 }

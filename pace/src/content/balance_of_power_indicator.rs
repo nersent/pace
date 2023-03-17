@@ -7,6 +7,9 @@ pub struct BopIndicator {
     pub ctx: ComponentContext,
 }
 
+/// Balance of Power Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000589100
 impl BopIndicator {
     pub fn new(ctx: ComponentContext) -> Self {
         return Self { ctx };

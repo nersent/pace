@@ -24,6 +24,7 @@ impl Default for AoStrategyConfig {
     }
 }
 
+/// Custom Awesome Oscillator Strategy. May be incorrect.
 pub struct AoStrategy {
     pub config: AoStrategyConfig,
     pub ctx: ComponentContext,

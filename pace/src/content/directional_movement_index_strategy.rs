@@ -23,6 +23,7 @@ impl Default for DmiStrategyConfig {
     }
 }
 
+/// Custom Directional Movement Index Strategy. May be incorrect.
 pub struct DmiStrategy {
     pub config: DmiStrategyConfig,
     pub ctx: ComponentContext,

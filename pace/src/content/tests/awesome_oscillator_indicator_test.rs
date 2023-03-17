@@ -3,8 +3,8 @@ mod tests {
     use crate::{
         components::{
             component::Component,
+            src::SrcKind,
             src_component::{AnySrcComponent, SrcComponent},
-            src_kind::SrcKind,
         },
         content::awesome_oscillator_indicator::{AoIndicator, AoIndicatorConfig},
         ta::{ma::MaKind, ma_component::MaComponent, tr_component::TrComponent},

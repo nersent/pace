@@ -24,6 +24,7 @@ impl Default for CmfStrategyConfig {
     }
 }
 
+/// Custom Chaikin Money Flow Strategy. May be incorrect.
 pub struct CmfStrategy {
     pub config: CmfStrategyConfig,
     pub ctx: ComponentContext,

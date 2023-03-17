@@ -2,7 +2,9 @@ use crate::components::{component::Component, component_context::ComponentContex
 
 use super::sma_component::SmaComponent;
 
-/// Exponential moving average.
+/// Exponential Moving Vverage. Weighting factors decrease exponentially.
+///
+/// Same as PineScript `ta.ema(src)`. Similar to `ta.ema(src, length)`, but `length` is fixed and set on initialization.
 pub struct EmaComponent {
     pub alpha: f64,
     pub length: usize,
@@ -17,7 +19,7 @@ impl EmaComponent {
     }
 
     pub fn with_alpha(ctx: ComponentContext, length: usize, alpha: f64) -> Self {
-        assert!(length > 0, "EmaComponent must have a length larger than 0");
+        assert!(length >= 1, "EmaComponent must have a length of at least 1");
         return Self {
             length,
             alpha,

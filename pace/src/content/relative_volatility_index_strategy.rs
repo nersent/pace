@@ -24,6 +24,7 @@ impl Default for RviStrategyConfig {
     }
 }
 
+/// Custom Relative Volatility Index Strategy. May be incorrect.
 pub struct RviStrategy {
     pub config: RviStrategyConfig,
     pub ctx: ComponentContext,

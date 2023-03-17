@@ -2,7 +2,9 @@ use crate::components::{component::Component, component_context::ComponentContex
 
 use super::{rma_component::RmaComponent, tr_component::TrComponent};
 
-/// Average true range.
+/// Average True Range.
+///
+/// Same as PineScript `ta.atr(src)`. Similar to `ta.atr(src, length)`, but `length` is fixed and set on initialization.
 pub struct AtrComponent {
     pub length: usize,
     pub ctx: ComponentContext,
@@ -12,7 +14,7 @@ pub struct AtrComponent {
 
 impl AtrComponent {
     pub fn new(ctx: ComponentContext, length: usize) -> Self {
-        assert!(length > 0, "AtrComponent must have a length of at least 1");
+        assert!(length >= 1, "AtrComponent must have a length of at least 1");
         return Self {
             ctx: ctx.clone(),
             length,

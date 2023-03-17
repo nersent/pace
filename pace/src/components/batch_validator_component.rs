@@ -1,5 +1,6 @@
 use super::{component::Component, component_context::ComponentContext};
 
+/// Returns `None` until gets **`N`** `non-None` items in a row. This allows to keep the same behaviour as in PineScript.
 pub struct BatchValidatorComponent {
     pub ctx: ComponentContext,
     pub length: usize,
@@ -7,11 +8,10 @@ pub struct BatchValidatorComponent {
     was_none: bool,
 }
 
-/// Returns None until got N valid items in a row.
 impl BatchValidatorComponent {
     pub fn new(ctx: ComponentContext, length: usize) -> Self {
         assert!(
-            length > 0,
+            length >= 1,
             "BatchValidatorComponent must have a length of at least 1"
         );
         return Self {

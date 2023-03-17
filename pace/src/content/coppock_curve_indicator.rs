@@ -3,8 +3,8 @@ use crate::{
         component::Component,
         component_context::ComponentContext,
         component_default::ComponentDefault,
+        src::SrcKind,
         src_component::{AnySrcComponent, SrcComponent},
-        src_kind::SrcKind,
     },
     ta::{roc_component::RocComponent, wma_component::WmaComponent},
 };
@@ -27,6 +27,9 @@ impl ComponentDefault for CcIndicatorConfig {
     }
 }
 
+/// Coppock Curve Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000589114
 pub struct CcIndicator {
     pub config: CcIndicatorConfig,
     pub ctx: ComponentContext,

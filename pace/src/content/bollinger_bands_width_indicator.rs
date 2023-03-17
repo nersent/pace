@@ -3,8 +3,8 @@ use crate::{
         component::Component,
         component_context::ComponentContext,
         component_default::ComponentDefault,
+        src::SrcKind,
         src_component::{AnySrcComponent, SrcComponent},
-        src_kind::SrcKind,
     },
     ta::{sma_component::SmaComponent, stdev_component::StdevComponent},
 };
@@ -27,6 +27,9 @@ impl ComponentDefault for BbwIndicatorConfig {
     }
 }
 
+/// Bollinger Bands Width Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000501972
 pub struct BbwIndicator {
     pub config: BbwIndicatorConfig,
     pub ctx: ComponentContext,

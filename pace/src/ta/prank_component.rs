@@ -1,22 +1,27 @@
 use crate::components::{
     component::Component, component_context::ComponentContext,
-    fixed_value_cache_component::FixedValueCacheComponent,
+    window_cache_component::WindowCacheComponent,
 };
 
-/// Percent rank.
+/// Percent rank is the percents of how many previous values was less than or equal to the current value of given series.
+///
+/// Same as PineScript `ta.percentrank(src)`. Similar to `ta.percentrank(src, length)`, but `length` is fixed and set on initialization.
 pub struct PrankComponent {
     pub length: usize,
     pub ctx: ComponentContext,
-    input_cache: FixedValueCacheComponent,
+    input_cache: WindowCacheComponent<Option<f64>>,
 }
 
 impl PrankComponent {
     pub fn new(ctx: ComponentContext, length: usize) -> Self {
-        assert!(length >= 1, "PrankComponent length must be >= 1");
+        assert!(
+            length >= 1,
+            "PrankComponent must have a length of at least 1"
+        );
         return Self {
             ctx: ctx.clone(),
             length,
-            input_cache: FixedValueCacheComponent::new(ctx.clone(), length + 1),
+            input_cache: WindowCacheComponent::new(ctx.clone(), length + 1),
         };
     }
 }

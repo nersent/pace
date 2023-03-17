@@ -3,8 +3,8 @@ use crate::{
         component::Component,
         component_context::ComponentContext,
         component_default::ComponentDefault,
+        src::SrcKind,
         src_component::{AnySrcComponent, SrcComponent},
-        src_kind::SrcKind,
     },
     pinescript::common::{ps_abs, ps_diff, ps_max, ps_min},
     ta::sum_component::SumComponent,
@@ -26,12 +26,13 @@ impl ComponentDefault for CmoIndicatorConfig {
     }
 }
 
+/// Chande Momentum Oscillator Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000589109
 pub struct CmoIndicator {
     pub config: CmoIndicatorConfig,
     pub ctx: ComponentContext,
     prev_src: Option<f64>,
-    prev_m1: Option<f64>,
-    prev_m2: Option<f64>,
     sm1: SumComponent,
     sm2: SumComponent,
 }
@@ -45,8 +46,6 @@ impl CmoIndicator {
         return Self {
             ctx: ctx.clone(),
             prev_src: None,
-            prev_m1: None,
-            prev_m2: None,
             sm1: SumComponent::new(ctx.clone(), config.length),
             sm2: SumComponent::new(ctx.clone(), config.length),
             config,

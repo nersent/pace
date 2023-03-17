@@ -1,9 +1,6 @@
-use crate::{
-    components::{component::Component, component_context::ComponentContext},
-    ta::ma::{hl2, hlc3, ohlc4},
-};
+use crate::components::{component::Component, component_context::ComponentContext};
 
-use super::src_kind::SrcKind;
+use super::src::{hl2, hlc3, ohlc4, SrcKind};
 
 pub type AnySrcComponent = Box<dyn Component<(), Option<f64>>>;
 

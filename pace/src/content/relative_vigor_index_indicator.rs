@@ -25,6 +25,9 @@ pub struct RvgiIndicatorData {
     pub sig: Option<f64>,
 }
 
+/// Relative Vigor Index Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000591593
 pub struct RvgiIndicator {
     pub config: RvgiIndicatorConfig,
     pub ctx: ComponentContext,

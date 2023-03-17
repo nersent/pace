@@ -27,6 +27,7 @@ impl Default for CmoStrategyConfig {
     }
 }
 
+/// Custom Chande Momentum Oscillator Strategy. May be incorrect.
 pub struct CmoStrategy {
     pub config: CmoStrategyConfig,
     pub ctx: ComponentContext,

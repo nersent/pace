@@ -3,8 +3,8 @@ use crate::{
         component::Component,
         component_context::ComponentContext,
         component_default::ComponentDefault,
+        src::SrcKind,
         src_component::{AnySrcComponent, SrcComponent},
-        src_kind::SrcKind,
     },
     ta::{
         rsi_component::RsiComponent, sma_component::SmaComponent, stoch_component::StochComponent,
@@ -34,6 +34,14 @@ impl ComponentDefault for SrsiIndicatorConfig {
     }
 }
 
+pub struct SrsiIndicatorData {
+    pub k: Option<f64>,
+    pub d: Option<f64>,
+}
+
+/// Stochastic Relative Strength Index Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000502333
 pub struct SrsiIndicator {
     pub config: SrsiIndicatorConfig,
     pub ctx: ComponentContext,
@@ -41,11 +49,6 @@ pub struct SrsiIndicator {
     k_stoch: StochComponent,
     k_sma: SmaComponent,
     d_sma: SmaComponent,
-}
-
-pub struct SrsiIndicatorData {
-    pub k: Option<f64>,
-    pub d: Option<f64>,
 }
 
 impl SrsiIndicator {

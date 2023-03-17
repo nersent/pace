@@ -1,6 +1,6 @@
 use crate::components::{component::Component, component_context::ComponentContext};
 
-/// Calculates variance using Welford's online algorithm.
+/// Calculates variance using Welford's online algorithm. Has O(1) complexity.
 pub struct WelfordsVarComponent {
     pub ctx: ComponentContext,
     n: usize,

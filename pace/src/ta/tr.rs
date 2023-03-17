@@ -1,3 +1,4 @@
+/// Similar to PineScript `ta.tr(handle_na)`, but it requires for all values to be provided.
 pub fn true_range(
     current_high: f64,
     current_low: f64,

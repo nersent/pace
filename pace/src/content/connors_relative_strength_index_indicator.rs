@@ -3,8 +3,8 @@ use crate::{
         component::Component,
         component_context::ComponentContext,
         component_default::ComponentDefault,
+        src::SrcKind,
         src_component::{AnySrcComponent, SrcComponent},
-        src_kind::SrcKind,
     },
     pinescript::common::ps_nz,
     ta::{
@@ -33,6 +33,9 @@ impl ComponentDefault for CrsiIndicatorConfig {
     }
 }
 
+/// Connors Relative Strength Index Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000502017
 pub struct CrsiIndicator {
     pub config: CrsiIndicatorConfig,
     pub ctx: ComponentContext,

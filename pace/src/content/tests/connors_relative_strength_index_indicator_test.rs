@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        components::{component::Component, src_component::SrcComponent, src_kind::SrcKind},
+        components::{component::Component, src::SrcKind, src_component::SrcComponent},
         content::connors_relative_strength_index_indicator::{CrsiIndicator, CrsiIndicatorConfig},
         testing::{
             array_snapshot::ArraySnapshot,

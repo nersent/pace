@@ -2,11 +2,17 @@ use crate::components::{component::Component, component_context::ComponentContex
 
 use super::rma_component::RmaComponent;
 
+pub static RSI_MIN_VALUE: f64 = 0.0;
+pub static RSI_MAX_VALUE: f64 = 100.0;
+
 pub struct RsiMetadata {
     pub up: Option<f64>,
     pub down: Option<f64>,
 }
 
+/// Relative Strength Index. It is calculated using the `ta.rma()` of upward and downward changes of `source` over the last `length` bars.
+///
+/// Same as PineScript `ta.rsi(src)`. Similar to `ta.rsi(src, length)`, but `length` is fixed and set on initialization.
 pub struct RsiComponent {
     pub length: usize,
     pub ctx: ComponentContext,
@@ -16,12 +22,9 @@ pub struct RsiComponent {
     pub metadata: RsiMetadata,
 }
 
-pub static RSI_MIN_VALUE: f64 = 0.0;
-pub static RSI_MAX_VALUE: f64 = 100.0;
-
 impl RsiComponent {
     pub fn new(ctx: ComponentContext, length: usize) -> Self {
-        assert!(length > 1, "RsiComponent must have a length of at least 2");
+        assert!(length >= 2, "RsiComponent must have a length of at least 2");
         return Self {
             length,
             ctx: ctx.clone(),

@@ -24,6 +24,7 @@ impl Default for CcStrategyConfig {
     }
 }
 
+/// Custom Coppock Curve Strategy. May be incorrect.
 pub struct CcStrategy {
     pub config: CcStrategyConfig,
     pub ctx: ComponentContext,

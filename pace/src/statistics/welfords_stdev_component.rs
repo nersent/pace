@@ -2,7 +2,7 @@ use crate::components::{component::Component, component_context::ComponentContex
 
 use super::{common::stdev_from_var, welfords_var_component::WelfordsVarComponent};
 
-/// Calculates standard deviation using Welford's online algorithm.
+/// Calculates standard deviation using Welford's online algorithm. Has O(1) complexity.
 pub struct WelfordsStdevComponent {
     pub ctx: ComponentContext,
     variance: WelfordsVarComponent,

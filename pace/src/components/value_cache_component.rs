@@ -1,6 +1,6 @@
 use super::{component::Component, component_context::ComponentContext};
 
-/// Stores alll values in a cache.
+/// Stores all values in a cache.
 pub struct ValueCacheComponent<T> {
     pub ctx: ComponentContext,
     values: Vec<T>,

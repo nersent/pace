@@ -3,6 +3,8 @@ use crate::components::{component::Component, component_context::ComponentContex
 use super::bars::highest_bars;
 
 /// Highest value offset for a given number of bars back.
+///
+/// Same as PineScript `ta.highestbars(src)`. Similar to `ta.highestbars(src, length)`, but `length` is fixed and set on initialization.
 pub struct HighestBarsComponent {
     pub length: usize,
     pub ctx: ComponentContext,
@@ -10,6 +12,10 @@ pub struct HighestBarsComponent {
 
 impl HighestBarsComponent {
     pub fn new(ctx: ComponentContext, length: usize) -> Self {
+        assert!(
+            length >= 1,
+            "HighestBarsComponent must have a length of at least 1"
+        );
         return Self {
             length,
             ctx: ctx.clone(),

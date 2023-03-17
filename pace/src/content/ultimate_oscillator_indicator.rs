@@ -23,6 +23,9 @@ impl Default for UoIndicatorConfig {
     }
 }
 
+/// Ultimate Oscillator Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000502328
 pub struct UoIndicator {
     pub config: UoIndicatorConfig,
     pub ctx: ComponentContext,

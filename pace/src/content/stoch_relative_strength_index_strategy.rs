@@ -26,6 +26,7 @@ impl Default for SrsiStrategyConfig {
     }
 }
 
+/// Custom Stochastic Relative Strength Index Strategy. May be incorrect.
 pub struct SrsiStrategy {
     pub config: SrsiStrategyConfig,
     pub ctx: ComponentContext,

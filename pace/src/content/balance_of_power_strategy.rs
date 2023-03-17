@@ -24,6 +24,7 @@ impl Default for BopStrategyConfig {
     }
 }
 
+/// Custom Balance of Power Strategy. May be incorrect.
 pub struct BopStrategy {
     pub config: BopStrategyConfig,
     pub ctx: ComponentContext,

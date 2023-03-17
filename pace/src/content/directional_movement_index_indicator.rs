@@ -30,6 +30,9 @@ pub struct DmiIndicatorData {
     pub adx: Option<f64>,
 }
 
+/// Directional Movement Index Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000502250
 pub struct DmiIndicator {
     pub config: DmiIndicatorConfig,
     pub ctx: ComponentContext,
@@ -37,7 +40,6 @@ pub struct DmiIndicator {
     true_range_rma: RmaComponent,
     plus_dm_rma: RmaComponent,
     minus_dm_rma: RmaComponent,
-    plus_minus_diff_rma: RmaComponent,
     plus_fix_nan: FixNanComponent,
     minus_fix_nan: FixNanComponent,
     adx: RmaComponent,
@@ -51,7 +53,6 @@ impl DmiIndicator {
             true_range_rma: RmaComponent::new(ctx.clone(), config.length),
             plus_dm_rma: RmaComponent::new(ctx.clone(), config.length),
             minus_dm_rma: RmaComponent::new(ctx.clone(), config.length),
-            plus_minus_diff_rma: RmaComponent::new(ctx.clone(), config.lensig),
             plus_fix_nan: FixNanComponent::new(ctx.clone()),
             minus_fix_nan: FixNanComponent::new(ctx.clone()),
             adx: RmaComponent::new(ctx.clone(), config.lensig),
@@ -66,7 +67,6 @@ impl Component<(), DmiIndicatorData> for DmiIndicator {
         let low = self.ctx.low();
         let prev_high = self.ctx.prev_high(1);
         let prev_low = self.ctx.prev_low(1);
-        let prev_close = self.ctx.prev_close(1);
 
         let up = ps_diff(high, prev_high);
         let down = ps_diff(prev_low, low);

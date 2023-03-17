@@ -27,6 +27,9 @@ impl ComponentDefault for VoIndicatorConfig {
     }
 }
 
+/// Volume Oscillator Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000591350
 pub struct VoIndicator {
     pub config: VoIndicatorConfig,
     pub ctx: ComponentContext,

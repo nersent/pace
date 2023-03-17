@@ -1,6 +1,6 @@
 use crate::components::{component::Component, component_context::ComponentContext};
 
-/// Calculates the mean of a series.
+/// Calculates mean for all history of values.
 pub struct MeanComponent {
     pub ctx: ComponentContext,
     sum: f64,

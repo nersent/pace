@@ -1,5 +1,8 @@
 use super::bars::{highest, lowest};
 
+/// Stochastic.
+///
+/// Similar to PineScript `ta.stoch(src, high, low, length)`, but `src` array requires to be truncated to the length and you need to keep track of the previous value of stoch.
 pub fn stoch(
     value: Option<f64>,
     high: &[Option<f64>],

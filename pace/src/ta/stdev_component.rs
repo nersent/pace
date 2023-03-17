@@ -1,25 +1,31 @@
 use crate::{
     components::{
         component::Component, component_context::ComponentContext,
-        fixed_value_cache_component::FixedValueCacheComponent,
+        window_cache_component::WindowCacheComponent,
     },
     ta::sma_component::SmaComponent,
     utils::comparison::FloatComparison,
 };
 
+/// Standard Deviation.
+///
+/// Compared to `statistics::stdev`, this component calculates stdev based on a sliding window.
+///
+/// Same as PineScript `ta.stdev(src)`. Similar to `ta.stdev(src, length)`, but `length` is fixed and set on initialization.
 pub struct StdevComponent {
     pub length: usize,
-    pub is_biased: bool,
     pub ctx: ComponentContext,
+    /// If `is_biased` is true, function will calculate using a biased estimate of the entire population, if false - unbiased estimate of a sample.
+    pub is_biased: bool,
     sma: SmaComponent,
-    input_cache: FixedValueCacheComponent,
+    input_cache: WindowCacheComponent<Option<f64>>,
 }
 
 impl StdevComponent {
     // Biased by default.
     pub fn new(ctx: ComponentContext, length: usize, is_biased: bool) -> Self {
         assert!(
-            length > 0,
+            length >= 1,
             "StdevComponent must have a length of at least 1"
         );
         return Self {
@@ -27,7 +33,7 @@ impl StdevComponent {
             length,
             is_biased,
             sma: SmaComponent::new(ctx.clone(), length),
-            input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
+            input_cache: WindowCacheComponent::new(ctx.clone(), length),
         };
     }
 

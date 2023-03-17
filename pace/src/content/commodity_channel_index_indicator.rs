@@ -3,8 +3,8 @@ use crate::{
         component::Component,
         component_context::ComponentContext,
         component_default::ComponentDefault,
+        src::SrcKind,
         src_component::{AnySrcComponent, SrcComponent},
-        src_kind::SrcKind,
     },
     pinescript::common::{ps_diff, ps_div},
     ta::{
@@ -29,6 +29,9 @@ impl ComponentDefault for CciIndicatorConfig {
     }
 }
 
+/// Commodity Channel Index Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000502001
 pub struct CciIndicator {
     pub config: CciIndicatorConfig,
     pub ctx: ComponentContext,

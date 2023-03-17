@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        components::{component::Component, src_component::SrcComponent, src_kind::SrcKind},
+        components::{component::Component, src::SrcKind, src_component::SrcComponent},
         content::commodity_channel_index_indicator::{CciIndicator, CciIndicatorConfig},
         testing::{
             array_snapshot::ArraySnapshot,

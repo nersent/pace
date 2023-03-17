@@ -15,27 +15,27 @@ use super::{
 };
 
 pub struct PerformanceMetrics {
-    /// The overall profit or loss. In TradingView `strategy.netprofit`
+    /// The overall profit or loss. Same as PineScript `strategy.netprofit`.
     pub net_profit: f64,
-    /// Current unrealized profit or loss for all open positions. In TradingView `strategy.openprofit`
+    /// Current unrealized profit or loss for all open positions. Same as `strategy.openprofit`
     pub open_profit: f64,
-    /// Total value of all completed winning trades. In TradingView `strategy.grossprofit`
+    /// Total value of all completed winning trades. Same as PineScript `strategy.grossprofit`.
     pub gross_profit: f64,
-    /// Total value of all completed losing trades. In TradingView `strategy.grossloss`
+    /// Total value of all completed losing trades. Same as PineScript `strategy.grossloss`.
     pub gross_loss: f64,
-    /// Total number of closed tradesIn TradingView `strategy.closedtrades`
+    /// Total number of closed trades. Same as PineScript `strategy.closedtrades`.
     pub closed_trades: usize,
-    /// Total number of winning tradesIn TradingView `strategy.wintrades`
+    /// Total number of winning trades. Same as PineScript `strategy.wintrades`.
     pub winning_trades: usize,
-    /// Total number of losing tradesIn TradingView `strategy.losstrades
+    /// Total number of losing trades. Same as PineScript `strategy.losstrades`.
     pub losing_trades: usize,
     /// The overall profit or loss for long positions.
     pub long_net_profit: f64,
     /// The overall profit or loss for short positions.
     pub short_net_profit: f64,
-    // Maximum equity drawdown value for the whole trading interval. In TradingView `strategy.max_drawdown`
+    // Maximum equity drawdown value for the whole trading interval. Same as PineScript `strategy.max_drawdown`.
     pub max_drawdown: f64,
-    /// Maximum equity run-up value for the whole trading interval. In TradingView `strategy.max_runup`
+    /// Maximum equity run-up value for the whole trading interval. Same as PineScript `strategy.max_runup`.
     pub max_run_up: f64,
     /// The gross profit divided by the number of winning trades.
     pub avg_winning_trade: f64,
@@ -75,7 +75,7 @@ impl PerformanceMetrics {
     }
 }
 
-/// Generic strategy metrics.
+/// Common performance metrics. Includes most of the metrics from the "Performance Summmary" tab in TradingView.
 pub struct PerformanceMetricsComponent {
     pub sctx: StrategyContext,
     pub data: PerformanceMetrics,
@@ -83,7 +83,6 @@ pub struct PerformanceMetricsComponent {
 
 impl PerformanceMetricsComponent {
     pub fn new(sctx: StrategyContext) -> Self {
-        let state = sctx.state();
         return Self {
             sctx: sctx.clone(),
             data: PerformanceMetrics::default(),

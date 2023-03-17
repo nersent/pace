@@ -2,7 +2,9 @@ use crate::components::{component::Component, component_context::ComponentContex
 
 use super::ema_component::EmaComponent;
 
-/// Running moving average. Used in RSI.
+/// Running Moving Average. Used in RSI. It is the exponentially weighted moving average with alpha = 1 / length.
+///
+/// Same as PineScript `ta.rma(src)`. Similar to `ta.rma(src, length)`, but `length` is fixed and set on initialization.
 pub struct RmaComponent {
     pub length: usize,
     pub ctx: ComponentContext,
@@ -11,7 +13,7 @@ pub struct RmaComponent {
 
 impl RmaComponent {
     pub fn new(ctx: ComponentContext, length: usize) -> Self {
-        assert!(length > 0, "RmaComponent must have a length larger than 0");
+        assert!(length >= 1, "RmaComponent must have a length of at least 1");
         return Self {
             length,
             ctx: ctx.clone(),

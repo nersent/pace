@@ -3,8 +3,8 @@ use crate::{
         component::Component,
         component_context::ComponentContext,
         component_default::ComponentDefault,
+        src::SrcKind,
         src_component::{AnySrcComponent, SrcComponent},
-        src_kind::SrcKind,
     },
     ta::{
         ma::MaKind,
@@ -28,10 +28,12 @@ impl ComponentDefault for PoIndicatorConfig {
     }
 }
 
+/// Price Oscillator Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000502346
 pub struct PoIndicator {
     pub config: PoIndicatorConfig,
     pub ctx: ComponentContext,
-    prev_ao: Option<f64>,
 }
 
 impl PoIndicator {
@@ -39,7 +41,6 @@ impl PoIndicator {
         return PoIndicator {
             ctx: ctx.clone(),
             config,
-            prev_ao: None,
         };
     }
 }

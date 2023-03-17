@@ -16,6 +16,9 @@ impl Default for CiIndicatorConfig {
     }
 }
 
+/// Choppiness Index Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000501980
 pub struct CiIndicator {
     pub config: CiIndicatorConfig,
     pub ctx: ComponentContext,

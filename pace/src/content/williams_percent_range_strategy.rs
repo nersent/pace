@@ -24,6 +24,7 @@ impl Default for WprStrategyConfig {
     }
 }
 
+/// Custom Williams %r Strategy. May be incorrect.
 pub struct WprStrategy {
     pub config: WprStrategyConfig,
     pub ctx: ComponentContext,

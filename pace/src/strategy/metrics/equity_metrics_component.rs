@@ -4,7 +4,8 @@ use crate::{
 };
 
 pub struct EquityMetrics {
-    /// Current equity (initial capital + net profit + open profit). In TradingView `strategy.equity`
+    /// Current equity (initial capital + net profit + open profit).
+    /// Same as PineScript `strategy.equity`.
     pub equity: f64,
     pub equity_min: f64,
     pub equity_max: f64,
@@ -39,7 +40,7 @@ impl EquityMetrics {
     }
 }
 
-/// Equity metrics.
+/// Calculates basic equity metrics.
 pub struct EquityMetricsComponent {
     pub sctx: StrategyContext,
     pub data: EquityMetrics,
@@ -69,8 +70,8 @@ impl Component<(), ()> for EquityMetricsComponent {
 
         if let Some(last_trade) = &last_trade {
             if !last_trade.is_closed {
-                let mut lowest_price = self.sctx.ctx.lowest_price().unwrap();
-                let mut highest_price = self.sctx.ctx.highest_price().unwrap();
+                let mut lowest_price = self.sctx.ctx.low().unwrap();
+                let mut highest_price = self.sctx.ctx.high().unwrap();
 
                 if last_trade.direction == TradeDirection::Short {
                     let _lowest_price = lowest_price;

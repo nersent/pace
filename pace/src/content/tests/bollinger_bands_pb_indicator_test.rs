@@ -3,8 +3,8 @@ mod tests {
     use crate::{
         components::{
             component::Component,
+            src::SrcKind,
             src_component::{AnySrcComponent, SrcComponent},
-            src_kind::SrcKind,
         },
         content::bollinger_bands_pb_indicator::{BbpbIndicator, BbpbIndicatorConfig},
         testing::{

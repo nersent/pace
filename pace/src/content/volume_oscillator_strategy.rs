@@ -24,6 +24,7 @@ impl Default for VoStrategyConfig {
     }
 }
 
+/// Custom Volume Oscillator Strategy. May be incorrect.
 pub struct VoStrategy {
     pub ctx: ComponentContext,
     cross_over: CrossOverThresholdComponent,

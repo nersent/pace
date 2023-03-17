@@ -2,6 +2,13 @@ use crate::components::{component::Component, component_context::ComponentContex
 
 use super::{common::stdev_from_var, var_component::VarComponent};
 
+/// Standard deviation.
+///
+/// For O(1) complexity, use `fast`. By default it's `false`.
+///
+/// Compared to `ta::stdev`, this component calculates stdev based on entire history of values.
+///
+/// Not the same as PineScript `ta.stdev`.
 pub struct StdevComponent {
     pub ctx: ComponentContext,
     pub fast: bool,

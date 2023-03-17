@@ -2,6 +2,7 @@ use crate::components::component_context::ComponentContext;
 
 use super::cross::{cross_over, cross_under, CrossMode};
 
+/// Same as PineScript `ta.cross(a, b)`.
 pub struct CrossComponent {
     pub ctx: ComponentContext,
     prev_a_value: Option<f64>,

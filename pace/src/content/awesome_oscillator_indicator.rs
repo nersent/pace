@@ -3,8 +3,8 @@ use crate::{
         component::Component,
         component_context::ComponentContext,
         component_default::ComponentDefault,
+        src::SrcKind,
         src_component::{AnySrcComponent, SrcComponent},
-        src_kind::SrcKind,
     },
     ta::{
         ma::MaKind,
@@ -30,6 +30,9 @@ impl ComponentDefault for AoIndicatorConfig {
     }
 }
 
+/// Awesome Oscillator Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000501826
 pub struct AoIndicator {
     pub config: AoIndicatorConfig,
     pub ctx: ComponentContext,

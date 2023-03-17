@@ -64,7 +64,7 @@ impl Default for CobraMetricsComponentConfig {
     }
 }
 
-/// Ported to Rust based on https://www.tradingview.com/v/MN8HOZ5M/
+/// Ported from https://www.tradingview.com/v/MN8HOZ5M/
 pub struct CobraMetricsComponent {
     pub sctx: StrategyContext,
     pub config: CobraMetricsComponentConfig,

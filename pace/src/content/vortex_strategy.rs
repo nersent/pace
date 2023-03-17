@@ -11,6 +11,7 @@ pub struct VortexStrategy {
     cross: CrossComponent,
 }
 
+/// Custom Vortex Strategy. May be incorrect.
 impl VortexStrategy {
     pub fn new(ctx: ComponentContext) -> Self {
         return Self {

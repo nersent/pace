@@ -2,10 +2,13 @@ use crate::components::{component::Component, component_context::ComponentContex
 
 use super::tr::true_range;
 
-/// True range.
+/// True Range.
+///
+/// Similar to PineScript `ta.tr(handle_na)`, but `handle_na` is set on initialization.
 pub struct TrComponent {
-    pub handle_na: bool,
     pub ctx: ComponentContext,
+    /// How NaN values are handled. if `true`, and previous day's close is NaN then tr would be calculated as current day high-low. Otherwise (if `false`) tr would return None in such cases.
+    pub handle_na: bool,
 }
 
 impl TrComponent {

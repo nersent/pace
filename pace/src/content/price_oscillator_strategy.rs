@@ -24,6 +24,7 @@ impl Default for PoStrategyConfig {
     }
 }
 
+/// Custom Price Oscillator Strategy. May be incorrect.
 pub struct PoStrategy {
     pub config: PoStrategyConfig,
     pub ctx: ComponentContext,

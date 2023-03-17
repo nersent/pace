@@ -1,13 +1,18 @@
-use crate::components::{
-    batch_validator_component::BatchValidatorComponent, component::Component,
-    component_context::ComponentContext, fixed_value_cache_component::FixedValueCacheComponent,
+use crate::{
+    asset,
+    components::{
+        batch_validator_component::BatchValidatorComponent, component::Component,
+        component_context::ComponentContext, window_cache_component::WindowCacheComponent,
+    },
 };
 
-/// Symmetrically weighted moving average.
+/// Symmetrically Weighted Moving Average with fixed length: 4. Weights: [1/6, 2/6, 2/6, 1/6].
+///
+/// Same as PineScript `ta.swma(src)`. Similar to `ta.swma(src, length)`, but `length` is fixed and set on initialization.
 pub struct SwmaComponent {
     pub length: usize,
     pub ctx: ComponentContext,
-    input_cache: FixedValueCacheComponent,
+    input_cache: WindowCacheComponent<Option<f64>>,
     batch_validator: BatchValidatorComponent,
 }
 
@@ -19,7 +24,7 @@ impl SwmaComponent {
         return Self {
             ctx: ctx.clone(),
             length,
-            input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
+            input_cache: WindowCacheComponent::new(ctx.clone(), length),
             batch_validator: BatchValidatorComponent::new(ctx.clone(), length),
         };
     }
@@ -35,7 +40,6 @@ impl Component<Option<f64>, Option<f64>> for SwmaComponent {
         }
 
         let values = self.input_cache.all();
-        let mut swma = 0.0;
 
         let swma = values.iter().enumerate().fold(0.0, |acc, (i, value)| {
             let value = value.unwrap();

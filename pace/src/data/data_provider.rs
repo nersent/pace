@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-/// OHLCV data provider
+/// OHLCV data provider.
 pub trait DataProvider {
     fn get_start_tick(&self) -> usize;
     fn get_end_tick(&self) -> usize;

@@ -24,6 +24,9 @@ impl Default for BbpbStrategyConfig {
     }
 }
 
+/// Bollinger Bands %B Strategy.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000589104
 pub struct BbpbStrategy {
     pub config: BbpbStrategyConfig,
     pub ctx: ComponentContext,

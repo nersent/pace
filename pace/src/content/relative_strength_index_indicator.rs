@@ -3,8 +3,8 @@ use crate::{
         component::Component,
         component_context::ComponentContext,
         component_default::ComponentDefault,
+        src::SrcKind,
         src_component::{AnySrcComponent, SrcComponent},
-        src_kind::SrcKind,
     },
     ta::rsi_component::RsiComponent,
 };
@@ -23,6 +23,9 @@ impl ComponentDefault for RsiIndicatorConfig {
     }
 }
 
+/// Relative Strength Index Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000502338
 pub struct RsiIndicator {
     pub ctx: ComponentContext,
     pub config: RsiIndicatorConfig,

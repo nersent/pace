@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        components::{component::Component, src_component::SrcComponent, src_kind::SrcKind},
+        components::{component::Component, src::SrcKind, src_component::SrcComponent},
         content::relative_volatility_index_indicator::{RviIndicator, RviIndicatorConfig},
         testing::{
             array_snapshot::ArraySnapshot,

@@ -7,6 +7,9 @@ use crate::{
     },
 };
 
+pub static CCI_THRESHOLD_OVERSOLD: f64 = -200.0;
+pub static CCI_THRESHOLD_OVERBOUGHT: f64 = 200.0;
+
 pub struct CciStrategyConfig {
     pub threshold_oversold: f64,
     pub threshold_overbought: f64,
@@ -15,21 +18,19 @@ pub struct CciStrategyConfig {
 impl Default for CciStrategyConfig {
     fn default() -> Self {
         return Self {
-            threshold_oversold: COMMODITY_CHANNEL_INDEX_STRATEGY_THRESHOLD_OVERSOLD,
-            threshold_overbought: COMMODITY_CHANNEL_INDEX_STRATEGY_THRESHOLD_OVERBOUGHT,
+            threshold_oversold: CCI_THRESHOLD_OVERSOLD,
+            threshold_overbought: CCI_THRESHOLD_OVERBOUGHT,
         };
     }
 }
 
+/// Custom Commodity Channel Index Strategy. May be incorrect.
 pub struct CciStrategy {
     pub config: CciStrategyConfig,
     pub ctx: ComponentContext,
     cross_over: CrossOverThresholdComponent,
     cross_under: CrossUnderThresholdComponent,
 }
-
-pub static COMMODITY_CHANNEL_INDEX_STRATEGY_THRESHOLD_OVERSOLD: f64 = -200.0;
-pub static COMMODITY_CHANNEL_INDEX_STRATEGY_THRESHOLD_OVERBOUGHT: f64 = 200.0;
 
 impl CciStrategy {
     pub fn new(ctx: ComponentContext, config: CciStrategyConfig) -> Self {

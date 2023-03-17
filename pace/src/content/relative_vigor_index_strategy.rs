@@ -6,6 +6,7 @@ use crate::{
 
 use super::relative_vigor_index_indicator::RvgiIndicatorData;
 
+/// Custom Relative Vigor Index Strategy. May be incorrect.
 pub struct RvgiStrategy {
     pub ctx: ComponentContext,
     cross: CrossComponent,

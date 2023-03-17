@@ -3,8 +3,8 @@ use crate::{
         component::Component,
         component_context::ComponentContext,
         component_default::ComponentDefault,
+        src::SrcKind,
         src_component::{AnySrcComponent, SrcComponent},
-        src_kind::SrcKind,
     },
     pinescript::common::{ps_diff, ps_div},
     ta::{highest_component::HighestComponent, lowest_component::LowestComponent},
@@ -27,6 +27,9 @@ impl ComponentDefault for WprIndicatorConfig {
     }
 }
 
+/// Williams %r Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000501985
 pub struct WprIndicator {
     pub config: WprIndicatorConfig,
     pub ctx: ComponentContext,

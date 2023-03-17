@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        components::{component::Component, src_component::SrcComponent, src_kind::SrcKind},
+        components::{component::Component, src::SrcKind, src_component::SrcComponent},
         content::stoch_relative_strength_index_indicator::{SrsiIndicator, SrsiIndicatorConfig},
         testing::{array_snapshot::ArraySnapshot, fixture::Fixture},
         utils::polars::DataFrameUtils,

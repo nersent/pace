@@ -8,6 +8,11 @@ use crate::{
 pub static AROON_MIN_VALUE: f64 = 0.0;
 pub static AROON_MAX_VALUE: f64 = 100.0;
 
+pub struct AroonIndicatorOutput {
+    pub up: Option<f64>,
+    pub down: Option<f64>,
+}
+
 pub struct AroonIndicatorConfig {
     pub length: usize,
 }
@@ -18,16 +23,14 @@ impl Default for AroonIndicatorConfig {
     }
 }
 
+/// Aroon Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000501801
 pub struct AroonIndicator {
     pub config: AroonIndicatorConfig,
     pub ctx: ComponentContext,
     highest_bars: HighestBarsComponent,
     lowest_bars: LowestBarsComponent,
-}
-
-pub struct AroonIndicatorData {
-    pub up: Option<f64>,
-    pub down: Option<f64>,
 }
 
 impl AroonIndicator {
@@ -41,10 +44,10 @@ impl AroonIndicator {
     }
 }
 
-impl Component<(), AroonIndicatorData> for AroonIndicator {
-    fn next(&mut self, _: ()) -> AroonIndicatorData {
+impl Component<(), AroonIndicatorOutput> for AroonIndicator {
+    fn next(&mut self, _: ()) -> AroonIndicatorOutput {
         if !self.ctx.at_length(self.config.length) {
-            return AroonIndicatorData {
+            return AroonIndicatorOutput {
                 up: None,
                 down: None,
             };
@@ -58,6 +61,6 @@ impl Component<(), AroonIndicatorData> for AroonIndicator {
         let up = high.map(|high| (high as f64 + length) / length * 100.0);
         let down = low.map(|low| (low as f64 + length) / length * 100.0);
 
-        return AroonIndicatorData { up, down };
+        return AroonIndicatorOutput { up, down };
     }
 }

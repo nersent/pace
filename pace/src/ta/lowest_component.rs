@@ -1,23 +1,29 @@
 use crate::components::{
     component::Component, component_context::ComponentContext,
-    fixed_value_cache_component::FixedValueCacheComponent,
+    window_cache_component::WindowCacheComponent,
 };
 
 use super::bars::lowest;
 
 /// Lowest value for a given number of bars back.
+///
+/// Same as PineScript `ta.lowest(src)`. Similar to `ta.lowest(src, length)`, but `length` is fixed and set on initialization.
 pub struct LowestComponent {
     pub length: usize,
     pub ctx: ComponentContext,
-    input_cache: FixedValueCacheComponent,
+    input_cache: WindowCacheComponent<Option<f64>>,
 }
 
 impl LowestComponent {
     pub fn new(ctx: ComponentContext, length: usize) -> Self {
+        assert!(
+            length >= 1,
+            "LowestComponent must have a length of at least 1"
+        );
         return Self {
             ctx: ctx.clone(),
             length,
-            input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
+            input_cache: WindowCacheComponent::new(ctx.clone(), length),
         };
     }
 }

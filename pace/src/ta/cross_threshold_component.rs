@@ -1,6 +1,7 @@
 use super::cross::{cross_over, cross_under, CrossMode};
 use crate::components::component_context::ComponentContext;
 
+/// Similar to `CrossOverThresholdComponent` and `CrossUnderThresholdComponent`, but there is only one `threshold` for every `CrossMode`.
 pub struct CrossThresholdComponent {
     pub ctx: ComponentContext,
     prev_value: Option<f64>,

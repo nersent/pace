@@ -19,6 +19,9 @@ pub struct VortexIndicatorData {
     pub minus: Option<f64>,
 }
 
+/// Vortex Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000591352
 pub struct VortexIndicator {
     pub config: VortexIndicatorConfig,
     pub ctx: ComponentContext,

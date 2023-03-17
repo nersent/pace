@@ -24,6 +24,7 @@ impl Default for RsiStrategyConfig {
     }
 }
 
+/// Relative Strength Index Strategy.
 pub struct RsiStrategy {
     pub config: RsiStrategyConfig,
     pub ctx: ComponentContext,

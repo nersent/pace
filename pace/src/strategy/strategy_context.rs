@@ -41,6 +41,7 @@ pub struct StrategyState {
     pub open_profit: f64,
 }
 
+/// Manages trades and provides data for all strategy components.
 pub struct StrategyContext {
     pub ctx: ComponentContext,
     state: Rc<RefCell<StrategyState>>,

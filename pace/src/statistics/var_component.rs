@@ -7,6 +7,13 @@ use super::{
     common::variance, mean_component::MeanComponent, welfords_var_component::WelfordsVarComponent,
 };
 
+// Variance.
+///
+/// For O(1) complexity, use `fast`. By default it's `false`.
+///
+/// Compared to `ta::var`, this component calculates variance based on entire history of values.
+///
+/// Not the same as PineScript `ta.var`.
 pub struct VarComponent {
     pub ctx: ComponentContext,
     pub fast: bool,

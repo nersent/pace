@@ -22,6 +22,9 @@ pub struct DcIndicatorData {
     pub lower: Option<f64>,
 }
 
+/// Donchian Channels Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000502253
 pub struct DcIndicator {
     pub config: DcIndicatorConfig,
     pub ctx: ComponentContext,

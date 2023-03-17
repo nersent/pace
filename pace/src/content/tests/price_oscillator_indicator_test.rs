@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        components::{component::Component, src_component::SrcComponent, src_kind::SrcKind},
+        components::{component::Component, src::SrcKind, src_component::SrcComponent},
         content::price_oscillator_indicator::{PoIndicator, PoIndicatorConfig},
         ta::{ma::MaKind, ma_component::MaComponent},
         testing::{

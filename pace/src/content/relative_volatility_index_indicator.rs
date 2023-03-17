@@ -3,8 +3,8 @@ use crate::{
         component::Component,
         component_context::ComponentContext,
         component_default::ComponentDefault,
+        src::SrcKind,
         src_component::{AnySrcComponent, SrcComponent},
-        src_kind::SrcKind,
     },
     ta::{ema_component::EmaComponent, stdev_component::StdevComponent},
 };
@@ -28,6 +28,9 @@ impl ComponentDefault for RviIndicatorConfig {
     }
 }
 
+/// Relative Volatility Index Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000594684
 pub struct RviIndicator {
     pub config: RviIndicatorConfig,
     pub ctx: ComponentContext,

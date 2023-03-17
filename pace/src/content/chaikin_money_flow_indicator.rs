@@ -21,6 +21,9 @@ pub struct CmfIndicator {
     ad_sum: SumComponent,
 }
 
+/// Chaikin Money Flow Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000501974
 impl CmfIndicator {
     pub fn new(ctx: ComponentContext, config: CmfIndicatorConfig) -> Self {
         return Self {

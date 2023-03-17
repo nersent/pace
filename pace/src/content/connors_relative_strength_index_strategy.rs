@@ -24,6 +24,7 @@ impl Default for CrsiStrategyConfig {
     }
 }
 
+/// Custom Connors Relative Strength Index Strategy. May be incorrect.
 pub struct CrsiStrategy {
     pub config: CrsiStrategyConfig,
     pub ctx: ComponentContext,

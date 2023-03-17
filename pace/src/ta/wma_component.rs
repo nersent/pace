@@ -1,23 +1,25 @@
 use crate::components::{
     batch_validator_component::BatchValidatorComponent, component::Component,
-    component_context::ComponentContext, fixed_value_cache_component::FixedValueCacheComponent,
+    component_context::ComponentContext, window_cache_component::WindowCacheComponent,
 };
 
-/// Weighted moving average.
+/// Weighted Moving Average. In wma weighting factors decrease in arithmetical progression.
+///
+/// Same as PineScript `ta.wma(src)`. Similar to `ta.wma(src, length)`, but `length` is fixed and set on initialization.
 pub struct WmaComponent {
     pub length: usize,
     pub ctx: ComponentContext,
-    input_cache: FixedValueCacheComponent,
+    input_cache: WindowCacheComponent<Option<f64>>,
     batch_validator: BatchValidatorComponent,
 }
 
 impl WmaComponent {
     pub fn new(ctx: ComponentContext, length: usize) -> Self {
-        assert!(length > 0, "WmaComponent must have a length of at least 1");
+        assert!(length >= 1, "WmaComponent must have a length of at least 1");
         return Self {
             ctx: ctx.clone(),
             length,
-            input_cache: FixedValueCacheComponent::new(ctx.clone(), length),
+            input_cache: WindowCacheComponent::new(ctx.clone(), length),
             batch_validator: BatchValidatorComponent::new(ctx.clone(), length),
         };
     }

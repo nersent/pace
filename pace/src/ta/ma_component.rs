@@ -2,11 +2,12 @@ use crate::components::{component::Component, component_context::ComponentContex
 
 use super::{
     ema_component::EmaComponent, ma::MaKind, rma_component::RmaComponent,
-    sma_component::SmaComponent,
+    sma_component::SmaComponent, swma_component::SwmaComponent,
 };
 
 pub type AnyMaComponent = Box<dyn Component<Option<f64>, Option<f64>>>;
 
+/// A simplified way of creating a moving average component.
 pub struct MaComponent {
     pub length: usize,
     pub kind: MaKind,
@@ -33,6 +34,7 @@ impl MaComponent {
             MaKind::SMA => Box::new(SmaComponent::new(ctx, length)),
             MaKind::EMA => Box::new(EmaComponent::new(ctx, length)),
             MaKind::RMA => Box::new(RmaComponent::new(ctx, length)),
+            MaKind::SWMA => Box::new(SwmaComponent::new(ctx)),
         }
     }
 }

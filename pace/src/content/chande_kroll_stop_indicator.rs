@@ -1,8 +1,5 @@
 use crate::{
-    components::{
-        component::Component, component_context::ComponentContext,
-        fixed_value_cache_component::FixedValueCacheComponent,
-    },
+    components::{component::Component, component_context::ComponentContext},
     ta::{
         atr_component::AtrComponent, highest_component::HighestComponent,
         lowest_component::LowestComponent,
@@ -32,12 +29,13 @@ pub struct CksIndicatorData {
     pub stop_short: Option<f64>,
 }
 
+/// Chande Kroll Stop Indicator.
+///
+/// Ported from https://www.tradingview.com/chart/?solution=43000589105
 pub struct CksIndicator {
     pub config: CksIndicatorConfig,
     pub ctx: ComponentContext,
     atr: AtrComponent,
-    first_high_stop_highest_cache: FixedValueCacheComponent,
-    first_low_stop_lowest_cache: FixedValueCacheComponent,
     first_high_stop_highest: HighestComponent,
     first_low_stop_lowest: LowestComponent,
     stop_short_highest: HighestComponent,
@@ -49,8 +47,6 @@ impl CksIndicator {
         return Self {
             ctx: ctx.clone(),
             atr: AtrComponent::new(ctx.clone(), config.p),
-            first_high_stop_highest_cache: FixedValueCacheComponent::new(ctx.clone(), config.q),
-            first_low_stop_lowest_cache: FixedValueCacheComponent::new(ctx.clone(), config.q),
             first_high_stop_highest: HighestComponent::new(ctx.clone(), config.p),
             first_low_stop_lowest: LowestComponent::new(ctx.clone(), config.p),
             stop_short_highest: HighestComponent::new(ctx.clone(), config.q),

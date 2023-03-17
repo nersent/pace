@@ -6,6 +6,7 @@ use crate::utils::polars::SeriesCastUtils;
 
 use super::data_provider::DataProvider;
 
+/// Implements `DataProvider`. Stores all data in memory.
 pub struct InMemoryDataProvider {
     open: Vec<Option<f64>>,
     high: Vec<Option<f64>>,
