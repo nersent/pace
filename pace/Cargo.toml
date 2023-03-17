@@ -1,0 +1,24 @@
+[package]
+name = "pace"
+version = "0.0.1"
+edition = "2021"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+polars = { version = "0.26.1", features = ["parquet", "lazy"] }
+itertools = "0.10.5"
+similar-asserts = "1.4.2"
+similar = "2.2.1"
+colored = "2.0.0"
+pyo3 = { version = "0.18.0", features = ["extension-module", "macros"] }
+chrono = "0.4.23"
+kdam = "0.3.0"
+mimalloc = { version = "0.1.17", default-features = false }
+rand = "0.8.5"

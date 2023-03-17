@@ -1,9 +1,1 @@
-__pycache__
-.data
 target
-node_modules
-.rustc_info
-.vscode
-.out
-build
-output.csv
