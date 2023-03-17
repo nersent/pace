@@ -17,18 +17,34 @@ mod content;
 mod example_strategy;
 mod ml;
 mod utils;
+mod xd;
 use kdam::tqdm;
 use polars::prelude::{DataFrame, NamedFrom, PolarsResult};
 use polars::series::Series;
 use rand::Rng;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::Instant;
 
 use crate::base::asset::asset_data_provider::AssetDataProvider;
 use crate::base::asset::in_memory_asset_data_provider::InMemoryAssetDataProvider;
+use crate::base::asset::source::{Source, SourceKind};
 use crate::base::asset::timeframe::Timeframe;
+use crate::base::components::component_context::{ComponentContext, ComponentContextConfig};
 use crate::base::components::testing::Fixture;
+use crate::base::ta::ema_component::ExponentialMovingAverageComponent;
+use crate::base::ta::sma_component::SimpleMovingAverageComponent;
+use crate::content::aroon_indicator::{AroonIndicator, AroonIndicatorConfig};
+use crate::content::awesome_oscillator_indicator::{
+    AwesomeOscillatorIndicator, AwesomeOscillatorIndicatorConfig,
+};
 use crate::utils::polars::save_df;
+use crate::xd::component::Component;
+use crate::xd::data_source_component::SourceComponent;
+use crate::xd::ma::MaKind;
+use crate::xd::ma_component::MaComponent;
+use crate::xd::stats::{stdev_from_var, variance};
+use crate::xd::xd_indicator::{AoIndicator, AoIndicatorConfig};
 use ml::dataset_ml::generate_ml_datasets;
 
 fn benchmark_example_strategy() {
@@ -45,10 +61,12 @@ fn benchmark_example_strategy() {
 
     let mean = times.iter().sum::<u128>() as f64 / times.len() as f64;
 
-    println!("{}", mean);
+    println!("Mean: {}us", mean);
 }
 
-fn main() {
+fn aha() {
+    benchmark_example_strategy();
+    return ();
     let mut iterations = String::new();
     println!("How many iterations?");
     std::io::stdin().read_line(&mut iterations).unwrap();
@@ -723,4 +741,87 @@ fn main() {
     // benchmark_example_strategy();
     // example_strategy::run_example_strategy();
     // generate_ml_datasets();
+}
+
+fn main() {
+    let df = Fixture::raw_df("btc_1d.csv");
+    let asset_data_provider: Arc<dyn AssetDataProvider + Send + Sync> = Arc::new(
+        InMemoryAssetDataProvider::from_df(&df, "btc_usd", Timeframe::OneDay),
+    );
+
+    println!("Loaded");
+
+    let mut iterations = String::new();
+    println!("How many iterations?");
+    std::io::stdin().read_line(&mut iterations).unwrap();
+    let iterations: u32 = iterations.trim().parse().unwrap();
+    // let iterations: u32 = 1;
+
+    let mut time_list: Vec<u128> = Vec::new();
+    let mut time_list_s: Vec<f64> = Vec::new();
+
+    for id in tqdm!(0..iterations) {
+        let ctx = ComponentContext::from_asset_data_provider(Arc::clone(&asset_data_provider));
+        let mut sma = SimpleMovingAverageComponent::new(ctx.clone(), 100);
+        let mut ema = ExponentialMovingAverageComponent::new(ctx.clone(), 229);
+        let mut ao = AwesomeOscillatorIndicator::new(
+            ctx.clone(),
+            AwesomeOscillatorIndicatorConfig {
+                long_length: 30,
+                long_ma_type: base::ta::ma::MovingAverageKind::SMA,
+                short_length: 14,
+                short_ma_type: base::ta::ma::MovingAverageKind::RMA,
+                long_source: Source::from_kind(ctx.clone(), SourceKind::Close),
+                short_source: Source::from_kind(ctx.clone(), SourceKind::OHLC4),
+            },
+        );
+
+        // let mut ao_xd = AoIndicator::new(
+        //     ctx.clone(),
+        //     AoIndicatorConfig {
+        //         long_ma: Box::new(MaComponent::new(ctx.clone(), MaKind::SMA, 30)),
+        //         long_src: Box::new(SourceComponent::new(
+        //             ctx.clone(),
+        //             xd::source_kind::SourceKind::Close,
+        //         )),
+        //         short_ma: Box::new(MaComponent::new(ctx.clone(), MaKind::RMA, 14)),
+        //         short_src: Box::new(SourceComponent::new(
+        //             ctx.clone(),
+        //             xd::source_kind::SourceKind::OHLC4,
+        //         )),
+        //     },
+        // );
+
+        // let mut aroon = AroonIndicator::new(ctx.clone(), AroonIndicatorConfig { length: 30 });
+        // let mut aroon_xd = XdIndicator::new(ctx.clone(), XdIndicatorConfig {});
+
+        let start_time = Instant::now();
+        let mut last_value: Option<f64> = None;
+
+        for cctx in ctx {
+            let ctx = cctx.get();
+            let close = ctx.close();
+            let output = ao.next();
+            // let output = ao_xd.next(());
+            last_value = output;
+        }
+
+        let end_time = Instant::now();
+        let time = end_time - start_time;
+        time_list.push(time.as_micros());
+        time_list_s.push(time.as_secs_f64());
+        println!("{:?}", last_value);
+    }
+
+    let time_mean = time_list_s.iter().sum::<f64>() / time_list_s.len() as f64;
+    let time_var = variance(&time_list_s, time_mean);
+    let time_stdev = stdev_from_var(time_var);
+
+    println!("Time list: {:?}", time_list);
+
+    println!(WRAR
+        "Mean time: {}ms | Stdev: {}ms",
+        time_mean / 1000.0,
+        time_stdev * 1000.0
+    );
 }

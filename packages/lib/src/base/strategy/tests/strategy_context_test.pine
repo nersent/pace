@@ -121,5 +121,11 @@ netEquityMaxDrawdown() =>
 plot(strategy.netprofit + strategy.initial_capital, "_target_net_equity_")
 plot(netEquityMaxDrawdown(), "_target_net_equity_max_drawdown_percent_")
 
+net_equity_max = strategy.initial_capital
+net_equity_max := math.max(net_equity_max, strategy.initial_capital + strategy.netprofit)
+
+plot(strategy.max_drawdown / net_equity_max, "_target_max_drawdown_percent_")
+
+
 
 plot(bar_index, title='_tick_')

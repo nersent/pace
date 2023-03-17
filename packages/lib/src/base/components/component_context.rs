@@ -114,7 +114,9 @@ impl ComponentContext {
     }
 
     pub fn at_length(&self, length: usize) -> bool {
-        return self.tick.unwrap() >= length - 1;
+        let tick = self.get().current_tick;
+        // self.tick.unwrap()
+        return tick >= length - 1;
     }
 }
 
