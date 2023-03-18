@@ -11,18 +11,64 @@ The core feature of Pace is incremental architecture, which allows O(1) constant
 
 > Note: Pace is in early development stage. Expect breaking changes.
 
-## Features
+## PineScript
 
-- PineScript API and behaviour compatibility (see [migration from PineScript](#pinescript-migration))
+Pace indicators have been tested against TradingView PineScript indicators, meaning you should expect the same results.
 
-- TradingView default indicators and strategies
+See [migration from PineScript](#pinescript-migration)
 
-- Exact strategy metrics as TradingView
-
-# Roadmap
+## Roadmap
 
 - [ ] Improve performance
+- [ ] Release stable version
 - [ ] Additionaly support vectorized calculations
+
+## Features
+
+- PineScript compatible
+
+- TradingView strategy runner compatible
+
+- Default technical indicators and strategies from TradingView
+  - Aroon
+  - Average True Range
+  - Awesome Oscillator
+  - Balance of Power
+  - Bollinger Bands %B
+  - Bollinger Bands Width
+  - Chaikin Money Flow
+  - Chande Kroll Stop
+  - Choppiness Index
+  - Commodity Channel Index
+  - Connors Relative Strength Index
+  - Coppock Curve
+  - Cross
+  - Deviation
+  - Directional Movement Index
+  - Donchian Channels
+  - Exponential Moving Average
+  - Highest Bars
+  - Lowest Bars
+  - Lowest Bars
+  - MACD
+  - Percent Rank
+  - Price Oscillator
+  - Rate of Change
+  - Relative Strength Index
+  - Relative Vigor Index
+  - Relative Volatility Index
+  - Simple Moving Averageq
+  - Standard Deviation
+  - Stoch Relative Strength Index
+  - Stochastic
+  - Sum
+  - Symmetrically Weighted Moving Average
+  - True Range
+  - Ultimate Oscillator
+  - Volume Oscillator
+  - Vortex Indicator
+  - Weighted Moving Average
+  - Williams %R
 
 ## Getting Started
 
@@ -49,8 +95,6 @@ Visit [docs](/docs/index.md) to view the full documentation.
 1. State-of-the art
 
    One of the SOTA technical analysis libraries is the industry golden standard [talib](https://ta-lib.org/), which is written in C and is tailored towards vector calculations. The problem with talib is that it's old (started in 1999) and unmaintained. Adding new features without sacrificing the performance is a great challenge and requires C expertise.
-
-   [Pandas TA](https://github.com/twopirllc/pandas-ta) on the other hand is a great python library and easy to work with, but has some drawbacks such as performance issues in some scenarios.
 
 2. PineScript
 
@@ -99,6 +143,7 @@ We performed multiple benchmarks for popular indicators across different technic
 - Windows 11
 - Rustc 1.67.0
 - Python 3.9
+- Pace benchmark uses [mimalloc allocator](https://github.com/purpleprotocol/mimalloc_rust) and has been compiled with [cargo pgo](https://github.com/Kobzol/cargo-pgo)
 
 ### Interpretation:
 
