@@ -22,6 +22,7 @@ pub mod coppock_curve_strategy;
 pub mod directional_movement_index_indicator;
 pub mod directional_movement_index_strategy;
 pub mod donchian_channels_indicator;
+pub mod macd_indicator;
 pub mod price_oscillator_indicator;
 pub mod price_oscillator_strategy;
 pub mod relative_strength_index_indicator;

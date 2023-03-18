@@ -4,7 +4,7 @@ use crate::{
     ta::{highest_component::HighestComponent, lowest_component::LowestComponent},
 };
 
-use super::directional_movement_index_indicator::DmiIndicatorData;
+use super::directional_movement_index_indicator::DmiIndicatorRes;
 
 pub struct DcIndicatorConfig {
     pub length: usize,
@@ -16,7 +16,7 @@ impl Default for DcIndicatorConfig {
     }
 }
 
-pub struct DcIndicatorData {
+pub struct DcIndicatorRes {
     pub upper: Option<f64>,
     pub basis: Option<f64>,
     pub lower: Option<f64>,
@@ -43,14 +43,14 @@ impl DcIndicator {
     }
 }
 
-impl Component<(), DcIndicatorData> for DcIndicator {
-    fn next(&mut self, _: ()) -> DcIndicatorData {
+impl Component<(), DcIndicatorRes> for DcIndicator {
+    fn next(&mut self, _: ()) -> DcIndicatorRes {
         let upper = self.highest.next(self.ctx.high());
         let lower = self.lowest.next(self.ctx.low());
 
         let basis = ps_add(upper, lower).map(|x| x / 2.0);
 
-        return DcIndicatorData {
+        return DcIndicatorRes {
             upper,
             basis,
             lower,

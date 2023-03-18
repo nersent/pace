@@ -20,7 +20,7 @@ impl ComponentDefault for RvgiIndicatorConfig {
     }
 }
 
-pub struct RvgiIndicatorData {
+pub struct RvgiIndicatorRes {
     pub rvi: Option<f64>,
     pub sig: Option<f64>,
 }
@@ -52,8 +52,8 @@ impl RvgiIndicator {
     }
 }
 
-impl Component<(), RvgiIndicatorData> for RvgiIndicator {
-    fn next(&mut self, _: ()) -> RvgiIndicatorData {
+impl Component<(), RvgiIndicatorRes> for RvgiIndicator {
+    fn next(&mut self, _: ()) -> RvgiIndicatorRes {
         let close = self.ctx.close();
         let open = self.ctx.open();
         let high = self.ctx.high();
@@ -79,6 +79,6 @@ impl Component<(), RvgiIndicatorData> for RvgiIndicator {
 
         let sig = self.swma_sig.next(rvi);
 
-        return RvgiIndicatorData { rvi, sig };
+        return RvgiIndicatorRes { rvi, sig };
     }
 }

@@ -5,7 +5,7 @@ use super::rma_component::RmaComponent;
 pub static RSI_MIN_VALUE: f64 = 0.0;
 pub static RSI_MAX_VALUE: f64 = 100.0;
 
-pub struct RsiMetadata {
+pub struct RsiData {
     pub up: Option<f64>,
     pub down: Option<f64>,
 }
@@ -19,7 +19,7 @@ pub struct RsiComponent {
     up_rma: RmaComponent,
     down_rma: RmaComponent,
     prev_input_value: Option<f64>,
-    pub metadata: RsiMetadata,
+    pub data: RsiData,
 }
 
 impl RsiComponent {
@@ -31,7 +31,7 @@ impl RsiComponent {
             prev_input_value: None,
             up_rma: RmaComponent::new(ctx.clone(), length),
             down_rma: RmaComponent::new(ctx.clone(), length),
-            metadata: RsiMetadata {
+            data: RsiData {
                 up: None,
                 down: None,
             },
@@ -62,8 +62,8 @@ impl Component<Option<f64>, Option<f64>> for RsiComponent {
         let rs = up.unwrap() / down.unwrap();
         let rsi = 100.0 - 100.0 / (1.0 + rs);
 
-        self.metadata.up = up;
-        self.metadata.down = down;
+        self.data.up = up;
+        self.data.down = down;
 
         return Some(rsi);
     }

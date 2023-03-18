@@ -3,11 +3,6 @@ name = "pace"
 version = "0.0.1"
 edition = "2021"
 
-[profile.release]
-lto = "fat"
-codegen-units = 1
-panic = "abort"
-
 [lib]
 crate-type = ["cdylib", "rlib"]
 

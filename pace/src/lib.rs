@@ -1,14 +1,10 @@
-mod asset;
-mod components;
-mod content;
-mod data;
-mod pinescript;
-mod statistics;
-mod strategy;
-mod ta;
-mod testing;
-mod utils;
-
-pub fn xd() -> usize {
-    return 1;
-}
+pub mod asset;
+pub mod components;
+pub mod content;
+pub mod data;
+pub mod pinescript;
+pub mod statistics;
+pub mod strategy;
+pub mod ta;
+pub mod testing;
+pub mod utils;

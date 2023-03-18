@@ -1,5 +1,5 @@
 use std::{
-    cell::{RefCell, RefMut},
+    cell::{Cell, RefCell, RefMut},
     rc::Rc,
     sync::Arc,
     time::Duration,
@@ -9,36 +9,37 @@ use chrono::NaiveDateTime;
 
 use crate::data::data_provider::DataProvider;
 
-pub struct ComponentExecutionState {
-    pub current_tick: usize,
-    pub is_running: bool,
-    pub start_tick: usize,
-    pub end_tick: usize,
-}
+// pub struct ComponentExecutionState {
+//     pub current_tick: usize,
+// }
 
-impl ComponentExecutionState {
-    pub fn new(start_tick: usize, end_tick: usize) -> Self {
-        return Self {
-            current_tick: 0,
-            is_running: false,
-            start_tick,
-            end_tick,
-        };
-    }
+// impl ComponentExecutionState {
+//     pub fn new(start_tick: usize, end_tick: usize) -> Self {
+//         return Self {
+//             current_tick: 0,
+//             is_running: false,
+//             start_tick,
+//             end_tick,
+//         };
+//     }
 
-    pub fn next(&mut self) -> bool {
-        if !self.is_running {
-            self.is_running = true;
-            return true;
-        }
-        self.current_tick += 1;
-        return self.current_tick <= self.end_tick;
-    }
-}
+//     pub fn next(&mut self) -> bool {
+//         if !self.is_running {
+//             self.is_running = true;
+//             return true;
+//         }
+//         self.current_tick += 1;
+//         return self.current_tick <= self.end_tick;
+//     }
+// }
 
 pub struct ComponentContext {
     pub data: Arc<dyn DataProvider + 'static + Send + Sync>,
-    execution_state: Rc<RefCell<ComponentExecutionState>>,
+    start_tick: usize,
+    end_tick: usize,
+    // execution_state: Rc<RefCell<ComponentExecutionState>>,
+    current_tick: Rc<Cell<usize>>,
+    is_running: Rc<Cell<bool>>,
 }
 
 /// Provides data for all components.
@@ -50,21 +51,29 @@ impl ComponentContext {
         let end_tick = data_provider.get_end_tick();
         return Self {
             data: data_provider,
-            execution_state: Rc::new(RefCell::new(ComponentExecutionState::new(
-                start_tick, end_tick,
-            ))),
+            // execution_state: Rc::new(RefCell::new(ComponentExecutionState::new(
+            //     start_tick, end_tick,
+            // ))),
+            start_tick,
+            end_tick,
+            current_tick: Rc::new(Cell::new(start_tick)),
+            is_running: Rc::new(Cell::new(false)),
         };
     }
 
-    fn get_execution_state(&mut self) -> RefMut<ComponentExecutionState> {
-        return self.execution_state.as_ref().borrow_mut();
-    }
+    // fn get_execution_state(&mut self) -> RefMut<ComponentExecutionState> {
+    //     return self.execution_state.as_ref().borrow_mut();
+    // }
 
     /// This creates a new instance of `ComponentContext`, but keeps all pointers to the same data, meaning you can deeply nest `ComponentContext` and keep the same state.
     pub fn clone(&self) -> Self {
         return Self {
             data: Arc::clone(&self.data),
-            execution_state: Rc::clone(&self.execution_state),
+            start_tick: self.start_tick,
+            end_tick: self.end_tick,
+            // execution_state: Rc::clone(&self.execution_state),
+            current_tick: Rc::clone(&self.current_tick),
+            is_running: Rc::clone(&self.is_running),
         };
     }
 
@@ -82,19 +91,19 @@ impl ComponentContext {
     ///
     /// Same as PineScript `bar_index`.
     pub fn bar_index(&self) -> usize {
-        return self.execution_state.borrow().current_tick;
+        return self.current_tick.get();
     }
 
     /// First bar index. Starts with 0, unless `start_tick` was set differently.
     pub fn first_bar_index(&self) -> usize {
-        return self.execution_state.borrow().start_tick;
+        return self.start_tick;
     }
 
     /// Bar index of the last chart bar.
     ///
     /// Same as PineScript `last_bar_index`.
     pub fn last_bar_index(&self) -> usize {
-        return self.execution_state.borrow().end_tick;
+        return self.end_tick;
     }
 
     /// Returns `true` if current bar is **green** (returns are positive).
@@ -222,10 +231,35 @@ impl Iterator for ComponentContext {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let mut state = self.get_execution_state();
-        if state.next() {
-            return Some(state.current_tick);
+        let mut tick = self.current_tick.get();
+
+        if !self.is_running.get() {
+            self.is_running.set(true);
+            return Some(tick);
         }
+
+        tick += 1;
+
+        self.current_tick.set(tick);
+
+        if tick <= self.end_tick {
+            return Some(tick);
+        }
+
         return None;
+
+        // if tick <= self.end_tick - 1 {
+        //     tick += 1;
+        //     self.current_tick.set(tick);
+        //     return Some(tick);
+        // }
+
+        // return None;
+
+        // let mut state = self.get_execution_state();
+        // if state.next() {
+        //     return Some(state.current_tick);
+        // }
+        // return None;
     }
 }

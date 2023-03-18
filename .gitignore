@@ -1,1 +1,4 @@
 target
+benchmarks/.data
+benchmarks/.out
+__pycache__

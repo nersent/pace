@@ -7,7 +7,7 @@ use crate::{
     },
 };
 
-use super::stoch_relative_strength_index_indicator::SrsiIndicatorData;
+use super::stoch_relative_strength_index_indicator::SrsiIndicatorRes;
 
 pub static SRSI_THRESHOLD_OVERSOLD: f64 = 20.0;
 pub static SRSI_THRESHOLD_OVERBOUGHT: f64 = 80.0;
@@ -51,8 +51,8 @@ impl SrsiStrategy {
     }
 }
 
-impl Component<&SrsiIndicatorData, Option<TradeDirection>> for SrsiStrategy {
-    fn next(&mut self, stoch_rsi: &SrsiIndicatorData) -> Option<TradeDirection> {
+impl Component<&SrsiIndicatorRes, Option<TradeDirection>> for SrsiStrategy {
+    fn next(&mut self, stoch_rsi: &SrsiIndicatorRes) -> Option<TradeDirection> {
         let is_cross_over = self.cross_overbought.next(stoch_rsi.k);
         let is_cross_under = self.cross_oversold.next(stoch_rsi.k);
 

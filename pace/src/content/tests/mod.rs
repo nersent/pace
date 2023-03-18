@@ -12,6 +12,7 @@ mod connors_relative_strength_index_indicator_test;
 mod coppock_curve_indicator_test;
 mod directional_movement_index_indicator_test;
 mod donchian_channels_indicator_test;
+mod macd_indicator_test;
 mod price_oscillator_indicator_test;
 mod relative_strength_index_indicator_test;
 mod relative_strength_index_strategy_test;

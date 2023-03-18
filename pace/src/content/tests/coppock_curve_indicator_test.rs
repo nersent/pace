@@ -32,7 +32,7 @@ mod tests {
             &mut CcIndicator::new(
                 ctx.clone(),
                 CcIndicatorConfig {
-                    ma_length: 10,
+                    length: 10,
                     long_roc_length: 14,
                     short_roc_length: 11,
                     src: SrcComponent::build(ctx.clone(), SrcKind::Close),

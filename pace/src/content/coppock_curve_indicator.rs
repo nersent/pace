@@ -13,13 +13,13 @@ pub struct CcIndicatorConfig {
     pub src: AnySrcComponent,
     pub long_roc_length: usize,
     pub short_roc_length: usize,
-    pub ma_length: usize,
+    pub length: usize,
 }
 
 impl ComponentDefault for CcIndicatorConfig {
     fn default(ctx: ComponentContext) -> Self {
         Self {
-            ma_length: 10,
+            length: 10,
             long_roc_length: 14,
             short_roc_length: 11,
             src: SrcComponent::build(ctx.clone(), SrcKind::Close),
@@ -42,7 +42,7 @@ impl CcIndicator {
     pub fn new(ctx: ComponentContext, config: CcIndicatorConfig) -> Self {
         return Self {
             ctx: ctx.clone(),
-            ma: WmaComponent::new(ctx.clone(), config.ma_length),
+            ma: WmaComponent::new(ctx.clone(), config.length),
             long_roc: RocComponent::new(ctx.clone(), config.long_roc_length),
             short_roc: RocComponent::new(ctx.clone(), config.short_roc_length),
             config,

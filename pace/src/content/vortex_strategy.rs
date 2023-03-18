@@ -4,7 +4,7 @@ use crate::{
     ta::{cross::CrossMode, cross_component::CrossComponent},
 };
 
-use super::vortex_indicator::VortexIndicatorData;
+use super::vortex_indicator::VortexIndicatorRes;
 
 pub struct VortexStrategy {
     pub ctx: ComponentContext,
@@ -21,8 +21,8 @@ impl VortexStrategy {
     }
 }
 
-impl Component<&VortexIndicatorData, Option<TradeDirection>> for VortexStrategy {
-    fn next(&mut self, vi: &VortexIndicatorData) -> Option<TradeDirection> {
+impl Component<&VortexIndicatorRes, Option<TradeDirection>> for VortexStrategy {
+    fn next(&mut self, vi: &VortexIndicatorRes) -> Option<TradeDirection> {
         let vip_vim_cross = self.cross.next(vi.plus, vi.minus);
 
         let mut result: Option<TradeDirection> = None;

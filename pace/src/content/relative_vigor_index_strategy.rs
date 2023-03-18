@@ -4,7 +4,7 @@ use crate::{
     ta::{cross::CrossMode, cross_component::CrossComponent},
 };
 
-use super::relative_vigor_index_indicator::RvgiIndicatorData;
+use super::relative_vigor_index_indicator::RvgiIndicatorRes;
 
 /// Custom Relative Vigor Index Strategy. May be incorrect.
 pub struct RvgiStrategy {
@@ -21,8 +21,8 @@ impl RvgiStrategy {
     }
 }
 
-impl Component<&RvgiIndicatorData, Option<TradeDirection>> for RvgiStrategy {
-    fn next(&mut self, rvgi: &RvgiIndicatorData) -> Option<TradeDirection> {
+impl Component<&RvgiIndicatorRes, Option<TradeDirection>> for RvgiStrategy {
+    fn next(&mut self, rvgi: &RvgiIndicatorRes) -> Option<TradeDirection> {
         let rvi_s_cross = self.cross.next(rvgi.rvi, rvgi.sig);
 
         let mut result: Option<TradeDirection> = None;

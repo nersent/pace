@@ -34,7 +34,7 @@ impl ComponentDefault for SrsiIndicatorConfig {
     }
 }
 
-pub struct SrsiIndicatorData {
+pub struct SrsiIndicatorRes {
     pub k: Option<f64>,
     pub d: Option<f64>,
 }
@@ -64,8 +64,8 @@ impl SrsiIndicator {
     }
 }
 
-impl Component<(), SrsiIndicatorData> for SrsiIndicator {
-    fn next(&mut self, _: ()) -> SrsiIndicatorData {
+impl Component<(), SrsiIndicatorRes> for SrsiIndicator {
+    fn next(&mut self, _: ()) -> SrsiIndicatorRes {
         let src = self.config.src.next(());
         let rsi = self.rsi.next(src);
 
@@ -73,6 +73,6 @@ impl Component<(), SrsiIndicatorData> for SrsiIndicator {
         let k_sma = self.k_sma.next(k_stoch);
         let d_sma = self.d_sma.next(k_sma);
 
-        return SrsiIndicatorData { k: k_sma, d: d_sma };
+        return SrsiIndicatorRes { k: k_sma, d: d_sma };
     }
 }

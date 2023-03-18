@@ -8,7 +8,7 @@ use crate::{
 pub static AROON_MIN_VALUE: f64 = 0.0;
 pub static AROON_MAX_VALUE: f64 = 100.0;
 
-pub struct AroonIndicatorOutput {
+pub struct AroonIndicatorRes {
     pub up: Option<f64>,
     pub down: Option<f64>,
 }
@@ -44,10 +44,10 @@ impl AroonIndicator {
     }
 }
 
-impl Component<(), AroonIndicatorOutput> for AroonIndicator {
-    fn next(&mut self, _: ()) -> AroonIndicatorOutput {
+impl Component<(), AroonIndicatorRes> for AroonIndicator {
+    fn next(&mut self, _: ()) -> AroonIndicatorRes {
         if !self.ctx.at_length(self.config.length) {
-            return AroonIndicatorOutput {
+            return AroonIndicatorRes {
                 up: None,
                 down: None,
             };
@@ -61,6 +61,6 @@ impl Component<(), AroonIndicatorOutput> for AroonIndicator {
         let up = high.map(|high| (high as f64 + length) / length * 100.0);
         let down = low.map(|low| (low as f64 + length) / length * 100.0);
 
-        return AroonIndicatorOutput { up, down };
+        return AroonIndicatorRes { up, down };
     }
 }

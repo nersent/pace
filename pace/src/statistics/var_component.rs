@@ -4,7 +4,9 @@ use crate::components::{
 };
 
 use super::{
-    common::variance, mean_component::MeanComponent, welfords_var_component::WelfordsVarComponent,
+    common::{variance, variance_from_mean},
+    mean_component::MeanComponent,
+    welfords_var_component::WelfordsVarComponent,
 };
 
 // Variance.
@@ -53,6 +55,6 @@ impl Component<f64, f64> for VarComponent {
         let mean = self.mean.next(value);
         let values = self.input_cache.all();
 
-        return variance(values, mean);
+        return variance_from_mean(values, mean);
     }
 }

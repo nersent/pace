@@ -24,7 +24,7 @@ impl Default for DmiIndicatorConfig {
     }
 }
 
-pub struct DmiIndicatorData {
+pub struct DmiIndicatorRes {
     pub plus: Option<f64>,
     pub minus: Option<f64>,
     pub adx: Option<f64>,
@@ -61,8 +61,8 @@ impl DmiIndicator {
     }
 }
 
-impl Component<(), DmiIndicatorData> for DmiIndicator {
-    fn next(&mut self, _: ()) -> DmiIndicatorData {
+impl Component<(), DmiIndicatorRes> for DmiIndicator {
+    fn next(&mut self, _: ()) -> DmiIndicatorRes {
         let high = self.ctx.high();
         let low = self.ctx.low();
         let prev_high = self.ctx.prev_high(1);
@@ -113,6 +113,6 @@ impl Component<(), DmiIndicatorData> for DmiIndicator {
         };
         let adx = self.adx.next(adx).map(|x| x * 100.0);
 
-        return DmiIndicatorData { plus, minus, adx };
+        return DmiIndicatorRes { plus, minus, adx };
     }
 }

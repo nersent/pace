@@ -7,7 +7,7 @@ use crate::{
     },
 };
 
-use super::aroon_indicator::AroonIndicatorOutput;
+use super::aroon_indicator::AroonIndicatorRes;
 
 pub struct AroonStrategyData {
     pub up_trend_strength: f64,
@@ -40,8 +40,8 @@ impl AroonStrategy {
     }
 }
 
-impl Component<&AroonIndicatorOutput, Option<TradeDirection>> for AroonStrategy {
-    fn next(&mut self, aroon: &AroonIndicatorOutput) -> Option<TradeDirection> {
+impl Component<&AroonIndicatorRes, Option<TradeDirection>> for AroonStrategy {
+    fn next(&mut self, aroon: &AroonIndicatorRes) -> Option<TradeDirection> {
         self.data.up_trend_strength = match (aroon.up, aroon.down) {
             (Some(up), Some(down)) => {
                 if up > 50.0 && down < 50.0 {

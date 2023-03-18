@@ -4,7 +4,7 @@ use crate::{
     ta::{cross::CrossMode, cross_component::CrossComponent},
 };
 
-use super::directional_movement_index_indicator::DmiIndicatorData;
+use super::directional_movement_index_indicator::DmiIndicatorRes;
 
 pub static DMI_THRESHOLD_STRONG_TREND: f64 = 25.0;
 pub static DMI_THRESHOLD_WEAK_TREND: f64 = 20.0;
@@ -40,8 +40,8 @@ impl DmiStrategy {
     }
 }
 
-impl Component<&DmiIndicatorData, Option<TradeDirection>> for DmiStrategy {
-    fn next(&mut self, dmi: &DmiIndicatorData) -> Option<TradeDirection> {
+impl Component<&DmiIndicatorRes, Option<TradeDirection>> for DmiStrategy {
+    fn next(&mut self, dmi: &DmiIndicatorRes) -> Option<TradeDirection> {
         let is_strong_trend = dmi
             .adx
             .map(|x| x > self.config.threshold_strong_trend)

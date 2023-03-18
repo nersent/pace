@@ -14,7 +14,7 @@ impl Default for VortexIndicatorConfig {
     }
 }
 
-pub struct VortexIndicatorData {
+pub struct VortexIndicatorRes {
     pub plus: Option<f64>,
     pub minus: Option<f64>,
 }
@@ -44,8 +44,8 @@ impl VortexIndicator {
     }
 }
 
-impl Component<(), VortexIndicatorData> for VortexIndicator {
-    fn next(&mut self, _: ()) -> VortexIndicatorData {
+impl Component<(), VortexIndicatorRes> for VortexIndicator {
+    fn next(&mut self, _: ()) -> VortexIndicatorRes {
         let current_tick = self.ctx.bar_index();
         let high = self.ctx.high();
         let low = self.ctx.low();
@@ -64,7 +64,7 @@ impl Component<(), VortexIndicatorData> for VortexIndicator {
         let vip = ps_div(vmp, str);
         let vim = ps_div(vmm, str);
 
-        return VortexIndicatorData {
+        return VortexIndicatorRes {
             plus: vip,
             minus: vim,
         };

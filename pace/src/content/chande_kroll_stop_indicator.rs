@@ -22,7 +22,7 @@ impl Default for CksIndicatorConfig {
     }
 }
 
-pub struct CksIndicatorData {
+pub struct CksIndicatorRes {
     pub first_high_stop: Option<f64>,
     pub first_low_stop: Option<f64>,
     pub stop_long: Option<f64>,
@@ -56,8 +56,8 @@ impl CksIndicator {
     }
 }
 
-impl Component<(), CksIndicatorData> for CksIndicator {
-    fn next(&mut self, _: ()) -> CksIndicatorData {
+impl Component<(), CksIndicatorRes> for CksIndicator {
+    fn next(&mut self, _: ()) -> CksIndicatorRes {
         let atr = self.atr.next(());
 
         let first_high_stop_highest = self.first_high_stop_highest.next(self.ctx.high());
@@ -76,7 +76,7 @@ impl Component<(), CksIndicatorData> for CksIndicator {
         let stop_short = self.stop_short_highest.next(first_high_stop);
         let stop_long = self.stop_long_lowest.next(first_low_stop);
 
-        return CksIndicatorData {
+        return CksIndicatorRes {
             first_high_stop,
             first_low_stop,
             stop_short,
