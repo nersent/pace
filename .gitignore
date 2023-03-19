@@ -2,3 +2,4 @@ target
 benchmarks/.data
 benchmarks/.out
 __pycache__
+summary.png

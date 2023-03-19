@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "pace",
-    "benchmarks/pace"
+    "benchmarks/pace",
+    "example"
 ]

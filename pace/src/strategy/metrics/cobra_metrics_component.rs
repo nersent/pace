@@ -1,4 +1,5 @@
 use chrono::Datelike;
+use prettytable::{color, row, Attr, Cell, Row, Table};
 
 use crate::{
     components::component::Component,
@@ -8,6 +9,7 @@ use crate::{
     },
     strategy::{strategy_context::StrategyContext, trade::TradeDirection},
     ta::sum_component::SumComponent,
+    utils::string::with_suffix,
 };
 
 use super::{
@@ -21,7 +23,7 @@ use super::{
     sharpe_ratio_component::{SharpeRatioComponent, SharpeRatioComponentConfig},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct CobraMetrics {
     pub equity_curve_max_dd: f64,
     pub intra_trade_max_dd: f64,
@@ -48,8 +50,133 @@ impl CobraMetrics {
             net_profit_l_s_ratio: 0.0,
         };
     }
+
+    pub fn print(&self) {
+        let f_percent = with_suffix("%");
+        let f_raw = |value: f64| format!("{:0.2}", value);
+
+        let key_cell = |text: &str| {
+            let mut cell = Cell::new(text)
+                .with_style(Attr::ForegroundColor(color::BRIGHT_YELLOW))
+                .with_style(Attr::Bold);
+            return cell;
+        };
+
+        let value_cell = |text: &str, theme: i32| {
+            let mut cell = Cell::new(text)
+                .with_style(Attr::ForegroundColor(color::YELLOW))
+                .with_style(Attr::Bold);
+
+            if theme == 1 {
+                cell = cell.with_style(Attr::ForegroundColor(color::GREEN));
+            } else if theme == -1 {
+                cell = cell.with_style(Attr::ForegroundColor(color::RED));
+            }
+
+            return cell;
+        };
+
+        let mut table = Table::new();
+
+        table.add_row(Row::new(vec![
+            key_cell("Equity Curve Max DD"),
+            value_cell(
+                &f_percent(self.equity_curve_max_dd * 100.0),
+                match self.equity_curve_max_dd {
+                    x if x > -0.25 => 1,
+                    x if x < -0.40 => -1,
+                    _ => 0,
+                },
+            ),
+        ]));
+
+        table.add_row(Row::new(vec![
+            key_cell("Intra-trade Max DD"),
+            value_cell(
+                &f_percent(self.intra_trade_max_dd * 100.0),
+                match self.intra_trade_max_dd {
+                    x if x > -0.25 => 1,
+                    x if x < -0.40 => -1,
+                    _ => 0,
+                },
+            ),
+        ]));
+
+        table.add_row(Row::new(vec![
+            key_cell("Sortino"),
+            value_cell(
+                &f_raw(self.sortino),
+                match self.sortino {
+                    x if x > 3.0 => 1,
+                    x if x < 2.0 => -1,
+                    _ => 0,
+                },
+            ),
+        ]));
+
+        table.add_row(Row::new(vec![
+            key_cell("Sharpe"),
+            value_cell(
+                &f_raw(self.sharpe),
+                match self.sharpe {
+                    x if x > 1.5 => 1,
+                    x if x < 1.0 => -1,
+                    _ => 0,
+                },
+            ),
+        ]));
+
+        table.add_row(Row::new(vec![
+            key_cell("Profit Factor"),
+            value_cell(
+                &f_raw(self.profit_factor),
+                match self.profit_factor {
+                    x if x > 4.0 => 1,
+                    x if x < 2.0 => -1,
+                    _ => 0,
+                },
+            ),
+        ]));
+
+        table.add_row(Row::new(vec![
+            key_cell("Profitable %"),
+            value_cell(
+                &f_percent(self.profitable * 100.0),
+                match self.profitable {
+                    x if x > 0.50 => 1,
+                    x if x < 0.35 => -1,
+                    _ => 0,
+                },
+            ),
+        ]));
+
+        table.add_row(Row::new(vec![
+            key_cell("Trades"),
+            value_cell(
+                &f_raw(self.trades as f64),
+                match self.trades {
+                    x if x >= 20 && x <= 80 => 1,
+                    x if x < 15 && x > 80 => -1,
+                    _ => 0,
+                },
+            ),
+        ]));
+
+        table.add_row(Row::new(vec![
+            key_cell("Omega"),
+            value_cell(&f_raw(self.omega), 0),
+        ]));
+
+        table.add_row(Row::new(vec![
+            key_cell("Net Profit L/S Ratio"),
+            value_cell(&f_raw(self.net_profit_l_s_ratio), 0),
+        ]));
+
+        table.printstd();
+    }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct CobraMetricsComponentConfig {
     pub estimated: bool,
     pub returns_start_year: Option<i32>,

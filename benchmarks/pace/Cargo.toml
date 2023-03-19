@@ -13,4 +13,4 @@ mimalloc = { version = "0.1.34", default-features = false }
 kdam = "0.3.0"
 serde_json = "1.0"
 serde = "1.0"
-pace = { path = "../../pace" }
+nersent_pace = { path = "../../pace" }

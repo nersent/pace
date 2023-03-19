@@ -9,11 +9,13 @@ Fast, memory-safe and cross-platform, but with very high learning curve.
 
 The core feature of Pace is incremental architecture, which allows O(1) constant-time updates of indicators, making it ideal for time sensitive low-frequency live trading.
 
+The goal of Pace is not to replace any existing technical analysis library, but rather provide a new approach and ways to write efficient trading strategies.
+
 > Note: Pace is in early development stage. Expect breaking changes.
 
 ## PineScript
 
-Pace indicators have been tested against TradingView PineScript indicators, meaning you should expect the same results.
+All Pace components and indicators have been tested against PineScript, ensuring the same results and easy migration.
 
 See [migration from PineScript](#pinescript-migration)
 
@@ -22,14 +24,27 @@ See [migration from PineScript](#pinescript-migration)
 - [ ] Improve performance
 - [ ] Release stable version
 - [ ] Additionaly support vectorized calculations
+- [ ] Implement Pace -> PineScript strategy exporter
+- [ ] Implement more TradingView strategy tab metrics
+- [ ] Implement exact TradingView sharpe/sortino
+- [ ] Basic chart plotting capabilities
 
 ## Features
 
 - PineScript compatible
 
-- TradingView strategy runner compatible
+- TradingView strategy metrics compatible
+
+- Risk indicators
+
+  - Sharpe ratio
+  - Sortino ratio
+  - Omega ratio
+  - Max Drawdown
+  - Max Run-up
 
 - Default technical indicators and strategies from TradingView
+
   - Aroon
   - Average True Range
   - Awesome Oscillator
@@ -83,12 +98,16 @@ You can use already configured [boilerplate project](https://github.com/nersent/
 2. Add Pace to your Cargo.toml
 
 ```bash
-$ cargo add nersent-pace
+$ cargo add nersent_pace
 ```
 
 ## Documentation
 
 Visit [docs](/docs/index.md) to view the full documentation.
+
+## Examples
+
+See already implemented indicators and strategies [here](pace/src/content).
 
 ## Motivation
 

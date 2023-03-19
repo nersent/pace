@@ -6,6 +6,7 @@ use std::{
 };
 
 use chrono::NaiveDateTime;
+use polars::prelude::DataFrame;
 
 use crate::data::data_provider::DataProvider;
 

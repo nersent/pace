@@ -21,6 +21,7 @@ pub struct StrategyContextEvents {
     pub on_trade_exit: Option<StrategyOnTradeExitEvent>,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub struct StrategyContextConfig {
     /**
     Enables an additional calculation on bar close, allowing market orders to enter on the same tick the order is placed
@@ -29,6 +30,17 @@ pub struct StrategyContextConfig {
     pub continous: bool,
     pub initial_capital: f64,
     pub buy_with_equity: bool,
+}
+
+impl Default for StrategyContextConfig {
+    fn default() -> Self {
+        return Self {
+            buy_with_equity: false,
+            continous: true,
+            on_bar_close: false,
+            initial_capital: 1000.0,
+        };
+    }
 }
 
 pub struct StrategyState {
@@ -44,6 +56,7 @@ pub struct StrategyState {
 /// Manages trades and provides data for all strategy components.
 pub struct StrategyContext {
     pub ctx: ComponentContext,
+    pub initial_capital: f64,
     state: Rc<RefCell<StrategyState>>,
 }
 
@@ -63,6 +76,7 @@ impl StrategyContext {
                 open_profit: 0.0,
                 config,
             })),
+            initial_capital: config.initial_capital,
         };
     }
 
@@ -74,6 +88,7 @@ impl StrategyContext {
         return Self {
             ctx: self.ctx.clone(),
             state: Rc::clone(&self.state),
+            initial_capital: self.initial_capital,
         };
     }
 

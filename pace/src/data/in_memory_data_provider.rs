@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use polars::prelude::DataFrame;
 
@@ -118,5 +118,9 @@ impl InMemoryDataProvider {
         let time = df.column("time").unwrap().to_duration();
 
         return Self::new(open, high, low, close, volume, time);
+    }
+
+    pub fn build(df: &DataFrame) -> Arc<dyn DataProvider + Send + Sync> {
+        return Arc::new(Self::from_df(&df));
     }
 }

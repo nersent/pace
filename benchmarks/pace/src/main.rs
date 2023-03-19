@@ -6,7 +6,7 @@ use serde_json::Result;
 use std::{borrow::Borrow, fs, path::Path, sync::Arc, time::Instant};
 
 use kdam::tqdm;
-use pace::{
+use nersent_pace::{
     components::{
         component::Component, component_context::ComponentContext, src::SrcKind,
         src_component::SrcComponent,
