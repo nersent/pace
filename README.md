@@ -31,9 +31,13 @@ See [migration from PineScript](#pinescript-migration)
 
 ## Features
 
-- PineScript compatible
+- PineScript API compatible
 
 - TradingView strategy metrics compatible
+
+  ![pace_strategy_overview](/static/strategy_overview_pace.png)
+
+  ![tradingview_strategy_overview](/static/strategy_overview_tradingview.png)
 
 - Risk indicators
 

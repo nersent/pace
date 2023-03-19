@@ -56,8 +56,15 @@ fn main() {
         cobra_metrics.next(());
     }
 
-    metrics.data.print_header();
+    // println!("");
+    // println!("");
+    // println!("");
+    // println!("");
+    metrics.data.print_overview();
+    metrics.data.plot_net_equity((236, 100));
     // metrics.data.print_summary();
-    metrics.data.plot_net_equity((240, 80));
+    // println!("");
+    // println!("");
+
     cobra_metrics.data.print();
 }

@@ -100,7 +100,7 @@ impl TradingViewMetrics {
         };
     }
 
-    pub fn print_header(&self) {
+    pub fn print_overview(&self) {
         let f_price = with_suffix(" USD");
         let f_percent = with_suffix("%");
         let f = |price: f64, percent: f64| format!("{} {}", f_price(price), f_percent(percent));

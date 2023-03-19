@@ -156,7 +156,7 @@ impl CobraMetrics {
                 &f_raw(self.trades as f64),
                 match self.trades {
                     x if x >= 20 && x <= 80 => 1,
-                    x if x < 15 && x > 80 => -1,
+                    x if x < 15 || x > 80 => -1,
                     _ => 0,
                 },
             ),
