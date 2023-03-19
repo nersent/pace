@@ -9,15 +9,15 @@
 
 </div>
 
-Pace is a technical analysis library written in Rust, compatible with PineScript, designed to be as close to bare metal as possible.
+**Pace**: Technical analysis library written in Rust, designed to be compatible with PineScript.
 
 Fast, memory-safe and cross-platform, but with very high learning curve.
 
-The core feature of Pace is incremental architecture, which allows O(1) constant-time updates of indicators, making it ideal for time sensitive low-frequency live trading.
+The core feature of Pace is incremental architecture, which allows O(1) constant-time updates of indicators, making it ideal for time-sensitive low-frequency live trading.
 
-The goal of Pace is not to replace any existing technical analysis library, but rather provide a new approach and ways to write efficient trading strategies.
+The goal of Pace is not to replace any existing TA library, but rather provide a new approach and ways to write and optimize trading strategies efficiently.
 
-> Note: Pace is in early development stage. Expect breaking changes.
+> Note: Pace is in an early development stage. Expect breaking changes.
 
 ## PineScript
 
@@ -35,10 +35,13 @@ See [migration from PineScript](#pinescript-migration)
 - [ ] Implement exact TradingView sharpe/sortino
 - [ ] Basic chart plotting capabilities
 - [ ] Support custom fill order size
+- [ ] Implement more risk metrics
 
 ## Features
 
-- PineScript API compatible
+- Indicator/Strategy testing utilities
+
+- Same results as PineScript
 
 - TradingView strategy metrics compatible
 
