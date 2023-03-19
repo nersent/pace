@@ -1,7 +1,13 @@
-# Pace
+<div align="center">
+  <img src="static/logo.png" width="256">
 
-[![Discord](https://discordapp.com/api/guilds/307605794680209409/widget.png?style=shield)](https://discord.gg/P7Vn4VX)
-[![Github](https://img.shields.io/github/followers/xnerhu.svg?style=social&label=Follow)](https://github.com/xnerhu)
+  <br />
+
+[![Made by Nersent](https://cdn.nersent.com/public/badges/made_by_nersent.svg)](https://nersent.com)
+[![Stage](https://cdn.nersent.com/public/badges/stage_in_dev.svg)](https://nersent.com)
+[![Community](https://cdn.nersent.com/public/badges/discord.svg)](https://discord.gg/P7Vn4VX)
+
+</div>
 
 Pace is a technical analysis library written in Rust, compatible with PineScript, designed to be as close to bare metal as possible.
 
@@ -28,6 +34,7 @@ See [migration from PineScript](#pinescript-migration)
 - [ ] Implement more TradingView strategy tab metrics
 - [ ] Implement exact TradingView sharpe/sortino
 - [ ] Basic chart plotting capabilities
+- [ ] Support custom fill order size
 
 ## Features
 
@@ -173,6 +180,7 @@ We performed multiple benchmarks for popular indicators across different technic
 - talib is the fastest library across all benchmarks, thanks to vectorization
 - Pace is the second fastest library, despite not being designed towards vector calculations
 - On smaller datasets, the gap between talib and Pace is not significant
+- Pandas and Numpy have both their own runtime overhead
 
 ### Mean time (ms):
 

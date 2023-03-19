@@ -6,7 +6,7 @@ homepage = "https://nersent.com"
 repository = "https://github.com/nersent/pace"
 keywords = ["nersent", "technical", "analysis", "ta", "talib"]
 documentation = "https://github.com/nersent/pace/docs/index.md"
-description = "Incremental Technical Analysis library"
+description = "Technical Analysis library"
 license-file = "../LICENSE"
 
 [lib]
