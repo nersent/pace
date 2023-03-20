@@ -18,8 +18,6 @@ Fast, memory-safe and cross-platform, but with very high learning curve.
 
 The core feature of Pace is incremental architecture, which allows O(1) constant-time updates of indicators, making it ideal for time-sensitive low-frequency live trading.
 
-The goal of Pace is not to replace any existing TA library, but rather provide a new approach and ways to write and optimize trading strategies efficiently.
-
 > Note: This library is in an early development stage. Expect breaking changes.
 
 ## PineScript

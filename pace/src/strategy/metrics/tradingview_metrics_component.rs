@@ -100,8 +100,8 @@ impl TradingViewMetrics {
         };
     }
 
-    pub fn print_overview(&self) {
-        let f_price = with_suffix(" USD");
+    pub fn print_overview(&self, currency: &str) {
+        let f_price = with_suffix(&format!(" {}", currency));
         let f_percent = with_suffix("%");
         let f = |price: f64, percent: f64| format!("{} {}", f_price(price), f_percent(percent));
         let f_raw = |value: f64| format!("{:0.2}", value);
@@ -171,8 +171,8 @@ impl TradingViewMetrics {
         table.printstd();
     }
 
-    pub fn print_summary(&self) {
-        let f_price = with_suffix(" USD");
+    pub fn print_summary(&self, currency: &str) {
+        let f_price = with_suffix(&format!(" {}", currency));
         let f_percent = with_suffix("%");
         let f = |price: f64, percent: f64| format!("{}\n{}", f_price(price), f_percent(percent));
         let f_raw = |value: f64| format!("{:0.2}", value);

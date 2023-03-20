@@ -13,9 +13,7 @@ use nersent_pace::{
     strategy::{
         metrics::{
             cobra_metrics_component::CobraMetricsComponentConfig,
-            tradingview_metrics_component::{
-                TradingViewMetrics, TradingViewMetricsComponentConfig,
-            },
+            tradingview_metrics_component::TradingViewMetricsComponentConfig,
             wrapped_cobra_metrics_component::WrappedCobraMetricsComponent,
             wrapped_tradingview_metrics_component::WrappedTradingViewMetricsComponent,
         },
@@ -40,8 +38,6 @@ fn main() {
         strategy.clone(),
         TradingViewMetricsComponentConfig::default(),
     );
-    let mut cobra_metrics =
-        WrappedCobraMetricsComponent::new(strategy.clone(), CobraMetricsComponentConfig::default());
 
     let mut rsi_indicator =
         RsiIndicator::new(ctx.clone(), RsiIndicatorConfig::default(ctx.clone()));
@@ -53,18 +49,10 @@ fn main() {
 
         strategy.next(rsi_signal);
         metrics.next(());
-        cobra_metrics.next(());
     }
 
-    // println!("");
-    // println!("");
-    // println!("");
-    // println!("");
-    metrics.data.print_overview();
+    let currency = "USD";
+    metrics.data.print_overview(currency);
     metrics.data.plot_net_equity((236, 100));
-    // metrics.data.print_summary();
-    // println!("");
-    // println!("");
-
-    cobra_metrics.data.print();
+    metrics.data.print_summary(currency);
 }
