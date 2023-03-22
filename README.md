@@ -13,7 +13,7 @@
 
 **Pace**: Technical analysis library written in Rust, designed to be compatible with PineScript.
 
-Fast, memory-safe and cross-platform, but with very high learning curve.
+Fast, zero runtime cost and memory-safe, but with very high learning curve.
 
 The core feature of Pace is incremental architecture, which allows O(1) constant-time updates of indicators, making it ideal for time-sensitive low-frequency live trading.
 
@@ -27,6 +27,7 @@ See [migration from PineScript](#pinescript-migration)
 
 ## Roadmap
 
+- [ ] Python bindings
 - [ ] Improve performance
 - [ ] Release stable version
 - [ ] Additionaly support vectorized calculations
@@ -147,7 +148,7 @@ See already implemented indicators and strategies [here](pace/src/content).
 
    c. GPU
 
-   Similar to vectorization, but the calculations are performed on GPU, which is even faster than CPU. it's even harder to implement and maintain than vectorization. Keeping in mind, that there are tools and libraries that don't require you to write custom GPU kernels such as cupy/PyTorch, GPU TA still comes with it's own set of problems. It requires you to have GPU supporting software like CUDA and VRAM large enough. Also copying data from CPU to GPU and back is a performance bottleneck, which may be problematic for parameter optimization.
+   Similar to vectorization, but the calculations are performed on GPU, which is even faster than CPU. It is even harder to implement and maintain than vectorization. Keeping in mind, that there are tools and libraries that don't require you to write custom GPU kernels such as cupy/PyTorch, GPU TA still comes with it's own set of problems. It requires you to have GPU supporting software like CUDA and VRAM large enough. Also copying data from CPU to GPU and back is a performance bottleneck, which may be problematic sometimes.
 
    d. Incremental
 
