@@ -55,13 +55,13 @@ pub struct StrategyState {
 
 /// Manages trades and provides data for all strategy components.
 pub struct StrategyContext {
-    pub ctx: ComponentContext,
+    pub ctx: Context,
     pub initial_capital: f64,
     state: Rc<RefCell<StrategyState>>,
 }
 
 impl StrategyContext {
-    pub fn new(ctx: ComponentContext, config: StrategyContextConfig) -> Self {
+    pub fn new(ctx: Context, config: StrategyContextConfig) -> Self {
         return Self {
             ctx: ctx.clone(),
             state: Rc::new(RefCell::new(StrategyState {

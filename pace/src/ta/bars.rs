@@ -1,4 +1,4 @@
-use crate::utils::array::{find_max_index, find_min_index};
+use crate::statistics::math::{find_max_index, find_min_index};
 
 /// Highest value offset for a given number of bars back.
 ///

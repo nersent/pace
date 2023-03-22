@@ -47,6 +47,7 @@ pub struct Trade {
     pub exit_tick: Option<usize>,
     pub exit_price: Option<f64>,
     pub fill_size: Option<f64>,
+    pub pnl: f64,
 }
 
 impl Trade {
@@ -59,6 +60,7 @@ impl Trade {
             exit_price: None,
             exit_tick: None,
             fill_size: None,
+            pnl: 0.0,
         };
     }
 

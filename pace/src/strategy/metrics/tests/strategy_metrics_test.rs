@@ -5,23 +5,23 @@ mod tests {
     use polars::prelude::DataFrame;
 
     use crate::{
-        components::{component::Component, component_context::ComponentContext},
+        core::{context::Context, incremental::Incremental},
+        polars::series::SeriesCastUtils,
         strategy::{
             metrics::{
-                cobra_metrics_component::{CobraMetricsComponent, CobraMetricsComponentConfig},
+                cobra_metrics::{CobraMetrics, CobraMetricsConfig},
                 common::{
-                    gross_loss_percent, gross_profit_percent, long_net_profit_percent,
-                    max_drawdown_percent, max_run_up_percent, net_profit_percent,
-                    short_net_profit_percent,
+                    avg_win_loss_ratio, gross_loss_percent, gross_profit_percent,
+                    long_net_profit_percent, max_drawdown_percent, max_run_up_percent,
+                    net_profit_percent, short_net_profit_percent,
                 },
-                equity_metrics_component::EquityMetricsComponent,
-                performance_metrics_component::PerformanceMetricsComponent,
+                equity_metrics::EquityMetrics,
+                tradingview_metrics_component::{TradingViewMetrics, TradingViewMetricsConfig},
             },
-            strategy_context::{StrategyContext, StrategyContextConfig},
+            strategy::{Strategy, StrategyConfig},
             trade::TradeDirection,
         },
-        testing::{array_snapshot::ArraySnapshot, fixture::Fixture},
-        utils::{comparison::FloatComparison, polars::SeriesCastUtils},
+        testing::{array_snapshot::ArraySnapshot, comparison::FloatComparison, fixture::Fixture},
     };
 
     fn format_path(path: &str) -> String {
@@ -217,34 +217,43 @@ mod tests {
     }
 
     struct TestMetricsTarget {
-        pub ctx: ComponentContext,
-        pub sctx: StrategyContext,
+        pub ctx: Context,
         pub long_entries: Vec<usize>,
         pub short_entries: Vec<usize>,
-        pub equity_metrics: EquityMetricsComponent,
-        pub performance_metrics: PerformanceMetricsComponent,
-        pub cobra_metrics: CobraMetricsComponent,
+        pub equity_metrics: EquityMetrics,
+        pub tradingview_metrics: TradingViewMetrics,
+        pub cobra_metrics: CobraMetrics,
+        strategy: Strategy,
         max_run_up_percent: f64,
     }
 
     impl TestMetricsTarget {
         pub fn new(
-            sctx: StrategyContext,
+            ctx: Context,
+            strategy_config: StrategyConfig,
             long_entries: Vec<usize>,
             short_entries: Vec<usize>,
         ) -> Self {
+            let strategy = Strategy::new(ctx.clone(), strategy_config);
             return Self {
-                ctx: sctx.ctx.clone(),
-                sctx: sctx.clone(),
-                equity_metrics: EquityMetricsComponent::new(sctx.clone()),
-                performance_metrics: PerformanceMetricsComponent::new(sctx.clone()),
-                cobra_metrics: CobraMetricsComponent::new(
-                    sctx.clone(),
-                    CobraMetricsComponentConfig {
+                ctx: ctx.clone(),
+                equity_metrics: EquityMetrics::new(ctx.clone(), &strategy),
+                tradingview_metrics: TradingViewMetrics::new(
+                    ctx.clone(),
+                    &strategy,
+                    TradingViewMetricsConfig {
+                        risk_free_rate: 0.0,
+                    },
+                ),
+                cobra_metrics: CobraMetrics::new(
+                    ctx.clone(),
+                    &strategy,
+                    CobraMetricsConfig {
                         estimated: false,
                         returns_start_year: Some(2018), // returns_start_year: Some(2018),
                     },
                 ),
+                strategy,
                 long_entries,
                 short_entries,
                 max_run_up_percent: 0.0,
@@ -252,7 +261,7 @@ mod tests {
         }
 
         pub fn next(&mut self) -> TestMetricsPayload {
-            let tick = self.ctx.bar_index();
+            let tick = self.ctx.bar().index;
 
             let mut trade_direction: Option<TradeDirection> = None;
 
@@ -262,25 +271,26 @@ mod tests {
                 trade_direction = Some(TradeDirection::Short);
             }
 
-            let initial_capital = self.sctx.state().config.initial_capital;
-            let bar_index = self.ctx.bar_index();
+            let initial_capital = self.strategy.config.initial_capital;
 
-            self.sctx.next(trade_direction);
+            self.strategy.next(trade_direction);
 
-            let prev_max_run_up = self.performance_metrics.data.max_run_up;
+            let prev_max_run_up = self.tradingview_metrics.data.max_run_up;
 
-            self.equity_metrics.next(());
-            self.performance_metrics.next(&self.equity_metrics.data);
-            self.cobra_metrics
-                .next((&self.equity_metrics.data, &self.performance_metrics.data));
+            self.equity_metrics.next(&self.strategy);
+            self.tradingview_metrics.next(&self.strategy);
+            self.cobra_metrics.next(&self.strategy);
 
+            let metrics = &self.strategy.metrics;
             let equity_metrics = &self.equity_metrics.data;
-            let perf_metrics = &self.performance_metrics.data;
+            let tradingview_metrics = &self.tradingview_metrics.data;
             let cobra_metrics = &self.cobra_metrics.data;
 
-            if perf_metrics.max_run_up > prev_max_run_up {
-                self.max_run_up_percent =
-                    max_run_up_percent(perf_metrics.max_run_up, equity_metrics.bar_equity_max)
+            if tradingview_metrics.max_run_up > prev_max_run_up {
+                self.max_run_up_percent = max_run_up_percent(
+                    tradingview_metrics.max_run_up,
+                    equity_metrics.bar_equity_max,
+                )
             }
 
             // println!("[{}]: {:?}", bar_index, cobra_metrics);
@@ -289,26 +299,30 @@ mod tests {
             return TestMetricsPayload {
                 base: TestBaseMetrics {
                     equity: equity_metrics.equity,
-                    net_profit: perf_metrics.net_profit,
-                    open_profit: perf_metrics.open_profit,
-                    gross_profit: perf_metrics.gross_profit,
-                    gross_loss: perf_metrics.gross_loss,
-                    closed_trades: perf_metrics.closed_trades,
-                    winning_trades: perf_metrics.winning_trades,
-                    losing_trades: perf_metrics.losing_trades,
+                    net_profit: tradingview_metrics.net_profit,
+                    open_profit: tradingview_metrics.open_pl,
+                    gross_profit: tradingview_metrics.gross_profit,
+                    gross_loss: tradingview_metrics.gross_loss,
+                    closed_trades: tradingview_metrics.total_closed_trades,
+                    winning_trades: tradingview_metrics.number_winning_trades,
+                    losing_trades: tradingview_metrics.number_losing_trades,
                 },
                 base_additional: TestAdditionalBaseMetrics {
                     net_equity: equity_metrics.net_equity,
-                    long_net_profit: perf_metrics.long_net_profit,
-                    short_net_profit: perf_metrics.short_net_profit,
-                    max_drawdown: perf_metrics.max_drawdown,
-                    max_run_up: perf_metrics.max_run_up,
-                    avg_winning_trade: perf_metrics.avg_winning_trade,
-                    avg_losing_trade: perf_metrics.avg_losing_trade,
-                    avg_trade: perf_metrics.avg_trade,
-                    avg_winning_losing_trade_ratio: perf_metrics.avg_winning_losing_trade_ratio,
-                    profit_factor: perf_metrics.profit_factor,
-                    profitable: perf_metrics.profitable,
+                    long_net_profit: metrics.long_net_profit,
+                    short_net_profit: metrics.short_net_profit,
+                    max_drawdown: tradingview_metrics.max_drawdown,
+                    max_run_up: tradingview_metrics.max_run_up,
+                    avg_winning_trade: tradingview_metrics.avg_winning_trade,
+                    avg_losing_trade: tradingview_metrics.avg_losing_trade,
+                    avg_trade: tradingview_metrics.avg_trade,
+                    avg_winning_losing_trade_ratio: avg_win_loss_ratio(
+                        tradingview_metrics.avg_winning_trade,
+                        tradingview_metrics.avg_losing_trade,
+                    )
+                    .unwrap_or(0.0),
+                    profit_factor: tradingview_metrics.profit_factor,
+                    profitable: tradingview_metrics.percent_profitable,
                 },
                 cobra_metrics: TestCobraMetrics {
                     equity_curve_max_dd: cobra_metrics.equity_curve_max_dd,
@@ -320,27 +334,24 @@ mod tests {
                 },
                 utility: TestUtilityMetrics {
                     gross_loss_percent: gross_loss_percent(
-                        perf_metrics.gross_loss,
+                        tradingview_metrics.gross_loss,
                         initial_capital,
                     ),
                     gross_profit_percent: gross_profit_percent(
-                        perf_metrics.gross_profit,
+                        tradingview_metrics.gross_profit,
                         initial_capital,
                     ),
                     long_net_profit_percent: long_net_profit_percent(
-                        perf_metrics.long_net_profit,
+                        metrics.long_net_profit,
                         initial_capital,
                     ),
-                    net_profit_percent: net_profit_percent(
-                        perf_metrics.net_profit,
-                        initial_capital,
-                    ),
+                    net_profit_percent: net_profit_percent(metrics.net_profit, initial_capital),
                     short_net_profit_percent: short_net_profit_percent(
-                        perf_metrics.short_net_profit,
+                        metrics.short_net_profit,
                         initial_capital,
                     ),
                     max_drawdown_percent: max_drawdown_percent(
-                        perf_metrics.max_drawdown,
+                        tradingview_metrics.max_drawdown,
                         equity_metrics.net_equity_max,
                     ),
                     net_equity_min: equity_metrics.net_equity_min,
@@ -353,7 +364,7 @@ mod tests {
 
     fn _test_metrics(target: &mut TestMetricsTarget, expected: &[Option<TestMetricsPayload>]) {
         let mut snapshot = ArraySnapshot::<Option<TestMetricsPayload>>::new();
-        for _ in target.sctx.ctx.clone() {
+        for _ in target.ctx.clone() {
             let payload = target.next();
             snapshot.push(Some(payload));
         }
@@ -476,19 +487,16 @@ mod tests {
     fn on_next_bar_open_continous_extensive() {
         let (df, ctx) = Fixture::load_ctx(&format_path("next_bar_continous.csv"));
         let expected = _load_metrics(&df);
-        let strategy_ctx = StrategyContext::new(
-            ctx.clone(),
-            StrategyContextConfig {
-                continous: true,
-                on_bar_close: false,
-                initial_capital: 1000.0,
-                buy_with_equity: false,
-            },
-        );
 
         _test_metrics(
             &mut TestMetricsTarget::new(
-                strategy_ctx.clone(),
+                ctx.clone(),
+                StrategyConfig {
+                    continous: true,
+                    on_bar_close: false,
+                    initial_capital: 1000.0,
+                    buy_with_equity: false,
+                },
                 // Long entries
                 vec![2, 18, 44, 60, 120, 180, 400, 700, 1000, 1600],
                 // Short entries

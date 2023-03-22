@@ -1,0 +1,66 @@
+#[cfg(test)]
+mod tests {
+    use crate::{
+        common::src::{Src, SrcKind},
+        content::{
+            aroon::{Aroon, AroonConfig},
+            awesome_oscillator::{AwesomeOscillator, AwesomeOscillatorConfig},
+            volume_oscillator::{VolumeOscillator, VolumeOscillatorConfig},
+        },
+        core::incremental::Incremental,
+        polars::dataframe::DataFrameUtils,
+        ta::{
+            moving_average::{Ma, MaKind},
+            simple_moving_average::Sma,
+        },
+        testing::{
+            array_snapshot::ArraySnapshot,
+            fixture::{DataFrameFixtureUtils, Fixture},
+        },
+    };
+
+    fn format_path(path: &str) -> String {
+        format!("tests/content/volume_oscillator/indicator/{}", path)
+    }
+
+    fn _test(target: &mut VolumeOscillator, expected: &[Option<f64>]) {
+        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+        for _ in target.ctx.clone() {
+            let output = target.next(());
+            snapshot.push(output);
+        }
+        snapshot.assert(expected);
+    }
+
+    #[test]
+    fn short_length_5_long_length_10_ema() {
+        let (df, ctx) = Fixture::load_ctx(&format_path("short_length_5_long_length_10_ema.csv"));
+
+        _test(
+            &mut VolumeOscillator::new(
+                ctx.clone(),
+                VolumeOscillatorConfig {
+                    short_ma: Ma::new(ctx.clone(), MaKind::EMA, 5).to_box(),
+                    long_ma: Ma::new(ctx.clone(), MaKind::EMA, 10).to_box(),
+                },
+            ),
+            &df.test_target(),
+        );
+    }
+
+    #[test]
+    fn short_length_1_long_length_1_ema() {
+        let (df, ctx) = Fixture::load_ctx(&format_path("short_length_1_long_length_1_ema.csv"));
+
+        _test(
+            &mut VolumeOscillator::new(
+                ctx.clone(),
+                VolumeOscillatorConfig {
+                    short_ma: Ma::new(ctx.clone(), MaKind::EMA, 1).to_box(),
+                    long_ma: Ma::new(ctx.clone(), MaKind::EMA, 1).to_box(),
+                },
+            ),
+            &df.test_target(),
+        );
+    }
+}

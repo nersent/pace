@@ -3,16 +3,18 @@ use std::{path::Path, sync::Arc};
 use polars::prelude::DataFrame;
 
 use crate::{
-    components::component_context::ComponentContext,
-    data::in_memory_data_provider::InMemoryDataProvider,
+    core::{
+        context::Context, data_provider::DataProvider,
+        in_memory_data_provider::InMemoryDataProvider,
+    },
+    polars::{io::read_df, series::SeriesCastUtils},
     strategy::trade::TradeDirection,
-    utils::polars::{read_df, SeriesCastUtils},
 };
 
 pub struct Fixture {}
 
 impl Fixture {
-    pub fn load_ctx(path: &str) -> (DataFrame, ComponentContext) {
+    pub fn load_ctx(path: &str) -> (DataFrame, Context) {
         let mut normalized_path = Path::new("fixtures").join(path);
         let test_mode = std::env::var("NEXTEST").is_ok();
 
@@ -21,8 +23,7 @@ impl Fixture {
         }
 
         let df = read_df(&normalized_path);
-        let ctx =
-            ComponentContext::from_data_provider(Arc::from(InMemoryDataProvider::from_df(&df)));
+        let ctx = Context::new(InMemoryDataProvider::from_df(&df).to_arc());
         return (df, ctx);
     }
 }

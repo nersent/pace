@@ -1,16 +1,15 @@
 <div align="center">
-  <img src="static/logo.png" width="184">
+  <img src="static/logo.svg" width="184">
 
-  <br />
-  <br />
+<br />
+
+<h1><b>PACE</b></h1>
 
 <a href="https://nersent.com"><img src="https://cdn.nersent.com/public/badges/made_by_nersent.svg" alt="Made by Nersent" /></a>
 <a href="https://nersent.com"><img src="https://cdn.nersent.com/public/badges/stage_in_dev.svg" alt="In development" /></a>
 <a href="https://discord.gg/P7Vn4VX"><img src="https://cdn.nersent.com/public/badges/discord.svg" alt="Discord" /></a>
 
 </div>
-
----
 
 **Pace**: Technical analysis library written in Rust, designed to be compatible with PineScript.
 

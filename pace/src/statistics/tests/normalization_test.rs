@@ -4,7 +4,7 @@ mod tests {
         statistics::normalization::{
             clip_value, scale_value_centered, scale_value_down, scale_value_min_max, scale_value_up,
         },
-        utils::comparison::FloatComparison,
+        testing::comparison::FloatComparison,
     };
 
     static TEST_PRECISION_F64: f64 = 0.01;

@@ -1,4 +1,4 @@
-mod mean_component_test;
+mod mean_test;
 mod normalization_test;
-mod welfords_stdev_component_test;
-mod welfords_var_component_test;
+mod welfords_stdev_test;
+mod welfords_var_test;

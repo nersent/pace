@@ -1,47 +1,25 @@
-use plotters::{
-    prelude::{BitMapBackend, ChartBuilder, IntoDrawingArea},
-    style::IntoFont,
-};
 use prettytable::{color, row, Attr, Cell, Row, Table};
 use textplots::{Chart, Plot, Shape};
 
 use crate::{
-    components::component::Component,
-    statistics::stdev_component::StdevComponent,
-    strategy::{
-        metrics::common::max_run_up_percent, strategy_context::StrategyContext,
-        trade::TradeDirection,
-    },
+    core::{context::Context, incremental::Incremental},
+    statistics::stdev::Stdev,
+    strategy::strategy::Strategy,
     utils::string::with_suffix,
 };
 
 use super::{
     common::{
-        avg_losing_trade, avg_trade, avg_win_loss_ratio, avg_winning_trade, gross_profit_percent,
-        max_drawdown_percent, net_profit_percent, percent_profitable, profit_factor, sharpe_ratio,
-        sortino_ratio,
+        avg_losing_trade, avg_trade, avg_win_loss_ratio, avg_winning_trade, gross_loss_percent,
+        gross_profit_percent, max_drawdown_percent, max_run_up_percent, net_profit_percent,
+        percent_profitable, profit_factor, sharpe_ratio, sortino_ratio,
     },
-    equity_metrics_component::{EquityMetrics, EquityMetricsComponent},
-    performance_metrics_component::{PerformanceMetrics, PerformanceMetricsComponent},
-    returns_component::ReturnsComponent,
+    equity_metrics::EquityMetrics,
+    returns::Returns,
 };
 
-#[derive(Clone, Copy, Debug)]
-pub struct TradingViewMetricsComponentConfig {
-    pub risk_free_rate: f64,
-}
-
-impl Default for TradingViewMetricsComponentConfig {
-    fn default() -> Self {
-        Self {
-            // Default RFR on TradingView is `2%`.
-            risk_free_rate: 0.02,
-        }
-    }
-}
-
 #[derive(Clone, Debug)]
-pub struct TradingViewMetrics {
+pub struct TradingViewMetricsData {
     pub net_profit: f64,
     pub net_profit_percent: f64,
     pub gross_profit: f64,
@@ -69,7 +47,7 @@ pub struct TradingViewMetrics {
     pub equity_history: Vec<f64>,
 }
 
-impl TradingViewMetrics {
+impl TradingViewMetricsData {
     pub fn default(initial_capital: f64) -> Self {
         return Self {
             net_profit: 0.0,
@@ -247,45 +225,108 @@ impl TradingViewMetrics {
     }
 }
 
-/// Includes metrics from TradingView "Performance Summary" tab.
+#[derive(Clone, Copy, Debug)]
+pub struct TradingViewMetricsConfig {
+    pub risk_free_rate: f64,
+}
+
+impl TradingViewMetricsConfig {
+    fn default(initial_capital: f64) -> Self {
+        Self {
+            // Default RFR on TradingView is `2%`.
+            risk_free_rate: 0.02,
+        }
+    }
+}
+
+/// Includes common metrics from TradingView "Performance Summary" tab.
 ///
 /// Some metrics are not exact: `Sharpe Ratio, Sortino Ratio`.
 ///
-/// `TradingViewMetricsComponent` is intented to be used while developing a strategy, as it is not optimized for performance.
-pub struct TradingViewMetricsComponent {
-    pub sctx: StrategyContext,
-    pub data: TradingViewMetrics,
-    pub config: TradingViewMetricsComponentConfig,
-    returns: ReturnsComponent,
-    neg_returns_stdev: StdevComponent,
+/// `TradingViewMetrics` is intented to be used while developing a strategy, as it is not optimized for performance.
+pub struct TradingViewMetrics {
+    pub ctx: Context,
+    pub data: TradingViewMetricsData,
+    pub config: TradingViewMetricsConfig,
+    returns: Returns,
+    neg_returns_stdev: Stdev,
+    equity_metrics: EquityMetrics,
 }
 
-impl TradingViewMetricsComponent {
-    pub fn new(sctx: StrategyContext, config: TradingViewMetricsComponentConfig) -> Self {
+impl TradingViewMetrics {
+    pub fn new(ctx: Context, strategy: &Strategy, config: TradingViewMetricsConfig) -> Self {
+        let initial_capital = strategy.config.initial_capital;
         return Self {
-            sctx: sctx.clone(),
-            data: TradingViewMetrics::default(sctx.initial_capital),
+            ctx: ctx.clone(),
+            data: TradingViewMetricsData::default(initial_capital),
+            returns: Returns::new(ctx.clone(), initial_capital),
             config,
-            returns: ReturnsComponent::new(sctx.ctx.clone(), sctx.state().config.initial_capital),
-            neg_returns_stdev: StdevComponent::new(sctx.ctx.clone()),
+            neg_returns_stdev: Stdev::new(ctx.clone()),
+            equity_metrics: EquityMetrics::new(ctx.clone(), strategy),
         };
     }
 }
 
-impl Component<(&EquityMetrics, &PerformanceMetrics), ()> for TradingViewMetricsComponent {
-    fn next(&mut self, (equity_metrics, perf_metrics): (&EquityMetrics, &PerformanceMetrics)) {
-        let initial_capital = self.sctx.initial_capital;
+impl Incremental<&Strategy, ()> for TradingViewMetrics {
+    fn next(&mut self, strategy: &Strategy) {
+        let initial_capital = strategy.config.initial_capital;
 
-        let state = self.sctx.state();
+        self.equity_metrics.next(strategy);
+        let equity_metrics = &self.equity_metrics.data;
 
-        if let Some(e) = &state.events.on_trade_exit {
-            self.data.net_equity_history.push(equity_metrics.net_equity);
-            self.data
-                .max_drawdown_history
-                .push(perf_metrics.max_drawdown);
-        }
+        self.data.max_drawdown = f64::max(
+            equity_metrics.net_equity_max - equity_metrics.bar_equity_min,
+            self.data.max_drawdown,
+        );
+        self.data.max_drawdown_percent =
+            max_drawdown_percent(self.data.max_drawdown, equity_metrics.net_equity_max);
 
-        self.data.equity_history.push(equity_metrics.equity);
+        self.data.max_run_up = f64::max(
+            equity_metrics.bar_equity_max - equity_metrics.net_equity_min,
+            self.data.max_run_up,
+        );
+        self.data.max_run_up_percent =
+            max_run_up_percent(self.data.max_run_up, equity_metrics.bar_equity_max);
+
+        self.data.net_profit = strategy.metrics.net_profit;
+        self.data.net_profit_percent =
+            net_profit_percent(strategy.metrics.net_profit, initial_capital);
+
+        self.data.gross_profit = strategy.metrics.gross_profit;
+        self.data.gross_profit_percent =
+            gross_profit_percent(strategy.metrics.gross_profit, initial_capital);
+
+        self.data.gross_loss = strategy.metrics.gross_loss;
+        self.data.gross_loss_percent =
+            gross_loss_percent(strategy.metrics.gross_loss, initial_capital);
+
+        self.data.profit_factor =
+            profit_factor(strategy.metrics.gross_profit, strategy.metrics.gross_loss)
+                .unwrap_or(0.0);
+
+        self.data.open_pl = strategy.metrics.open_profit;
+        self.data.total_closed_trades = strategy.metrics.closed_trades;
+        self.data.number_winning_trades = strategy.metrics.winning_trades;
+        self.data.number_losing_trades = strategy.metrics.losing_trades;
+        self.data.percent_profitable = percent_profitable(
+            strategy.metrics.winning_trades,
+            strategy.metrics.closed_trades,
+        )
+        .unwrap_or(0.0);
+        self.data.avg_trade =
+            avg_trade(strategy.metrics.net_profit, strategy.metrics.closed_trades).unwrap_or(0.0);
+        self.data.avg_winning_trade = avg_winning_trade(
+            strategy.metrics.gross_profit,
+            strategy.metrics.winning_trades,
+        )
+        .unwrap_or(0.0);
+        self.data.avg_losing_trade =
+            avg_losing_trade(strategy.metrics.gross_loss, self.data.number_losing_trades)
+                .unwrap_or(0.0);
+
+        self.data.ratio_avg_win_avg_loss =
+            avg_win_loss_ratio(self.data.avg_winning_trade, self.data.avg_losing_trade)
+                .unwrap_or(0.0);
 
         self.returns.next(equity_metrics.net_equity);
         let returns = &self.returns.data;
@@ -294,48 +335,16 @@ impl Component<(&EquityMetrics, &PerformanceMetrics), ()> for TradingViewMetrics
             .neg_returns_stdev
             .next(f64::min(0.0, returns.delta).abs());
 
-        self.data.net_profit = perf_metrics.net_profit;
-        self.data.net_profit_percent = net_profit_percent(perf_metrics.net_profit, initial_capital);
-
-        self.data.gross_profit = perf_metrics.gross_profit;
-        self.data.gross_profit_percent =
-            gross_profit_percent(perf_metrics.gross_profit, initial_capital);
-
-        self.data.gross_loss = perf_metrics.gross_loss;
-        self.data.gross_loss_percent =
-            gross_profit_percent(perf_metrics.gross_loss, initial_capital);
-
-        self.data.max_drawdown = perf_metrics.max_drawdown;
-        self.data.max_drawdown_percent =
-            max_drawdown_percent(perf_metrics.max_drawdown, equity_metrics.net_equity_max);
-
-        self.data.max_run_up = perf_metrics.max_run_up;
-        self.data.max_run_up_percent =
-            max_run_up_percent(perf_metrics.max_run_up, equity_metrics.bar_equity_max);
-
-        self.data.profit_factor = perf_metrics.profit_factor;
-        self.data.open_pl = perf_metrics.open_profit;
-        self.data.total_closed_trades = perf_metrics.closed_trades;
-        self.data.number_winning_trades = perf_metrics.winning_trades;
-        self.data.number_losing_trades = perf_metrics.losing_trades;
-        self.data.percent_profitable =
-            percent_profitable(perf_metrics.winning_trades, perf_metrics.closed_trades)
-                .unwrap_or(0.0);
-        self.data.avg_trade =
-            avg_trade(perf_metrics.net_profit, perf_metrics.closed_trades).unwrap_or(0.0);
-        self.data.avg_winning_trade =
-            avg_winning_trade(self.data.gross_profit, self.data.number_winning_trades)
-                .unwrap_or(0.0);
-        self.data.avg_losing_trade =
-            avg_losing_trade(self.data.gross_loss, self.data.number_losing_trades).unwrap_or(0.0);
-
-        self.data.ratio_avg_win_avg_loss =
-            avg_win_loss_ratio(self.data.avg_winning_trade, self.data.avg_losing_trade)
-                .unwrap_or(0.0);
-
         self.data.sharpe_ratio =
             sharpe_ratio(returns.mean, returns.stdev, self.config.risk_free_rate);
         self.data.sortino_ratio =
             sortino_ratio(returns.mean, neg_returns_stdev, self.config.risk_free_rate);
+
+        if let Some(e) = &strategy.events.on_trade_exit {
+            self.data.net_equity_history.push(equity_metrics.net_equity);
+            self.data.max_drawdown_history.push(self.data.max_drawdown);
+        }
+
+        self.data.equity_history.push(equity_metrics.equity);
     }
 }

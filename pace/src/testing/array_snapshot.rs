@@ -1,6 +1,8 @@
 use colored::Colorize;
 
-use crate::{strategy::trade::TradeDirection, utils::comparison::FloatComparison};
+use crate::strategy::trade::TradeDirection;
+
+use super::comparison::FloatComparison;
 
 pub struct ArraySnapshot<T> {
     pub debug_mode: bool,
