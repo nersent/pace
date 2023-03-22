@@ -28,6 +28,7 @@ See [migration from PineScript](#pinescript-migration)
 
 ## Roadmap
 
+- [ ] Python bindings
 - [ ] Improve performance
 - [ ] Release stable version
 - [ ] Additionaly support vectorized calculations
