@@ -15,7 +15,7 @@ mod tests {
     fn _test(target: &mut WindowValidator, expected: &[Option<bool>]) {
         let mut snapshot = ArraySnapshot::<Option<bool>>::new();
         for _ in target.ctx.clone() {
-            let output = target.next(target.ctx.bar().close);
+            let output = target.next(target.ctx.bar.close());
             snapshot.push(Some(output));
         }
         snapshot.assert(expected);

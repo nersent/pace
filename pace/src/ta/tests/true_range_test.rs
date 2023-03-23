@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use crate::{
         core::incremental::Incremental,
         ta::{
@@ -9,11 +11,12 @@ mod tests {
         testing::{
             array_snapshot::ArraySnapshot,
             fixture::{DataFrameFixtureUtils, Fixture},
+            pace::format_pace_fixture_path,
         },
     };
 
-    fn format_path(path: &str) -> String {
-        format!("tests/ta/tr/{}", path)
+    fn format_path(path: &str) -> PathBuf {
+        format_pace_fixture_path(&format!("tests/ta/tr/{}", path))
     }
 
     fn _test(target: &mut Tr, expected: &[Option<f64>]) {

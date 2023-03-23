@@ -60,10 +60,9 @@ impl Incremental<(), Option<f64>> for ChoppinessIndex {
     fn next(&mut self, _: ()) -> Option<f64> {
         let atr = self.atr.next(());
         let atr_sum = self.atr_sum.next(atr);
-        let bar = self.ctx.bar();
 
-        let highest = self.highest.next(bar.high);
-        let lowest = self.lowest.next(bar.low);
+        let highest = self.highest.next(self.ctx.bar.high());
+        let lowest = self.lowest.next(self.ctx.bar.low());
 
         let chop: Option<f64> = match (atr_sum, highest, lowest) {
             (Some(atr_sum), Some(highest), Some(lowest)) => {

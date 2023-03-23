@@ -68,9 +68,8 @@ impl Incremental<&Strategy, ()> for EquityMetrics {
 
         if let Some(last_trade) = &last_trade {
             if !last_trade.is_closed {
-                let bar = self.ctx.bar();
-                let mut lowest_price = bar.low.unwrap();
-                let mut highest_price = bar.high.unwrap();
+                let mut lowest_price = self.ctx.bar.low().unwrap();
+                let mut highest_price = self.ctx.bar.high().unwrap();
 
                 if last_trade.direction == TradeDirection::Short {
                     let _lowest_price = lowest_price;

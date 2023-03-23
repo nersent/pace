@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use crate::{
         core::incremental::Incremental,
         ta::{
@@ -9,17 +11,18 @@ mod tests {
         testing::{
             array_snapshot::ArraySnapshot,
             fixture::{DataFrameFixtureUtils, Fixture},
+            pace::format_pace_fixture_path,
         },
     };
 
-    fn format_path(path: &str) -> String {
-        format!("tests/ta/cross/{}", path)
+    fn format_path(path: &str) -> PathBuf {
+        format_pace_fixture_path(&format!("tests/ta/cross/{}", path))
     }
 
     fn _test(target: &mut CrossUnderThreshold, target_rsi: &mut Rsi, expected: &[Option<f64>]) {
         let mut snapshot = ArraySnapshot::<Option<f64>>::new();
         for _ in target.ctx.clone() {
-            let output_rsi = target_rsi.next(target.ctx.bar().close);
+            let output_rsi = target_rsi.next(target.ctx.bar.close());
             let output = target.next(output_rsi);
             snapshot.push(Some(if output { 1.0 } else { 0.0 }));
         }

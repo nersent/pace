@@ -43,7 +43,7 @@ impl Aroon {
 
 impl Incremental<(), AroonData> for Aroon {
     fn next(&mut self, _: ()) -> AroonData {
-        if !self.ctx.bar().at_length(self.config.length) {
+        if !self.ctx.bar.at_length(self.config.length) {
             return AroonData {
                 up: None,
                 down: None,

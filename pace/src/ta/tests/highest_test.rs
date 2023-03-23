@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use crate::{
         core::incremental::Incremental,
         ta::{
@@ -9,17 +11,18 @@ mod tests {
         testing::{
             array_snapshot::ArraySnapshot,
             fixture::{DataFrameFixtureUtils, Fixture},
+            pace::format_pace_fixture_path,
         },
     };
 
-    fn format_path(path: &str) -> String {
-        format!("tests/ta/bars/highest/{}", path)
+    fn format_path(path: &str) -> PathBuf {
+        format_pace_fixture_path(&format!("tests/ta/bars/highest/{}", path))
     }
 
     fn _test(target: &mut Highest, expected: &[Option<f64>]) {
         let mut snapshot = ArraySnapshot::<Option<f64>>::new();
         for _ in target.ctx.clone() {
-            let output = target.next(target.ctx.bar().high);
+            let output = target.next(target.ctx.bar.high());
             snapshot.push(output);
         }
         snapshot.assert(expected);

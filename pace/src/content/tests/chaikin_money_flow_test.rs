@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use crate::{
         common::src::{Src, SrcKind},
         content::{
@@ -16,11 +18,15 @@ mod tests {
         testing::{
             array_snapshot::ArraySnapshot,
             fixture::{DataFrameFixtureUtils, Fixture},
+            pace::format_pace_fixture_path,
         },
     };
 
-    fn format_path(path: &str) -> String {
-        format!("tests/content/chaikin_money_flow/indicator/{}", path)
+    fn format_path(path: &str) -> PathBuf {
+        format_pace_fixture_path(&format!(
+            "tests/content/chaikin_money_flow/indicator/{}",
+            path
+        ))
     }
 
     fn _test(target: &mut ChaikinMoneyFlow, expected: &[Option<f64>]) {

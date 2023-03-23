@@ -69,9 +69,8 @@ impl ChandeKrollStop {
 impl Incremental<(), ChandeKrollStopData> for ChandeKrollStop {
     fn next(&mut self, _: ()) -> ChandeKrollStopData {
         let atr = self.atr.next(());
-        let bar = self.ctx.bar();
-        let first_high_stop_highest = self.first_high_stop_highest.next(bar.high);
-        let first_low_stop_lowest = self.first_low_stop_lowest.next(bar.low);
+        let first_high_stop_highest = self.first_high_stop_highest.next(self.ctx.bar.high());
+        let first_low_stop_lowest = self.first_low_stop_lowest.next(self.ctx.bar.low());
 
         let (first_high_stop, first_low_stop) =
             match (first_high_stop_highest, first_low_stop_lowest, atr) {

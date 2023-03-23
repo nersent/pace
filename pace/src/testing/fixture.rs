@@ -1,4 +1,7 @@
-use std::{path::Path, sync::Arc};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use polars::prelude::DataFrame;
 
@@ -14,15 +17,8 @@ use crate::{
 pub struct Fixture {}
 
 impl Fixture {
-    pub fn load_ctx(path: &str) -> (DataFrame, Context) {
-        let mut normalized_path = Path::new("fixtures").join(path);
-        let test_mode = std::env::var("NEXTEST").is_ok();
-
-        if test_mode {
-            normalized_path = Path::new("../").join(normalized_path);
-        }
-
-        let df = read_df(&normalized_path);
+    pub fn load_ctx(path: &Path) -> (DataFrame, Context) {
+        let df = read_df(&path);
         let ctx = Context::new(InMemoryDataProvider::from_df(&df).to_arc());
         return (df, ctx);
     }

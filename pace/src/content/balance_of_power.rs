@@ -33,11 +33,10 @@ impl BalanceOfPower {
 
 impl Incremental<(), Option<f64>> for BalanceOfPower {
     fn next(&mut self, _: ()) -> Option<f64> {
-        let bar = self.ctx.bar();
-        let close = bar.close;
-        let open = bar.open;
-        let high = bar.high;
-        let low = bar.low;
+        let close = self.ctx.bar.close();
+        let open = self.ctx.bar.open();
+        let high = self.ctx.bar.high();
+        let low = self.ctx.bar.low();
 
         let value = match (close, open, high, low) {
             (Some(close), Some(open), Some(high), Some(low)) => {

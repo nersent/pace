@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use crate::{
         content::aroon::{Aroon, AroonConfig},
         core::incremental::Incremental,
@@ -8,11 +10,12 @@ mod tests {
         testing::{
             array_snapshot::ArraySnapshot,
             fixture::{DataFrameFixtureUtils, Fixture},
+            pace::format_pace_fixture_path,
         },
     };
 
-    fn format_path(path: &str) -> String {
-        format!("tests/content/aroon/indicator/{}", path)
+    fn format_path(path: &str) -> PathBuf {
+        format_pace_fixture_path(&format!("tests/content/aroon/indicator/{}", path))
     }
 
     fn _test(target: &mut Aroon, expected: &[Option<(Option<f64>, Option<f64>)>]) {

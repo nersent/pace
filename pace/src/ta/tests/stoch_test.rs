@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use crate::{
         core::incremental::Incremental,
         ta::{
@@ -8,18 +10,22 @@ mod tests {
         testing::{
             array_snapshot::ArraySnapshot,
             fixture::{DataFrameFixtureUtils, Fixture},
+            pace::format_pace_fixture_path,
         },
     };
 
-    fn format_path(path: &str) -> String {
-        format!("tests/ta/stoch/{}", path)
+    fn format_path(path: &str) -> PathBuf {
+        format_pace_fixture_path(&format!("tests/ta/stoch/{}", path))
     }
 
     fn _test_close_high_low(target: &mut Stoch, expected: &[Option<f64>]) {
         let mut snapshot = ArraySnapshot::<Option<f64>>::new();
         for _ in target.ctx.clone() {
-            let bar = target.ctx.bar();
-            let ouptut = target.next((bar.close, bar.high, bar.low));
+            let ouptut = target.next((
+                target.ctx.bar.close(),
+                target.ctx.bar.high(),
+                target.ctx.bar.low(),
+            ));
             snapshot.push(ouptut);
         }
         snapshot.assert(expected);
@@ -28,8 +34,11 @@ mod tests {
     fn _test_close_close_close(target: &mut Stoch, expected: &[Option<f64>]) {
         let mut snapshot = ArraySnapshot::<Option<f64>>::new();
         for _ in target.ctx.clone() {
-            let bar = target.ctx.bar();
-            let ouptut = target.next((bar.close, bar.close, bar.close));
+            let ouptut = target.next((
+                target.ctx.bar.close(),
+                target.ctx.bar.close(),
+                target.ctx.bar.close(),
+            ));
             snapshot.push(ouptut);
         }
         snapshot.assert(expected);

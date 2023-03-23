@@ -13,7 +13,7 @@ mod tests {
     fn _test(target: &mut FixNan, expected: &[Option<f64>]) {
         let mut snapshot = ArraySnapshot::<Option<f64>>::new();
         for _ in target.ctx.clone() {
-            let output = target.next(target.ctx.bar().close);
+            let output = target.next(target.ctx.bar.close());
             snapshot.push(output);
         }
         snapshot.assert(expected);

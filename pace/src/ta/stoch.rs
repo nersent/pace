@@ -61,7 +61,7 @@ impl Incremental<(Option<f64>, Option<f64>, Option<f64>), Option<f64>> for Stoch
         self.high_input_cache.next(high);
         self.low_input_cache.next(low);
 
-        if !self.ctx.bar().at_length(self.length) {
+        if !self.ctx.bar.at_length(self.length) {
             return None;
         }
 

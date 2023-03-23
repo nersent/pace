@@ -14,7 +14,7 @@ mod tests {
     fn _test(target: &mut WelfordsVar, expected: &[Option<f64>]) {
         let mut snapshot = ArraySnapshot::<Option<f64>>::new();
         for _ in target.ctx.clone() {
-            let output = target.next(target.ctx.bar().close.unwrap());
+            let output = target.next(target.ctx.bar.close().unwrap());
             snapshot.push(Some(output));
         }
         snapshot.assert(expected);

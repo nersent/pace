@@ -27,7 +27,7 @@ impl Incremental<Option<f64>, Option<f64>> for Prank {
     fn next(&mut self, value: Option<f64>) -> Option<f64> {
         self.input_cache.next(value);
 
-        if value.is_none() || !self.ctx.bar().at_length(self.length + 1) {
+        if value.is_none() || !self.ctx.bar.at_length(self.length + 1) {
             return None;
         }
 

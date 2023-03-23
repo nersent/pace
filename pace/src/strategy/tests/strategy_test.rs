@@ -95,7 +95,7 @@ mod tests {
         let mut snapshot =
             ArraySnapshot::<Option<(Option<TestTradePayload>, Vec<TestTradePayload>)>>::new();
         for _ in target.ctx.clone() {
-            let tick = target.ctx.bar().index;
+            let tick = target.ctx.bar.index();
             let trade_direction = trades[tick];
             target.next(trade_direction);
             let trades = target
@@ -116,7 +116,7 @@ mod tests {
     ) {
         let mut snapshot = ArraySnapshot::<Option<Vec<TestTradePayload>>>::new();
         for _ in target.ctx.clone() {
-            let tick = target.ctx.bar().index;
+            let tick = target.ctx.bar.index();
             let trade_direction = trades[tick];
             let output = target.next(trade_direction);
             let trades = target
@@ -142,7 +142,7 @@ mod tests {
 
         let mut snapshot = ArraySnapshot::<Option<(f64, f64)>>::new();
         for _ in target.ctx.clone() {
-            let tick = target.ctx.bar().index;
+            let tick = target.ctx.bar.index();
             let trade_direction = trades[tick];
             target.next(trade_direction);
             snapshot.push(Some((target.metrics.equity, target.metrics.open_profit)));

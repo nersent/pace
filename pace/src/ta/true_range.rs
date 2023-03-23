@@ -48,11 +48,9 @@ impl Tr {
 
 impl Incremental<(), Option<f64>> for Tr {
     fn next(&mut self, _: ()) -> Option<f64> {
-        let bar = self.ctx.bar();
-
         return true_range(
-            bar.high.unwrap(),
-            bar.low.unwrap(),
+            self.ctx.bar.high().unwrap(),
+            self.ctx.bar.low().unwrap(),
             self.ctx.high(1),
             self.ctx.low(1),
             self.ctx.close(1),

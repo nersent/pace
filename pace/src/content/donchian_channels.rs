@@ -55,9 +55,8 @@ impl DonchianChannels {
 
 impl Incremental<(), DonchianChannelsData> for DonchianChannels {
     fn next(&mut self, _: ()) -> DonchianChannelsData {
-        let bar = self.ctx.bar();
-        let upper = self.highest.next(bar.high);
-        let lower = self.lowest.next(bar.low);
+        let upper = self.highest.next(self.ctx.bar.high());
+        let lower = self.lowest.next(self.ctx.bar.low());
 
         let basis = ps_add(upper, lower).map(|x| x / 2.0);
 

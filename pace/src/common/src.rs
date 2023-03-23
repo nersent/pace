@@ -44,31 +44,29 @@ impl Src {
 
     fn create_delegate(ctx: Context, kind: SrcKind) -> Box<dyn FnMut() -> Option<f64>> {
         match kind {
-            SrcKind::Open => Box::new(move || ctx.bar().open),
-            SrcKind::High => Box::new(move || ctx.bar().high),
-            SrcKind::Low => Box::new(move || ctx.bar().low),
-            SrcKind::Close => Box::new(move || ctx.bar().close),
-            SrcKind::Volume => Box::new(move || ctx.bar().volume),
+            SrcKind::Open => Box::new(move || ctx.bar.open()),
+            SrcKind::High => Box::new(move || ctx.bar.high()),
+            SrcKind::Low => Box::new(move || ctx.bar.low()),
+            SrcKind::Close => Box::new(move || ctx.bar.close()),
+            SrcKind::Volume => Box::new(move || ctx.bar.volume()),
             SrcKind::OHLC4 => Box::new(move || {
                 Some(ohlc4(
-                    ctx.bar().open.unwrap(),
-                    ctx.bar().high.unwrap(),
-                    ctx.bar().low.unwrap(),
-                    ctx.bar().close.unwrap(),
+                    ctx.bar.open().unwrap(),
+                    ctx.bar.high().unwrap(),
+                    ctx.bar.low().unwrap(),
+                    ctx.bar.close().unwrap(),
                 ))
             }),
             SrcKind::HLC3 => Box::new(move || {
-                let bar = ctx.bar();
                 Some(hlc3(
-                    bar.high.unwrap(),
-                    bar.low.unwrap(),
-                    bar.close.unwrap(),
+                    ctx.bar.high().unwrap(),
+                    ctx.bar.low().unwrap(),
+                    ctx.bar.close().unwrap(),
                 ))
             }),
-            SrcKind::HL2 => Box::new(move || {
-                let bar = ctx.bar();
-                Some(hl2(bar.high.unwrap(), bar.low.unwrap()))
-            }),
+            SrcKind::HL2 => {
+                Box::new(move || Some(hl2(ctx.bar.high().unwrap(), ctx.bar.low().unwrap())))
+            }
         }
     }
 }

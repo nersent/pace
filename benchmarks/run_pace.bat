@@ -1,4 +1,4 @@
-cargo pgo instrument run
+cargo pgo instrument run -- --bin pace_bench
 
 cargo pgo optimize
 

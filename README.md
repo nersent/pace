@@ -11,7 +11,7 @@
 
 </div>
 
-**Pace**: Technical analysis library written in Rust, designed to be compatible with PineScript.
+**PACE**: Technical analysis library written in Rust, designed to be compatible with PineScript.
 
 Fast, zero runtime cost and memory-safe, but with very high learning curve.
 
@@ -25,30 +25,21 @@ All Pace components and indicators have been tested against PineScript, ensuring
 
 See [migration from PineScript](#pinescript-migration)
 
-## Roadmap
-
-- [ ] Python bindings
-- [ ] Improve performance
-- [ ] Release stable version
-- [ ] Additionaly support vectorized calculations
-- [ ] Implement Pace -> PineScript strategy exporter
-- [ ] Implement more TradingView strategy tab metrics
-- [ ] Implement exact TradingView sharpe/sortino
-- [ ] Basic chart plotting capabilities
-- [ ] Support custom fill order size
-- [ ] Implement more risk metrics
-
 ## Features
 
-- Indicator/Strategy testing utilities
+- Results of TA functions same as in PineScript
 
-- Same results as PineScript
+- Strategy metrics from TradingView
 
-- TradingView strategy metrics compatible
+  ![tradingview_strategy_overview](/static/strategy_overview_tradingview.png)
 
   ![pace_strategy_overview](/static/strategy_overview_pace.png)
 
-  ![tradingview_strategy_overview](/static/strategy_overview_tradingview.png)
+  ![pace_strategy_performance](/static/strategy_performance_pace.png)
+
+- Simple testing utilities
+
+- Support for [Polars](https://github.com/pola-rs/polars) library
 
 - Risk indicators
 
@@ -100,9 +91,28 @@ See [migration from PineScript](#pinescript-migration)
   - Weighted Moving Average
   - Williams %R
 
+## Roadmap
+
+- [ ] Python bindings
+- [ ] Improve performance
+- [ ] Release stable version
+- [ ] Additionaly support vectorized calculations
+- [ ] Implement Pace -> PineScript strategy exporter
+- [ ] Implement more TradingView strategy tab metrics
+- [ ] Implement exact TradingView sharpe/sortino
+- [ ] Basic chart plotting capabilities
+- [ ] Support custom fill order size
+- [ ] Implement more risk metrics
+- [ ] Parameter optimization
+- [ ] Add more benchmarks
+
 ## Getting Started
 
-You can use already configured [boilerplate project](https://github.com/nersent/pace-starter) with example indicator and strategy.
+You can use already configured [boilerplate project](https://github.com/nersent/pace-starter) with an example indicator and strategy.
+
+## Examples
+
+See already implemented indicators and strategies [here](pace/src/content).
 
 ## Installation
 
@@ -119,10 +129,6 @@ $ cargo add nersent_pace
 ## Documentation
 
 Visit [docs](/docs/index.md) to view the full documentation.
-
-## Examples
-
-See already implemented indicators and strategies [here](pace/src/content).
 
 ## Motivation
 
@@ -154,7 +160,7 @@ See already implemented indicators and strategies [here](pace/src/content).
 
    There is only one main loop, which iterates over the entire dataset. For every loop tick, each indicator is updated in constant O(1) time. This is the best approach if you care about computation delay, as it is fast and memory efficient. In the most cases, it's the easiest way to implement new features. Also, PineScript is incremental by design, so it's easy to port PineScript code to similar architecture.
 
-   Incremental architecture, has it's drawback - it is slower than vectorization, but not that much. For 1M bars and SMA(14) the difference between Pace and talib is 5ms.
+   Incremental architecture, has it's drawback - it is slower than vectorization, but not that much. For **1M** bars and `SMA(14)` the difference between Pace and talib is **5ms**.
 
    See [benchmarks](#benchmarks) section below for more details.
 
@@ -185,6 +191,7 @@ We performed multiple benchmarks for popular indicators across different technic
 - Pace is the second fastest library, despite not being designed towards vector calculations
 - On smaller datasets, the gap between talib and Pace is not significant
 - Pandas and Numpy have both their own runtime overhead
+- It's not worth to do technical analysis on GPU for smaller datasets
 
 ### Mean time (ms):
 

@@ -21,7 +21,7 @@ impl LowestBars {
 
 impl Incremental<(), Option<i32>> for LowestBars {
     fn next(&mut self, _: ()) -> Option<i32> {
-        if !self.ctx.bar().at_length(self.length) {
+        if !self.ctx.bar.at_length(self.length) {
             return None;
         }
         return lowest_bars(self.ctx.lows(self.length), self.length);

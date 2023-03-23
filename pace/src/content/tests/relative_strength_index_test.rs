@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use crate::{
         common::src::{Src, SrcKind},
         content::{
@@ -21,11 +23,15 @@ mod tests {
         testing::{
             array_snapshot::ArraySnapshot,
             fixture::{DataFrameFixtureUtils, Fixture},
+            pace::format_pace_fixture_path,
         },
     };
 
-    fn format_indicator_path(path: &str) -> String {
-        format!("tests/content/relative_strength_index/indicator/{}", path)
+    fn format_indicator_path(path: &str) -> PathBuf {
+        format_pace_fixture_path(&format!(
+            "tests/content/relative_strength_index/indicator/{}",
+            path
+        ))
     }
 
     fn _test_indicator(target: &mut RelativeStrengthIndex, expected: &[Option<f64>]) {
@@ -52,8 +58,11 @@ mod tests {
         );
     }
 
-    fn format_strategy_path(path: &str) -> String {
-        format!("tests/content/relative_strength_index/strategy/{}", path)
+    fn format_strategy_path(path: &str) -> PathBuf {
+        format_pace_fixture_path(&format!(
+            "tests/content/relative_strength_index/strategy/{}",
+            path
+        ))
     }
 
     fn _test_strategy(

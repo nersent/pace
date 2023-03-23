@@ -231,7 +231,7 @@ pub struct TradingViewMetricsConfig {
 }
 
 impl TradingViewMetricsConfig {
-    fn default(initial_capital: f64) -> Self {
+    pub fn default() -> Self {
         Self {
             // Default RFR on TradingView is `2%`.
             risk_free_rate: 0.02,

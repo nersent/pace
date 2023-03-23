@@ -176,7 +176,7 @@ pub struct CobraMetricsConfig {
 }
 
 impl CobraMetricsConfig {
-    fn default(strategy: &Strategy) -> Self {
+    pub fn default() -> Self {
         return Self {
             estimated: false,
             returns_start_year: Some(2018),
@@ -270,7 +270,7 @@ impl Incremental<&Strategy, ()> for CobraMetrics {
         self.prev_equity = equity_metrics.equity;
 
         if let Some(returns_start_year) = self.config.returns_start_year {
-            let bar_year = self.ctx.bar().datetime().unwrap().year();
+            let bar_year = self.ctx.bar.datetime().unwrap().year();
             if bar_year < returns_start_year {
                 return;
             }

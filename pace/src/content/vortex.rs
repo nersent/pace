@@ -58,10 +58,9 @@ impl Vortex {
 
 impl Incremental<(), VortexData> for Vortex {
     fn next(&mut self, _: ()) -> VortexData {
-        let bar = self.ctx.bar();
-        let current_tick = bar.index;
-        let high = bar.high;
-        let low = bar.low;
+        let current_tick = self.ctx.bar.index();
+        let high = self.ctx.bar.high();
+        let low = self.ctx.bar.low();
         let prev_high = self.ctx.high(1);
         let prev_low = self.ctx.low(1);
 

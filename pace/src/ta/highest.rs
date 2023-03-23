@@ -29,7 +29,7 @@ impl Incremental<Option<f64>, Option<f64>> for Highest {
     fn next(&mut self, value: Option<f64>) -> Option<f64> {
         self.input_cache.next(value);
 
-        if !self.ctx.bar().at_length(self.length) {
+        if !self.ctx.bar.at_length(self.length) {
             return None;
         }
 

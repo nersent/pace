@@ -35,7 +35,7 @@ impl Incremental<Option<f64>, Option<f64>> for Ema {
         if self.length == 1 {
             return value;
         }
-        if !self.ctx.bar().at_length(self.length - 1) {
+        if !self.ctx.bar.at_length(self.length - 1) {
             self.sma.next(value);
             return None;
         }

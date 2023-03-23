@@ -30,7 +30,7 @@ impl Incremental<Option<f64>, Option<f64>> for Wma {
         self.input_cache.next(value);
         let is_valid = self.batch_validator.next(value);
 
-        if !self.ctx.bar().at_length(self.length) || !is_valid {
+        if !self.ctx.bar.at_length(self.length) || !is_valid {
             return None;
         }
 

@@ -57,9 +57,8 @@ impl WilliamsPercentRank {
 impl Incremental<(), Option<f64>> for WilliamsPercentRank {
     fn next(&mut self, _: ()) -> Option<f64> {
         let src = self.config.src.next(());
-        let bar = self.ctx.bar();
-        let max = self.highest.next(bar.high);
-        let min = self.lowest.next(bar.low);
+        let max = self.highest.next(self.ctx.bar.high());
+        let min = self.lowest.next(self.ctx.bar.low());
 
         let pr = ps_div(ps_diff(src, max), ps_diff(max, min)).map(|x| x * 100.0);
 
@@ -96,8 +95,8 @@ impl WilliamsPercentRankStrategy {
     pub fn new(ctx: Context, config: WilliamsPercentRankStrategyConfig) -> Self {
         return Self {
             ctx: ctx.clone(),
-            cross_overbought: CrossOverThreshold::new(ctx.clone(), config.threshold_oversold),
-            cross_oversold: CrossUnderThreshold::new(ctx.clone(), config.threshold_overbought),
+            cross_overbought: CrossOverThreshold::new(ctx.clone(), config.threshold_overbought),
+            cross_oversold: CrossUnderThreshold::new(ctx.clone(), config.threshold_oversold),
             config,
         };
     }

@@ -77,16 +77,16 @@ impl Default for RelativeStrengthIndexStrategyConfig {
 pub struct RelativeStrengthIndexStrategy {
     pub config: RelativeStrengthIndexStrategyConfig,
     pub ctx: Context,
-    cross_overbought: CrossOverThreshold,
-    cross_oversold: CrossUnderThreshold,
+    cross_over: CrossOverThreshold,
+    cross_under: CrossUnderThreshold,
 }
 
 impl RelativeStrengthIndexStrategy {
     pub fn new(ctx: Context, config: RelativeStrengthIndexStrategyConfig) -> Self {
         return Self {
             ctx: ctx.clone(),
-            cross_overbought: CrossOverThreshold::new(ctx.clone(), config.threshold_oversold),
-            cross_oversold: CrossUnderThreshold::new(ctx.clone(), config.threshold_overbought),
+            cross_over: CrossOverThreshold::new(ctx.clone(), config.threshold_oversold),
+            cross_under: CrossUnderThreshold::new(ctx.clone(), config.threshold_overbought),
             config,
         };
     }
@@ -94,12 +94,12 @@ impl RelativeStrengthIndexStrategy {
 
 impl Incremental<Option<f64>, Option<TradeDirection>> for RelativeStrengthIndexStrategy {
     fn next(&mut self, rsi: Option<f64>) -> Option<TradeDirection> {
-        let is_cross_over = self.cross_overbought.next(rsi);
-        let is_cross_under = self.cross_oversold.next(rsi);
+        let cross_over = self.cross_over.next(rsi);
+        let cross_under = self.cross_under.next(rsi);
 
-        let result = if is_cross_over {
+        let result = if cross_over {
             Some(TradeDirection::Long)
-        } else if is_cross_under {
+        } else if cross_under {
             Some(TradeDirection::Short)
         } else {
             None

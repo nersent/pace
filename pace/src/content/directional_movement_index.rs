@@ -75,9 +75,8 @@ impl DirectionalMovementIndex {
 
 impl Incremental<(), DirectionalMovementIndexData> for DirectionalMovementIndex {
     fn next(&mut self, _: ()) -> DirectionalMovementIndexData {
-        let bar = self.ctx.bar();
-        let high = bar.high;
-        let low = bar.low;
+        let high = self.ctx.bar.high();
+        let low = self.ctx.bar.low();
         let prev_high = self.ctx.high(1);
         let prev_low = self.ctx.low(1);
 

@@ -65,11 +65,10 @@ impl UltimateOscillator {
 
 impl Incremental<(), Option<f64>> for UltimateOscillator {
     fn next(&mut self, _: ()) -> Option<f64> {
-        let bar = self.ctx.bar();
-        let high = bar.high;
-        let low = bar.low;
-        let close = bar.close;
-        let current_tick = bar.index;
+        let high = self.ctx.bar.high();
+        let low = self.ctx.bar.low();
+        let close = self.ctx.bar.close();
+        let current_tick = self.ctx.bar.index();
 
         let prev_close = if current_tick > 0 {
             self.ctx.close(1)

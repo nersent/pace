@@ -63,11 +63,10 @@ impl RelativeVigorIndex {
 
 impl Incremental<(), RelativeVigorIndexData> for RelativeVigorIndex {
     fn next(&mut self, _: ()) -> RelativeVigorIndexData {
-        let bar = self.ctx.bar();
-        let close = bar.close;
-        let open = bar.open;
-        let high = bar.high;
-        let low = bar.low;
+        let close = self.ctx.bar.close();
+        let open = self.ctx.bar.open();
+        let high = self.ctx.bar.high();
+        let low = self.ctx.bar.low();
 
         let close_open_diff = match (close, open) {
             (Some(close), Some(open)) => Some(close - open),

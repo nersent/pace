@@ -60,7 +60,7 @@ impl<T: std::fmt::Debug> ArraySnapshot<T> {
                     format!("{:?}", expected).black().on_green().bold(),
                 );
                 if !self.debug_mode {
-                    panic!("Component assertion failed at index {}", i);
+                    panic!("Array snapshot assertion failed at index {}", i);
                 } else {
                     break;
                 }

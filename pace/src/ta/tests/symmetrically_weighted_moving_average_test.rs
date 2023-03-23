@@ -1,22 +1,25 @@
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use crate::{
         core::incremental::Incremental,
         ta::symmetrically_weighted_moving_average::Swma,
         testing::{
             array_snapshot::ArraySnapshot,
             fixture::{DataFrameFixtureUtils, Fixture},
+            pace::format_pace_fixture_path,
         },
     };
 
-    fn format_path(path: &str) -> String {
-        format!("tests/ta/swma/{}", path)
+    fn format_path(path: &str) -> PathBuf {
+        format_pace_fixture_path(&format!("tests/ta/swma/{}", path))
     }
 
     fn _test(target: &mut Swma, expected: &[Option<f64>]) {
         let mut snapshot = ArraySnapshot::<Option<f64>>::new();
         for _ in target.ctx.clone() {
-            let output = target.next(target.ctx.bar().close);
+            let output = target.next(target.ctx.bar.close());
             snapshot.push(output);
         }
         snapshot.assert(expected);

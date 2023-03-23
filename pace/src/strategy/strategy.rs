@@ -110,10 +110,9 @@ impl Strategy {
 
 impl Incremental<Option<TradeDirection>, ()> for Strategy {
     fn next(&mut self, direction: Option<TradeDirection>) {
-        let bar = self.ctx.bar();
-        let tick = bar.index;
-        let open = bar.open;
-        let close = bar.close;
+        let tick = self.ctx.bar.index();
+        let open = self.ctx.bar.open();
+        let close = self.ctx.bar.close();
 
         if self.config.on_bar_close {
             self.unfilled_trade_direction = direction;

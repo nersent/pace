@@ -50,7 +50,7 @@ impl VolumeOscillator {
 
 impl Incremental<(), Option<f64>> for VolumeOscillator {
     fn next(&mut self, _: ()) -> Option<f64> {
-        let volume = self.ctx.bar().volume;
+        let volume = self.ctx.bar.volume();
 
         let short_ma = self.config.short_ma.next(volume);
         let long_ma = self.config.long_ma.next(volume);

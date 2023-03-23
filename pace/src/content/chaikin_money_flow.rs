@@ -48,11 +48,10 @@ impl ChaikinMoneyFlow {
 
 impl Incremental<(), Option<f64>> for ChaikinMoneyFlow {
     fn next(&mut self, _: ()) -> Option<f64> {
-        let bar = self.ctx.bar();
-        let close = bar.close;
-        let high = bar.high;
-        let low = bar.low;
-        let volume = bar.volume;
+        let close = self.ctx.bar.close();
+        let high = self.ctx.bar.high();
+        let low = self.ctx.bar.low();
+        let volume = self.ctx.bar.volume();
 
         let volume_sum = self.volume_sum.next(volume);
 

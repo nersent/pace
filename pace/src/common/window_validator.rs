@@ -25,7 +25,7 @@ impl WindowValidator {
 
 impl Incremental<Option<f64>, bool> for WindowValidator {
     fn next(&mut self, value: Option<f64>) -> bool {
-        let current_index = self.ctx.bar().index;
+        let current_index = self.ctx.bar.index();
 
         if value.is_none() {
             self.last_none_index = current_index;

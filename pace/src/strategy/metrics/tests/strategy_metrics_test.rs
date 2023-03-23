@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use std::{path::Path, sync::Arc};
+    use std::{
+        path::{Path, PathBuf},
+        sync::Arc,
+    };
 
     use polars::prelude::DataFrame;
 
@@ -16,16 +19,19 @@ mod tests {
                     net_profit_percent, short_net_profit_percent,
                 },
                 equity_metrics::EquityMetrics,
-                tradingview_metrics_component::{TradingViewMetrics, TradingViewMetricsConfig},
+                tradingview_metrics::{TradingViewMetrics, TradingViewMetricsConfig},
             },
             strategy::{Strategy, StrategyConfig},
             trade::TradeDirection,
         },
-        testing::{array_snapshot::ArraySnapshot, comparison::FloatComparison, fixture::Fixture},
+        testing::{
+            array_snapshot::ArraySnapshot, comparison::FloatComparison, fixture::Fixture,
+            pace::format_pace_fixture_path,
+        },
     };
 
-    fn format_path(path: &str) -> String {
-        format!("tests/strategy/metrics/{}", path)
+    fn format_path(path: &str) -> PathBuf {
+        format_pace_fixture_path(&format!("tests/strategy/metrics/{}", path))
     }
 
     #[derive(Debug)]
@@ -261,7 +267,7 @@ mod tests {
         }
 
         pub fn next(&mut self) -> TestMetricsPayload {
-            let tick = self.ctx.bar().index;
+            let tick = self.ctx.bar.index();
 
             let mut trade_direction: Option<TradeDirection> = None;
 

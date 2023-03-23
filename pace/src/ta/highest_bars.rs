@@ -22,7 +22,7 @@ impl HighestBars {
 
 impl Incremental<(), Option<i32>> for HighestBars {
     fn next(&mut self, _: ()) -> Option<i32> {
-        if !self.ctx.bar().at_length(self.length) {
+        if !self.ctx.bar.at_length(self.length) {
             return None;
         }
         return highest_bars(self.ctx.highs(self.length), self.length);
