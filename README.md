@@ -116,19 +116,14 @@ See already implemented indicators and strategies [here](pace/src/content).
 
 ## Installation
 
-1. Download Rust and Cargo
-
-- https://doc.rust-lang.org/book/ch01-01-installation.html
-
-2. Add Pace to your Cargo.toml
-
 ```bash
-$ cargo add nersent_pace
+cargo add nersent_pace
+cargo add polars
 ```
 
 ## Documentation
 
-Visit [docs](/docs/index.md) to view the full documentation.
+Visit [docs](/docs/readme.md) to view the full documentation.
 
 ## Motivation
 
