@@ -23,7 +23,7 @@ The core feature of Pace is incremental architecture, which allows O(1) constant
 
 All Pace components and indicators have been tested against PineScript, ensuring the same results and easy migration.
 
-See [migration from PineScript](#pinescript-migration)
+See [migration from PineScript](/docs/pinescript_migration.md)
 
 ## Features
 
