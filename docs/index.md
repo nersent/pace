@@ -222,13 +222,13 @@ for _ in ctx.clone() {
 
 ## 8. Strategy metrics
 
-Pace provides basic strategy metrics accessible through `strategy.metrics`. If you want to use more sophisticated metrics, you can create your own metrics component implementing `Incremental` trait or use built-in metrics ported from TradingView.
+Pace provides basic strategy metrics accessible through `strategy.metrics`. If you want to use more sophisticated metrics, you can create your own metrics component by implementing `Incremental` trait or use built-in metrics ported from TradingView.
 
 ```rust
 let mut tradingview_metrics = TradingViewMetrics::new(ctx.clone(), &strategy, TradingViewMetricsConfig::default());
 
 for _ in ctx.clone() {
-    tradingview_metrics.next(());
+    tradingview_metrics.next(&strategy);
 }
 
 tradingview_metrics.data.print_summary("USD");
