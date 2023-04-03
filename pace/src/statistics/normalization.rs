@@ -2,6 +2,10 @@ pub fn clip_value(value: f64, min: f64, max: f64) -> f64 {
     return f64::min(f64::max(value, min), max);
 }
 
+pub fn normalize_value(value: f64, min: f64, max: f64) -> f64 {
+    return (value - min) / (max - min);
+}
+
 pub fn scale_value_up(value: f64, threshold: f64, max: f64) -> f64 {
     if value <= threshold {
         return 0.0;

@@ -9,8 +9,10 @@ use nersent_pace::{
         relative_strength_index::RelativeStrengthIndex,
     },
     core::{
-        context::Context, data_provider::DataProvider,
-        in_memory_data_provider::InMemoryDataProvider, incremental::Incremental,
+        context::Context,
+        data_provider::{AnyDataProvider, DataProvider},
+        in_memory_data_provider::InMemoryDataProvider,
+        incremental::Incremental,
     },
     polars::io::read_df,
     statistics::common::{mean, stdev},
@@ -81,7 +83,7 @@ enum DataSize {
     Large,
 }
 
-fn create_data_provider(size: DataSize) -> Arc<dyn DataProvider + Send + Sync> {
+fn create_data_provider(size: DataSize) -> AnyDataProvider {
     let filename = match size {
         DataSize::Small => "small.parquet",
         DataSize::Large => "large.parquet",
@@ -101,7 +103,7 @@ fn create_ctx(data_provider: Arc<dyn DataProvider + Send + Sync>) -> Context {
 struct PaceBenchmarkRunner {}
 
 impl PaceBenchmarkRunner {
-    pub fn run(count: usize, data_provider: Arc<dyn DataProvider + Send + Sync>) -> Vec<Benchmark> {
+    pub fn run(count: usize, data_provider: AnyDataProvider) -> Vec<Benchmark> {
         let bars = data_provider.get_end_tick() - data_provider.get_start_tick() + 1;
 
         println!("\nRunning benchmarks for {} bars", bars);

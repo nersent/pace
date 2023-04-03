@@ -1,0 +1,5 @@
+condition = (bar_index + 2) % 4 == 0
+
+plot(ta.barssince(condition), title='_target_')
+plot(condition ? 1 : 0, title='_target_condition_')
+

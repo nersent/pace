@@ -502,6 +502,7 @@ mod tests {
                     on_bar_close: false,
                     initial_capital: 1000.0,
                     buy_with_equity: false,
+                    ..StrategyConfig::default()
                 },
                 // Long entries
                 vec![2, 18, 44, 60, 120, 180, 400, 700, 1000, 1600],

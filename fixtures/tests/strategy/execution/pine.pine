@@ -1,0 +1,49 @@
+//@version=5
+strategy(title="xd", initial_capital=1000, currency="USD", overlay=false, pyramiding=0, risk_free_rate = 0)
+
+// --------- CONSTANTS ----------
+int[] long_entries = array.from(2299, 2343, 2404, 2492, 2647, 2824, 2850, 2958, 3030, 3117, 3177, 3228, 3284, 3307, 3429, 3459, 3493, 3597, 3664, 3793, 3841, 3955, 4010, 4054, 4103, 4192)
+int[] long_exits = array.from(2303, 2347, 2408, 2496, 2651, 2828, 2880, 2962, 3034, 3121, 3181, 3232, 3288, 3311, 3433, 3463, 3497, 3601, 3668, 3797, 3845, 3959, 4014, 4058, 4107, 4196)
+int[] short_entries = array.from(2305, 2361, 2425, 2510, 2814, 2885, 2981, 3080, 3203, 3271, 3291, 3411, 3446, 3473, 3498, 3641, 3710, 3806, 3853, 3986, 4017, 4067, 4182)
+int[] short_exits = array.from(2309, 2365, 2429, 2514, 2818, 2889, 2985, 3084, 3207, 3275, 3295, 3415, 3450, 3477, 3502, 3645, 3714, 3810, 3857, 3990, 4021, 4071, 4186)
+
+// --------- EXECUTE ----------
+// if array.indexof(long_entries, bar_index) != -1
+//     strategy.entry("long_entry", strategy.long)
+
+// if array.indexof(long_exits, bar_index) != -1
+//     strategy.close("long_entry", "long_exit")
+
+// if array.indexof(short_entries, bar_index) != -1
+//     strategy.entry("short_entry", strategy.short)
+
+// if array.indexof(short_exits, bar_index) != -1
+//     strategy.close("short_entry", "short_exit")
+int _signal = 0
+
+if array.indexof(long_entries, bar_index) != -1
+    _signal := 1
+    // strategy.entry("long_entry", strategy.long)
+    strategy.order("Enter Long", strategy.long, qty=1)
+
+if array.indexof(long_exits, bar_index) != -1
+    _signal := 2
+    // strategy.close("long_entry", "long_exit")
+    strategy.order("Exit Long", strategy.short, qty=1)
+
+if array.indexof(short_entries, bar_index) != -1
+    _signal := -1
+    // strategy.entry("short_entry", strategy.short)
+    strategy.order("Enter Short", strategy.short, qty=1) 
+
+if array.indexof(short_exits, bar_index) != -1
+    _signal := -2
+    // strategy.close("short_entry", "short_exit")
+    strategy.order("Exit Short", strategy.long, qty=1)
+
+plot(volume,title="volume")
+plot(strategy.openprofit,title="_target_open_profit_")
+plot(strategy.netprofit,title="_target_net_profit_")
+plot(strategy.position_size,title="_target_position_size_")
+plot(strategy.max_drawdown,title="_target_max_drawdown_")
+plot(_signal,title="_target_signal_")

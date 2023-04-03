@@ -1,4 +1,7 @@
-use crate::core::{context::Context, incremental::Incremental};
+use crate::{
+    core::{context::Context, incremental::Incremental},
+    ta::moving_average::AnyMa,
+};
 
 /// Any data source provider;
 pub type AnySrc = Box<dyn Incremental<(), Option<f64>>>;
@@ -28,18 +31,25 @@ pub fn hl2(high: f64, low: f64) -> f64 {
 }
 
 pub struct Src {
-    pub kind: SrcKind,
     pub ctx: Context,
     delegate: Box<dyn FnMut() -> Option<f64>>,
 }
 
 impl Src {
     pub fn new(ctx: Context, kind: SrcKind) -> Self {
-        return Self {
-            ctx: ctx.clone(),
-            kind,
-            delegate: Self::create_delegate(ctx.clone(), kind),
-        };
+        return Self::from_delegate(ctx.clone(), Self::create_delegate(ctx.clone(), kind));
+    }
+
+    pub fn from_delegate(ctx: Context, delegate: Box<dyn FnMut() -> Option<f64>>) -> Self {
+        return Self { ctx, delegate };
+    }
+
+    pub fn from_consumer<T: 'static>(
+        ctx: Context,
+        mut src: Box<dyn Incremental<(), T>>,
+        mut consumer: Box<dyn Incremental<T, Option<f64>>>,
+    ) -> Self {
+        return Self::from_delegate(ctx.clone(), Box::new(move || consumer.next(src.next(()))));
     }
 
     fn create_delegate(ctx: Context, kind: SrcKind) -> Box<dyn FnMut() -> Option<f64>> {
@@ -74,5 +84,22 @@ impl Src {
 impl Incremental<(), Option<f64>> for Src {
     fn next(&mut self, _: ()) -> Option<f64> {
         return self.delegate.as_mut()();
+    }
+}
+
+pub struct Hlc {
+    ctx: Context,
+}
+
+impl Hlc {
+    pub fn new(ctx: Context) -> Self {
+        return Self { ctx };
+    }
+}
+
+impl Incremental<(), (Option<f64>, Option<f64>, Option<f64>)> for Hlc {
+    fn next(&mut self, _: ()) -> (Option<f64>, Option<f64>, Option<f64>) {
+        let bar = &self.ctx.bar;
+        return (bar.high(), bar.low(), bar.close());
     }
 }

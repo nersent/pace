@@ -143,3 +143,38 @@ pub fn fill_size(equity: f64, current_price: f64) -> f64 {
     }
     return equity / current_price;
 }
+
+#[derive(Debug, Clone)]
+pub struct TradeEntries {
+    pub long_entries: Vec<usize>,
+    pub short_entries: Vec<usize>,
+    pub long_exits: Vec<usize>,
+    pub short_exits: Vec<usize>,
+}
+
+impl TradeEntries {
+    pub fn to_signal(&self, tick: usize) -> Option<TradeDirection> {
+        if self.long_entries.contains(&tick) {
+            return Some(TradeDirection::Long);
+        }
+        if self.short_entries.contains(&tick) {
+            return Some(TradeDirection::Short);
+        }
+        if self.long_exits.contains(&tick) {
+            return Some(TradeDirection::Short);
+        }
+        if self.short_exits.contains(&tick) {
+            return Some(TradeDirection::Long);
+        }
+        return None;
+    }
+}
+
+#[derive(PartialEq, Copy, Debug, Clone)]
+pub enum StrategySignal {
+    Neutral,
+    LongEntry,
+    ShortEntry,
+    LongExit,
+    ShortExit,
+}

@@ -1,5 +1,7 @@
 mod average_true_range_test;
+mod bars_since_test;
 mod change_test;
+mod commodity_channel_index_test;
 mod cross_over_test;
 mod cross_over_threshold_test;
 mod cross_test;

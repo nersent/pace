@@ -15,10 +15,12 @@ pub trait DataProvider: 'static {
     fn get_low_for_range(&self, start_index: usize, end_index: usize) -> &[Option<f64>];
     fn get_close_for_range(&self, start_index: usize, end_index: usize) -> &[Option<f64>];
     fn get_volume_for_range(&self, start_index: usize, end_index: usize) -> &[Option<f64>];
-    fn to_arc(self) -> Arc<dyn DataProvider + Send + Sync>
+    fn to_arc(self) -> AnyDataProvider
     where
         Self: Sized + Send + Sync,
     {
         Arc::new(self)
     }
 }
+
+pub type AnyDataProvider = Arc<dyn DataProvider + Send + Sync>;

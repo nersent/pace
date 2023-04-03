@@ -8,11 +8,13 @@ use std::{
 
 use chrono::NaiveDateTime;
 
-use super::data_provider::DataProvider;
+use crate::utils::time::to_datetime;
+
+use super::data_provider::{AnyDataProvider, DataProvider};
 
 pub struct Bar {
     pub index: Rc<Cell<usize>>,
-    pub data: Arc<dyn DataProvider + 'static + Send + Sync>,
+    pub data: AnyDataProvider,
 }
 
 impl Bar {
@@ -34,9 +36,7 @@ impl Bar {
     ///
     /// Similar to PineScript `time`.
     pub fn datetime(&self) -> Option<NaiveDateTime> {
-        return self
-            .time()
-            .map(|time| NaiveDateTime::from_timestamp_millis(time.as_millis() as i64).unwrap());
+        return self.time().map(|time| to_datetime(time.as_millis() as i64));
     }
 
     /// Returns `true` if current bar is **green** (returns are positive).
@@ -76,7 +76,7 @@ impl Bar {
 }
 
 pub struct Context {
-    pub data: Arc<dyn DataProvider + 'static + Send + Sync>,
+    pub data: AnyDataProvider,
     pub bar: Bar,
     // First bar index. Starts with 0, unless `start_tick` was set differently.
     pub first_bar_index: usize,
@@ -90,7 +90,7 @@ pub struct Context {
 
 /// Execution state across shared across all components.
 impl Context {
-    pub fn new(data: Arc<dyn DataProvider + 'static + Send + Sync>) -> Self {
+    pub fn new(data: AnyDataProvider) -> Self {
         let first_bar_index = data.get_start_tick();
         let last_bar_index = data.get_end_tick();
         let bars = last_bar_index - first_bar_index + 1;

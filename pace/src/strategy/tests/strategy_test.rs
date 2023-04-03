@@ -1,6 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use std::{path::Path, sync::Arc};
+    use std::{
+        path::{Path, PathBuf},
+        sync::Arc,
+    };
 
     use polars::prelude::DataFrame;
 
@@ -9,12 +12,20 @@ mod tests {
             context::Context, data_provider::DataProvider,
             in_memory_data_provider::InMemoryDataProvider, incremental::Incremental,
         },
+        polars::series::SeriesCastUtils,
         strategy::{
             strategy::{Strategy, StrategyConfig},
             trade::{Trade, TradeDirection},
         },
-        testing::array_snapshot::ArraySnapshot,
+        testing::{
+            array_snapshot::ArraySnapshot, comparison::FloatComparison, fixture::Fixture,
+            pace::format_pace_fixture_path,
+        },
     };
+
+    fn format_path(path: &str) -> PathBuf {
+        format_pace_fixture_path(&format!("tests/strategy/execution/{}", path))
+    }
 
     #[derive(Debug, PartialEq, Clone, Copy)]
     pub struct TestTradePayload {
@@ -171,6 +182,7 @@ mod tests {
                     on_bar_close: true,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
+                    ..StrategyConfig::default()
                 },
             ),
             &[None, None, None, None, None],
@@ -226,6 +238,7 @@ mod tests {
                     on_bar_close: true,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
+                    ..StrategyConfig::default()
                 },
             ),
             &[
@@ -1579,6 +1592,7 @@ mod tests {
                     on_bar_close: false,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
+                    ..StrategyConfig::default()
                 },
             ),
             &[
@@ -2876,6 +2890,7 @@ mod tests {
                     on_bar_close: true,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
+                    ..StrategyConfig::default()
                 },
             ),
             &[
@@ -4340,6 +4355,7 @@ mod tests {
                     on_bar_close: false,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
+                    ..StrategyConfig::default()
                 },
             ),
             &[
@@ -5719,6 +5735,7 @@ mod tests {
                     on_bar_close: true,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
+                    ..StrategyConfig::default()
                 },
             ),
             &[None, None, None, None, None],
@@ -5809,6 +5826,7 @@ mod tests {
                     on_bar_close: true,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
+                    ..StrategyConfig::default()
                 },
             ),
             &[
@@ -6025,6 +6043,7 @@ mod tests {
                     on_bar_close: false,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
+                    ..StrategyConfig::default()
                 },
             ),
             &[
@@ -6283,6 +6302,7 @@ mod tests {
                     on_bar_close: true,
                     buy_with_equity: true,
                     initial_capital: 1000.0,
+                    ..StrategyConfig::default()
                 },
             ),
             &[
@@ -6617,6 +6637,7 @@ mod tests {
                     on_bar_close: false,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
+                    ..StrategyConfig::default()
                 },
             ),
             &[
@@ -6831,6 +6852,147 @@ mod tests {
                 // 51; no trades
                 Some((800.0, 0.0, 0.0)),
             ],
+        );
+    }
+
+    #[derive(Clone, Debug)]
+    struct TestExecutionPayload {
+        pub open_profit: f64,
+        pub net_profit: f64,
+        pub position_size: f64,
+    }
+
+    impl ArraySnapshot<TestExecutionPayload> {
+        pub fn assert(&self, expected: &[TestExecutionPayload]) {
+            self.assert_iter(expected, |actual, expected| {
+                return actual.open_profit.compare(expected.open_profit)
+                    && actual.net_profit.compare(expected.net_profit)
+                    && actual.position_size.compare(expected.position_size);
+            });
+        }
+    }
+
+    struct TestExecutionTarget {
+        pub ctx: Context,
+        pub long_entries: Vec<usize>,
+        pub long_exits: Vec<usize>,
+        pub short_entries: Vec<usize>,
+        pub short_exits: Vec<usize>,
+        strategy: Strategy,
+    }
+
+    impl TestExecutionTarget {
+        pub fn new(
+            ctx: Context,
+            strategy_config: StrategyConfig,
+            long_entries: Vec<usize>,
+            long_exits: Vec<usize>,
+            short_entries: Vec<usize>,
+            short_exits: Vec<usize>,
+        ) -> Self {
+            let strategy = Strategy::new(ctx.clone(), strategy_config);
+            return Self {
+                ctx: ctx.clone(),
+                strategy,
+                long_entries,
+                short_entries,
+                long_exits,
+                short_exits,
+            };
+        }
+
+        pub fn next(&mut self) -> TestExecutionPayload {
+            let tick = self.ctx.bar.index();
+
+            let mut trade_direction: Option<TradeDirection> = None;
+
+            if self.long_entries.contains(&tick) || self.short_exits.contains(&tick) {
+                trade_direction = Some(TradeDirection::Long);
+            } else if self.short_entries.contains(&tick) || self.long_exits.contains(&tick) {
+                trade_direction = Some(TradeDirection::Short);
+            }
+
+            let initial_capital = self.strategy.config.initial_capital;
+
+            self.strategy.next(trade_direction);
+
+            return TestExecutionPayload {
+                open_profit: self.strategy.metrics.open_profit,
+                net_profit: self.strategy.metrics.net_profit,
+                position_size: self.strategy.metrics.position_size,
+            };
+        }
+    }
+
+    fn _test_execution(target: &mut TestExecutionTarget, expected: &[TestExecutionPayload]) {
+        let mut snapshot = ArraySnapshot::<TestExecutionPayload>::new();
+        for _ in target.ctx.clone() {
+            let payload = target.next();
+            snapshot.push(payload);
+        }
+        snapshot.assert(expected);
+    }
+
+    fn _load_execution_metrics(df: &DataFrame) -> Vec<TestExecutionPayload> {
+        let mut list: Vec<TestExecutionPayload> = vec![];
+
+        let open_profit = df.column("_target_open_profit_").unwrap().to_f64();
+        let net_profit = df.column("_target_net_profit_").unwrap().to_f64();
+        let position_size = df.column("_target_position_size_").unwrap().to_f64();
+
+        for i in 0..open_profit.len() {
+            let p = TestExecutionPayload {
+                open_profit: open_profit[i].unwrap_or(0.0),
+                net_profit: net_profit[i].unwrap_or(0.0),
+                position_size: position_size[i].unwrap_or(0.0),
+            };
+            list.push(p);
+        }
+
+        return list;
+    }
+
+    #[test]
+    fn on_next_bar_open_intermittent_extensive() {
+        let (df, ctx) = Fixture::load_ctx(&format_path("default.csv"));
+        let expected = _load_execution_metrics(&df);
+
+        let mut long_entries: Vec<usize> = vec![];
+        let mut long_exits: Vec<usize> = vec![];
+        let mut short_entries: Vec<usize> = vec![];
+        let mut short_exits: Vec<usize> = vec![];
+
+        let signal_column = df.column("_target_signal_").unwrap().to_f64();
+
+        for i in 0..expected.len() {
+            let signal = signal_column[i].unwrap_or(0.0);
+            if signal.compare(1.0) {
+                long_entries.push(i);
+            } else if signal.compare(-1.0) {
+                short_entries.push(i);
+            } else if signal.compare(2.0) {
+                long_exits.push(i);
+            } else if signal.compare(-2.0) {
+                short_exits.push(i);
+            }
+        }
+
+        _test_execution(
+            &mut TestExecutionTarget::new(
+                ctx.clone(),
+                StrategyConfig {
+                    continous: false,
+                    on_bar_close: false,
+                    initial_capital: 1000.0,
+                    buy_with_equity: false,
+                    ..StrategyConfig::default()
+                },
+                long_entries,
+                long_exits,
+                short_entries,
+                short_exits,
+            ),
+            &expected,
         );
     }
 }

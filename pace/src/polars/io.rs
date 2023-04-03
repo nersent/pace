@@ -8,7 +8,10 @@ use crate::utils::fs::{ensure_dir, get_filename_extension};
 
 pub fn read_df_csv(path: &Path) -> DataFrame {
     let mut file = std::fs::File::open(path).unwrap();
-    let df = CsvReader::new(&mut file).finish().unwrap();
+    let df = CsvReader::new(&mut file)
+        .infer_schema(None)
+        .finish()
+        .unwrap();
     return df;
 }
 

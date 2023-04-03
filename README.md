@@ -105,6 +105,7 @@ See [migration from PineScript](/docs/pinescript_migration.md)
 - [ ] Implement more risk metrics
 - [ ] Parameter optimization
 - [ ] Add more benchmarks
+- [ ] [Probabilistic Sharpe Ratio](https://quantdare.com/probabilistic-sharpe-ratio/)
 
 ## Getting Started
 
@@ -169,6 +170,8 @@ We performed multiple benchmarks for popular indicators across different technic
 - [FinTA](https://github.com/peerchemist/finta)
 - [spectre](https://github.com/Heerozh/spectre)
 - [TA](https://github.com/bukosabino/ta)
+- https://tulipindicators.org/
+- https://kernc.github.io/backtesting.py/
 
 ### Details:
 

@@ -3,11 +3,13 @@ mod tests {
     use std::path::PathBuf;
 
     use crate::{
-        core::incremental::Incremental,
+        common::src::{Src, SrcKind},
+        core::incremental::{Chained, Incremental},
         ta::simple_moving_average::Sma,
         testing::{
             array_snapshot::ArraySnapshot,
             fixture::{DataFrameFixtureUtils, Fixture},
+            incremental::test_incremental,
             pace::format_pace_fixture_path,
         },
     };
@@ -28,7 +30,18 @@ mod tests {
     #[test]
     fn length_1_close() {
         let (df, ctx) = Fixture::load_ctx(&format_path("length_1_close.csv"));
-        _test(&mut Sma::new(ctx.clone(), 1), &df.test_target());
+        test_incremental(
+            ctx.clone(),
+            Chained::new(
+                ctx.clone(),
+                Src::new(ctx.clone(), SrcKind::Close).to_box(),
+                Sma::new(ctx.clone(), 1).to_box(),
+            )
+            .to_box(),
+            &df.test_target(),
+        );
+        // test_incremental(ctx.clone(), );
+        // _test(&mut Sma::new(ctx.clone(), 1), &df.test_target());
     }
 
     #[test]

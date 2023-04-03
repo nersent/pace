@@ -61,12 +61,10 @@ impl<T: std::fmt::Debug> ArraySnapshot<T> {
                 );
                 if !self.debug_mode {
                     panic!("Array snapshot assertion failed at index {}", i);
-                } else {
-                    break;
                 }
             }
             if self.debug_mode
-                && (self.print_max_index.is_none() || self.print_max_index.unwrap() > i)
+                && (self.print_max_index.is_none() || i < self.print_max_index.unwrap())
             {
                 println!(
                     "{}: {}",

@@ -1,6 +1,8 @@
 pub mod average_true_range;
 pub mod bars;
+pub mod bars_since;
 pub mod change;
+pub mod commodity_channel_index;
 pub mod cross;
 pub mod cross_over;
 pub mod cross_over_threshold;
@@ -15,6 +17,7 @@ pub mod lowest;
 pub mod lowest_bars;
 pub mod moving_average;
 pub mod percent_rank;
+pub mod prev_change;
 pub mod rate_of_change;
 pub mod relative_strength_index;
 pub mod running_moving_average;

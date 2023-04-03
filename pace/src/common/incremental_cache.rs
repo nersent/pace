@@ -14,25 +14,34 @@ impl<T> IncrementalCache<T> {
         };
     }
 
-    pub fn get(&mut self, index: usize) -> &T {
-        let index = (self.values.len() - 1) - index;
-        return self.values.get(index).unwrap();
+    pub fn get(&self, index: usize) -> Option<&T> {
+        let length = self.values.len();
+        if index >= length {
+            return None;
+        }
+        let index = (length - 1) - index;
+        return self.values.get(index);
     }
 
-    pub fn all(&mut self) -> &[T] {
+    pub fn all(&self) -> &[T] {
         return &self.values;
     }
 
-    pub fn last(&mut self) -> &T {
-        return self.values.last().unwrap();
+    pub fn last(&self) -> Option<&T> {
+        return self.values.last();
     }
 
-    pub fn first(&mut self) -> &T {
-        return self.values.first().unwrap();
+    pub fn first(&self) -> Option<&T> {
+        return self.values.first();
     }
 
     pub fn size(&self) -> usize {
         return self.values.len();
+    }
+
+    /// Removes first value and returns it.
+    pub fn shift(&mut self) -> T {
+        return self.values.remove(0);
     }
 }
 

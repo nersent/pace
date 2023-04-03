@@ -11,6 +11,7 @@ use polars::{
 use crate::strategy::trade::{trade_direction_from_f64, TradeDirection};
 
 pub trait SeriesCastUtils {
+    fn to_bool(&self) -> Vec<Option<bool>>;
     fn to_f64(&self) -> Vec<Option<f64>>;
     fn to_i32(&self) -> Vec<Option<i32>>;
     fn to_usize(&self) -> Vec<Option<usize>>;
@@ -19,6 +20,23 @@ pub trait SeriesCastUtils {
 }
 
 impl SeriesCastUtils for Series {
+    fn to_bool(&self) -> Vec<Option<bool>> {
+        return self
+            .cast(&DataType::Boolean)
+            .unwrap()
+            .bool()
+            .unwrap()
+            .into_iter()
+            .map(|val| {
+                if val.is_none() || val.unwrap().is_nan() {
+                    None
+                } else {
+                    val
+                }
+            })
+            .collect::<Vec<_>>();
+    }
+
     fn to_f64(&self) -> Vec<Option<f64>> {
         return self
             .cast(&DataType::Float64)
