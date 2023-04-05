@@ -26,6 +26,9 @@ impl Float64Utils for f64 {
     }
 
     fn compare_with_precision(&self, target: f64, precision: f64) -> bool {
+        if self.is_nan() {
+            return target.is_nan();
+        }
         return (self - target).abs() < precision;
     }
 

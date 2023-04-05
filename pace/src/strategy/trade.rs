@@ -43,10 +43,10 @@ pub struct Trade {
     pub direction: TradeDirection,
     pub is_closed: bool,
     pub entry_tick: Option<usize>,
-    pub entry_price: Option<f64>,
+    pub entry_price: f64,
     pub exit_tick: Option<usize>,
-    pub exit_price: Option<f64>,
-    pub fill_size: Option<f64>,
+    pub exit_price: f64,
+    pub fill_size: f64,
     pub pnl: f64,
 }
 
@@ -55,19 +55,19 @@ impl Trade {
         return Trade {
             direction,
             is_closed: false,
-            entry_price: None,
+            entry_price: f64::NAN,
             entry_tick: None,
-            exit_price: None,
+            exit_price: f64::NAN,
             exit_tick: None,
-            fill_size: None,
+            fill_size: f64::NAN,
             pnl: 0.0,
         };
     }
 
     pub fn pnl(&self, current_price: f64) -> f64 {
         return trade_pnl(
-            self.fill_size.unwrap(),
-            self.entry_price.unwrap(),
+            self.fill_size,
+            self.entry_price,
             current_price,
             self.direction == TradeDirection::Long,
         );

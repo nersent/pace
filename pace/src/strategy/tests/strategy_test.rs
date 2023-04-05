@@ -12,15 +12,16 @@ mod tests {
             context::Context, data_provider::DataProvider,
             in_memory_data_provider::InMemoryDataProvider, incremental::Incremental,
         },
+        pinescript::common::PineScriptFloat64,
         polars::series::SeriesCastUtils,
         strategy::{
             strategy::{Strategy, StrategyConfig},
             trade::{Trade, TradeDirection},
         },
         testing::{
-            array_snapshot::ArraySnapshot, comparison::FloatComparison, fixture::Fixture,
-            pace::format_pace_fixture_path,
+            array_snapshot::ArraySnapshot, fixture::Fixture, pace::format_pace_fixture_path,
         },
+        utils::float::Float64Utils,
     };
 
     fn format_path(path: &str) -> PathBuf {
@@ -43,9 +44,9 @@ mod tests {
                 direction: trade.direction,
                 is_closed: trade.is_closed,
                 entry_tick: trade.entry_tick,
-                entry_price: trade.entry_price,
+                entry_price: trade.entry_price.to_option(),
                 exit_tick: trade.exit_tick,
-                exit_price: trade.exit_price,
+                exit_price: trade.exit_price.to_option(),
             }
         }
     }
@@ -164,14 +165,7 @@ mod tests {
     #[test]
     fn empty_on_bar_close_continous() {
         let ctx = Context::new(
-            InMemoryDataProvider::from_values(Vec::from([
-                Some(1.0),
-                Some(2.0),
-                Some(3.0),
-                Some(4.0),
-                Some(5.0),
-            ]))
-            .to_arc(),
+            InMemoryDataProvider::from_values(Vec::from([1.0, 2.0, 3.0, 4.0, 5.0])).to_arc(),
         );
 
         _test(
@@ -199,35 +193,8 @@ mod tests {
     #[test]
     fn trades_history_on_bar_close_continous() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
-            Some(1.0),
-            Some(2.0),
-            Some(3.0),
-            Some(4.0),
-            Some(5.0),
-            Some(6.0),
-            Some(7.0),
-            Some(8.0),
-            Some(9.0),
-            Some(10.0),
-            Some(11.0),
-            Some(12.0),
-            Some(13.0),
-            Some(14.0),
-            Some(15.0),
-            Some(16.0),
-            Some(17.0),
-            Some(18.0),
-            Some(19.0),
-            Some(20.0),
-            Some(21.0),
-            Some(22.0),
-            Some(23.0),
-            Some(24.0),
-            Some(25.0),
-            Some(26.0),
-            Some(27.0),
-            Some(28.0),
-            Some(29.0),
+            1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+            17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0,
         ]))));
 
         _test_trades_history(
@@ -1553,35 +1520,8 @@ mod tests {
     #[test]
     fn trades_history_next_bar_open_continous() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
-            Some(1.0),
-            Some(2.0),
-            Some(3.0),
-            Some(4.0),
-            Some(5.0),
-            Some(6.0),
-            Some(7.0),
-            Some(8.0),
-            Some(9.0),
-            Some(10.0),
-            Some(11.0),
-            Some(12.0),
-            Some(13.0),
-            Some(14.0),
-            Some(15.0),
-            Some(16.0),
-            Some(17.0),
-            Some(18.0),
-            Some(19.0),
-            Some(20.0),
-            Some(21.0),
-            Some(22.0),
-            Some(23.0),
-            Some(24.0),
-            Some(25.0),
-            Some(26.0),
-            Some(27.0),
-            Some(28.0),
-            Some(29.0),
+            1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+            17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0,
         ]))));
 
         _test_trades_history(
@@ -2839,47 +2779,9 @@ mod tests {
     #[test]
     fn trades_history_on_bar_close_intermittent() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
-            Some(1.0),
-            Some(2.0),
-            Some(3.0),
-            Some(4.0),
-            Some(5.0),
-            Some(6.0),
-            Some(7.0),
-            Some(8.0),
-            Some(9.0),
-            Some(10.0),
-            Some(11.0),
-            Some(12.0),
-            Some(13.0),
-            Some(14.0),
-            Some(15.0),
-            Some(16.0),
-            Some(17.0),
-            Some(18.0),
-            Some(19.0),
-            Some(20.0),
-            Some(21.0),
-            Some(22.0),
-            Some(23.0),
-            Some(24.0),
-            Some(25.0),
-            Some(26.0),
-            Some(27.0),
-            Some(28.0),
-            Some(29.0),
-            Some(30.0),
-            Some(31.0),
-            Some(32.0),
-            Some(33.0),
-            Some(34.0),
-            Some(35.0),
-            Some(36.0),
-            Some(37.0),
-            Some(38.0),
-            Some(39.0),
-            Some(40.0),
-            Some(41.0),
+            1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+            17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0,
+            31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0,
         ]))));
 
         _test_trades_history(
@@ -4304,47 +4206,9 @@ mod tests {
     #[test]
     fn trades_history_next_bar_open_intermittent() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
-            Some(1.0),
-            Some(2.0),
-            Some(3.0),
-            Some(4.0),
-            Some(5.0),
-            Some(6.0),
-            Some(7.0),
-            Some(8.0),
-            Some(9.0),
-            Some(10.0),
-            Some(11.0),
-            Some(12.0),
-            Some(13.0),
-            Some(14.0),
-            Some(15.0),
-            Some(16.0),
-            Some(17.0),
-            Some(18.0),
-            Some(19.0),
-            Some(20.0),
-            Some(21.0),
-            Some(22.0),
-            Some(23.0),
-            Some(24.0),
-            Some(25.0),
-            Some(26.0),
-            Some(27.0),
-            Some(28.0),
-            Some(29.0),
-            Some(30.0),
-            Some(31.0),
-            Some(32.0),
-            Some(33.0),
-            Some(34.0),
-            Some(35.0),
-            Some(36.0),
-            Some(37.0),
-            Some(38.0),
-            Some(39.0),
-            Some(40.0),
-            Some(41.0),
+            1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+            17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0,
+            31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0,
         ]))));
 
         _test_trades_history(
@@ -5720,11 +5584,7 @@ mod tests {
     #[test]
     fn equity_empty_on_bar_close_continous() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
-            Some(1.0),
-            Some(2.0),
-            Some(3.0),
-            Some(4.0),
-            Some(5.0),
+            1.0, 2.0, 3.0, 4.0, 5.0,
         ]))));
 
         _test_equity(
@@ -5753,69 +5613,38 @@ mod tests {
     fn equity_on_bar_close_continous() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
             // 0
-            Some(1.0),
-            // 1
-            Some(1.0),
-            // 2
-            Some(1.0),
-            // 3
-            Some(2.0),
-            // 4
-            Some(4.0),
-            // 5
-            Some(1.0),
-            // 6
-            Some(0.5),
-            // 7
-            Some(10.0),
-            // 8
-            Some(12.0),
-            // 9
-            Some(10.0),
-            // 10
-            Some(6.0),
-            // 11
-            Some(14.0),
-            // 12
-            Some(15.0),
-            // 13
-            Some(18.0),
-            // 14
-            Some(4.0),
-            // 15
-            Some(18.0),
-            // 16
-            Some(20.0),
-            // 17
-            Some(18.0),
-            // 18
-            Some(6.0),
-            // 19
-            Some(1.0),
-            // 20
-            Some(8.0),
-            // 21
-            Some(9.0),
-            // 22
-            Some(10.0),
-            // 23
-            Some(17.0),
-            // 24
-            Some(11.0),
-            // 25
-            Some(11.0),
-            // 26
-            Some(15.0),
-            // 27
-            Some(22.0),
-            // 28
-            Some(6.0),
-            // 29
-            Some(5.0),
-            // 30
-            Some(7.0),
-            // 30
-            Some(1.0),
+            1.0,  // 1
+            1.0,  // 2
+            1.0,  // 3
+            2.0,  // 4
+            4.0,  // 5
+            1.0,  // 6
+            0.5,  // 7
+            10.0, // 8
+            12.0, // 9
+            10.0, // 10
+            6.0,  // 11
+            14.0, // 12
+            15.0, // 13
+            18.0, // 14
+            4.0,  // 15
+            18.0, // 16
+            20.0, // 17
+            18.0, // 18
+            6.0,  // 19
+            1.0,  // 20
+            8.0,  // 21
+            9.0,  // 22
+            10.0, // 23
+            17.0, // 24
+            11.0, // 25
+            11.0, // 26
+            15.0, // 27
+            22.0, // 28
+            6.0,  // 29
+            5.0,  // 30
+            7.0,  // 30
+            1.0,
         ]))));
 
         _test_equity(
@@ -5968,71 +5797,39 @@ mod tests {
     fn equity_on_next_bar_open_continous() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
             // 0
-            Some(1.0),
-            // 1
-            Some(1.0),
-            // 2
-            Some(1.0),
-            // 3
-            Some(2.0),
-            // 4
-            Some(4.0),
-            // 5
-            Some(1.0),
-            // 6
-            Some(0.5),
-            // 7
-            Some(10.0),
-            // 8
-            Some(12.0),
-            // 9
-            Some(10.0),
-            // 10
-            Some(6.0),
-            // 11
-            Some(14.0),
-            // 12
-            Some(15.0),
-            // 13
-            Some(18.0),
-            // 14
-            Some(4.0),
-            // 15
-            Some(18.0),
-            // 16
-            Some(19.0),
-            // 17
-            Some(18.0),
-            // 18
-            Some(6.0),
-            // 19
-            Some(1.0),
-            // 20
-            Some(0.02),
-            // 21
-            Some(0.01),
-            // 22
-            Some(10.0),
-            // 23
-            Some(17.0),
-            // 24
-            Some(11.0),
-            // 25
-            Some(11.0),
-            // 26
-            Some(15.0),
-            // 27
-            Some(22.0),
-            // 28
-            Some(6.0),
-            // 29
-            Some(5.0),
-            // 30
-            Some(7.0),
-            // 31
-            Some(1.0),
-            // 32
-            Some(11.0),
+            1.0,  // 1
+            1.0,  // 2
+            1.0,  // 3
+            2.0,  // 4
+            4.0,  // 5
+            1.0,  // 6
+            0.5,  // 7
+            10.0, // 8
+            12.0, // 9
+            10.0, // 10
+            6.0,  // 11
+            14.0, // 12
+            15.0, // 13
+            18.0, // 14
+            4.0,  // 15
+            18.0, // 16
+            19.0, // 17
+            18.0, // 18
+            6.0,  // 19
+            1.0,  // 20
+            0.02, // 21
+            0.01, // 22
+            10.0, // 23
+            17.0, // 24
+            11.0, // 25
+            11.0, // 26
+            15.0, // 27
+            22.0, // 28
+            6.0,  // 29
+            5.0,  // 30
+            7.0,  // 31
+            1.0,  // 32
+            11.0,
         ]))));
 
         _test_equity(
@@ -6189,109 +5986,58 @@ mod tests {
     fn equity_on_bar_close_intermittent() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
             // 0
-            Some(1.0),
-            // 1
-            Some(1.0),
-            // 2
-            Some(1.0),
-            // 3
-            Some(2.0),
-            // 4
-            Some(4.0),
-            // 5
-            Some(1.0),
-            // 6
-            Some(0.5),
-            // 7
-            Some(10.0),
-            // 8
-            Some(12.0),
-            // 9
-            Some(10.0),
-            // 10
-            Some(6.0),
-            // 11
-            Some(14.0),
-            // 12
-            Some(15.0),
-            // 13
-            Some(18.0),
-            // 14
-            Some(4.0),
-            // 15
-            Some(18.0),
-            // 16
-            Some(19.0),
-            // 17
-            Some(18.0),
-            // 18
-            Some(6.0),
-            // 19
-            Some(1.0),
-            // 20
-            Some(0.02),
-            // 21
-            Some(0.01),
-            // 22
-            Some(10.0),
-            // 23
-            Some(17.0),
-            // 24
-            Some(11.0),
-            // 25
-            Some(11.0),
-            // 26
-            Some(15.0),
-            // 27
-            Some(34.0),
-            // 28
-            Some(6.0),
-            // 29
-            Some(5.0),
-            // 30
-            Some(7.0),
-            // 31
-            Some(1.0),
-            // 32
-            Some(11.0),
-            // 33
-            Some(500.0),
-            // 34
-            Some(-50.0),
-            // 35
-            Some(11.0),
-            // 36
-            Some(11.0),
-            // 37
-            Some(11.0),
-            // 38
-            Some(57.0),
-            // 39
-            Some(11.0),
-            // 40
-            Some(5.0),
-            // 41
-            Some(2.0),
-            // 42
-            Some(61.0),
-            // 43
-            Some(57.0),
-            // 44
-            Some(30.0),
-            // 45
-            Some(6.0),
-            // 46
-            Some(8.0),
-            // 47
-            Some(5.0),
-            // 48
-            Some(10.0),
-            // 49
-            Some(8.0),
-            // 50
-            Some(12.0),
-            // 51
-            Some(16.0),
+            1.0,   // 1
+            1.0,   // 2
+            1.0,   // 3
+            2.0,   // 4
+            4.0,   // 5
+            1.0,   // 6
+            0.5,   // 7
+            10.0,  // 8
+            12.0,  // 9
+            10.0,  // 10
+            6.0,   // 11
+            14.0,  // 12
+            15.0,  // 13
+            18.0,  // 14
+            4.0,   // 15
+            18.0,  // 16
+            19.0,  // 17
+            18.0,  // 18
+            6.0,   // 19
+            1.0,   // 20
+            0.02,  // 21
+            0.01,  // 22
+            10.0,  // 23
+            17.0,  // 24
+            11.0,  // 25
+            11.0,  // 26
+            15.0,  // 27
+            34.0,  // 28
+            6.0,   // 29
+            5.0,   // 30
+            7.0,   // 31
+            1.0,   // 32
+            11.0,  // 33
+            500.0, // 34
+            -50.0, // 35
+            11.0,  // 36
+            11.0,  // 37
+            11.0,  // 38
+            57.0,  // 39
+            11.0,  // 40
+            5.0,   // 41
+            2.0,   // 42
+            61.0,  // 43
+            57.0,  // 44
+            30.0,  // 45
+            6.0,   // 46
+            8.0,   // 47
+            5.0,   // 48
+            10.0,  // 49
+            8.0,   // 50
+            12.0,  // 51
+            16.0,
         ]))));
 
         _test_equity(
@@ -6524,109 +6270,58 @@ mod tests {
     fn equity_next_bar_open_intermittent() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
             // 0
-            Some(1.0),
-            // 1
-            Some(1.0),
-            // 2
-            Some(1.0),
-            // 3
-            Some(2.0),
-            // 4
-            Some(4.0),
-            // 5
-            Some(1.0),
-            // 6
-            Some(0.5),
-            // 7
-            Some(10.0),
-            // 8
-            Some(12.0),
-            // 9
-            Some(10.0),
-            // 10
-            Some(6.0),
-            // 11
-            Some(14.0),
-            // 12
-            Some(15.0),
-            // 13
-            Some(18.0),
-            // 14
-            Some(4.0),
-            // 15
-            Some(18.0),
-            // 16
-            Some(5.0),
-            // 17
-            Some(10.0),
-            // 18
-            Some(6.0),
-            // 19
-            Some(1.0),
-            // 20
-            Some(2.0),
-            // 21
-            Some(5.0),
-            // 22
-            Some(10.0),
-            // 23
-            Some(20.0),
-            // 24
-            Some(10.0),
-            // 25
-            Some(8.0),
-            // 26
-            Some(15.0),
-            // 27
-            Some(34.0),
-            // 28
-            Some(10.0),
-            // 29
-            Some(5.0),
-            // 30
-            Some(7.0),
-            // 31
-            Some(1.0),
-            // 32
-            Some(12.0),
-            // 33
-            Some(4.0),
-            // 34
-            Some(-50.0),
-            // 35
-            Some(11.0),
-            // 36
-            Some(11.0),
-            // 37
-            Some(11.0),
-            // 38
-            Some(57.0),
-            // 39
-            Some(8.0),
-            // 40
-            Some(6.0),
-            // 41
-            Some(2.0),
-            // 42
-            Some(12.0),
-            // 43
-            Some(8.0),
-            // 44
-            Some(6.0),
-            // 45
-            Some(4.0),
-            // 46
-            Some(10.0),
-            // 47
-            Some(5.0),
-            // 48
-            Some(10.0),
-            // 49
-            Some(6.0),
-            // 50
-            Some(8.0),
-            // 51
-            Some(2.0),
+            1.0,   // 1
+            1.0,   // 2
+            1.0,   // 3
+            2.0,   // 4
+            4.0,   // 5
+            1.0,   // 6
+            0.5,   // 7
+            10.0,  // 8
+            12.0,  // 9
+            10.0,  // 10
+            6.0,   // 11
+            14.0,  // 12
+            15.0,  // 13
+            18.0,  // 14
+            4.0,   // 15
+            18.0,  // 16
+            5.0,   // 17
+            10.0,  // 18
+            6.0,   // 19
+            1.0,   // 20
+            2.0,   // 21
+            5.0,   // 22
+            10.0,  // 23
+            20.0,  // 24
+            10.0,  // 25
+            8.0,   // 26
+            15.0,  // 27
+            34.0,  // 28
+            10.0,  // 29
+            5.0,   // 30
+            7.0,   // 31
+            1.0,   // 32
+            12.0,  // 33
+            4.0,   // 34
+            -50.0, // 35
+            11.0,  // 36
+            11.0,  // 37
+            11.0,  // 38
+            57.0,  // 39
+            8.0,   // 40
+            6.0,   // 41
+            2.0,   // 42
+            12.0,  // 43
+            8.0,   // 44
+            6.0,   // 45
+            4.0,   // 46
+            10.0,  // 47
+            5.0,   // 48
+            10.0,  // 49
+            6.0,   // 50
+            8.0,   // 51
+            2.0,
         ]))));
 
         _test_equity(
@@ -6942,9 +6637,9 @@ mod tests {
 
         for i in 0..open_profit.len() {
             let p = TestExecutionPayload {
-                open_profit: open_profit[i].unwrap_or(0.0),
-                net_profit: net_profit[i].unwrap_or(0.0),
-                position_size: position_size[i].unwrap_or(0.0),
+                open_profit: open_profit[i].ps_nz(),
+                net_profit: net_profit[i].ps_nz(),
+                position_size: position_size[i].ps_nz(),
             };
             list.push(p);
         }
@@ -6965,7 +6660,7 @@ mod tests {
         let signal_column = df.column("_target_signal_").unwrap().to_f64();
 
         for i in 0..expected.len() {
-            let signal = signal_column[i].unwrap_or(0.0);
+            let signal = signal_column[i].ps_nz();
             if signal.compare(1.0) {
                 long_entries.push(i);
             } else if signal.compare(-1.0) {

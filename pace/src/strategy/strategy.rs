@@ -159,12 +159,7 @@ impl Incremental<Option<TradeDirection>, ()> for Strategy {
 
                 if close_trade {
                     let exit_price = if self.config.use_ohlc4_as_entry_price {
-                        Some(ohlc4(
-                            open.unwrap(),
-                            high.unwrap(),
-                            low.unwrap(),
-                            close.unwrap(),
-                        ))
+                        ohlc4(open, high, low, close)
                     } else {
                         orderbook_price
                     };
@@ -172,7 +167,7 @@ impl Incremental<Option<TradeDirection>, ()> for Strategy {
                     last_trade.exit_price = exit_price;
                     last_trade.exit_tick = Some(tick);
                     last_trade.is_closed = true;
-                    last_trade.pnl = last_trade.pnl(last_trade.exit_price.unwrap());
+                    last_trade.pnl = last_trade.pnl(last_trade.exit_price);
                     let pnl = last_trade.pnl;
 
                     self.events.on_trade_exit =
@@ -205,26 +200,21 @@ impl Incremental<Option<TradeDirection>, ()> for Strategy {
 
             if create_new_trade {
                 let entry_price = if self.config.use_ohlc4_as_entry_price {
-                    Some(ohlc4(
-                        open.unwrap(),
-                        high.unwrap(),
-                        low.unwrap(),
-                        close.unwrap(),
-                    ))
+                    ohlc4(open, high, low, close)
                 } else {
                     orderbook_price
                 };
 
                 let mut trade = Trade::new(unfilled_trade_direction);
 
-                trade.fill_size = Some(1.0);
+                trade.fill_size = 1.0;
 
                 if self.config.buy_with_equity {
                     let equity = self.config.initial_capital
                         + self.metrics.net_profit
                         + self.metrics.open_profit;
 
-                    trade.fill_size = Some(fill_size(equity, entry_price.unwrap()));
+                    trade.fill_size = fill_size(equity, entry_price);
                 }
 
                 trade.entry_price = entry_price;
@@ -249,7 +239,7 @@ impl Incremental<Option<TradeDirection>, ()> for Strategy {
 
         if let Some(last_trade) = self.trades.last_mut() {
             if !last_trade.is_closed {
-                self.metrics.open_profit = last_trade.pnl(close.unwrap());
+                self.metrics.open_profit = last_trade.pnl(close);
             }
         }
 
