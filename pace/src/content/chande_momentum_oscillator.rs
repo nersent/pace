@@ -4,17 +4,14 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    pinescript::common::{ps_abs, ps_diff, ps_max, ps_min},
-    strategy::trade::TradeDirection,
+    pinescript::common::PineScriptFloat64,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
-        cross::Cross,
-        cross_over_threshold::CrossOverThreshold,
-        cross_under_threshold::CrossUnderThreshold,
-        highest_bars::HighestBars,
-        lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
-        sum::Sum,
+        cross::Cross, cross_over_threshold::CrossOverThreshold,
+        cross_under_threshold::CrossUnderThreshold, highest_bars::HighestBars,
+        lowest_bars::LowestBars, sum::Sum,
     },
+    utils::float::Float64Utils,
 };
 
 pub static CHANDE_MOMENTUM_OSCILLATOR_MAX_VALUE: f64 = 100.0;
@@ -37,7 +34,7 @@ impl IncrementalDefault for ChandeMomentumOscillatorConfig {
 pub struct ChandeMomentumOscillator {
     pub config: ChandeMomentumOscillatorConfig,
     pub ctx: Context,
-    prev_src: Option<f64>,
+    prev_src: f64,
     sm1: Sum,
     sm2: Sum,
 }
@@ -50,7 +47,7 @@ impl ChandeMomentumOscillator {
         );
         return Self {
             ctx: ctx.clone(),
-            prev_src: None,
+            prev_src: f64::NAN,
             sm1: Sum::new(ctx.clone(), config.length),
             sm2: Sum::new(ctx.clone(), config.length),
             config,
@@ -58,28 +55,22 @@ impl ChandeMomentumOscillator {
     }
 }
 
-impl Incremental<(), Option<f64>> for ChandeMomentumOscillator {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for ChandeMomentumOscillator {
+    fn next(&mut self, _: ()) -> f64 {
         let src = self.config.src.next(());
-        let momm = ps_diff(src, self.prev_src);
+        let momm = src - self.prev_src;
 
-        let m1 = ps_max(Some(0.0), momm);
-        let m2 = ps_abs(ps_min(Some(0.0), momm));
+        let m1 = f64::ps_max(0.0, momm);
+        let m2 = f64::abs(f64::ps_min(0.0, momm));
 
         let sm1 = self.sm1.next(m1);
         let sm2 = self.sm2.next(m2);
 
-        let chande_mo: Option<f64> = match (sm1, sm2) {
-            (Some(sm1), Some(sm2)) => {
-                if sm1 == -sm2 {
-                    None
-                } else {
-                    Some(100.0 * (sm1 - sm2) / (sm1 + sm2))
-                }
-            }
-            _ => None,
-        };
+        if sm1 == -sm2 {
+            return f64::NAN;
+        }
 
+        let chande_mo = 100.0 * (sm1 - sm2) / (sm1 + sm2);
         self.prev_src = src;
 
         return chande_mo;
@@ -122,19 +113,17 @@ impl ChandeMomentumOscillatorStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for ChandeMomentumOscillatorStrategy {
-    fn next(&mut self, cmf: Option<f64>) -> Option<TradeDirection> {
+impl Incremental<f64, StrategySignal> for ChandeMomentumOscillatorStrategy {
+    fn next(&mut self, cmf: f64) -> StrategySignal {
         let is_cross_over = self.cross_over.next(cmf);
         let is_cross_under = self.cross_under.next(cmf);
 
-        let result = if is_cross_over {
-            Some(TradeDirection::Long)
-        } else if is_cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

@@ -8,6 +8,7 @@ mod chande_kroll_stop_test;
 mod chande_momentum_oscillator_test;
 mod choppiness_index_test;
 mod commodity_channel_index_test;
+
 mod connors_relative_strength_index_test;
 mod coppock_curve_test;
 mod directional_movement_index_test;

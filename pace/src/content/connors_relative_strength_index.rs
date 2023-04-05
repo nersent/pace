@@ -4,17 +4,12 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    pinescript::common::ps_nz,
-    strategy::trade::TradeDirection,
+    pinescript::common::PineScriptFloat64,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
-        cross::Cross,
-        cross_over_threshold::CrossOverThreshold,
-        cross_under_threshold::CrossUnderThreshold,
-        highest_bars::HighestBars,
-        lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
-        percent_rank::Prank,
-        rate_of_change::Roc,
+        cross::Cross, cross_over_threshold::CrossOverThreshold,
+        cross_under_threshold::CrossUnderThreshold, highest_bars::HighestBars,
+        lowest_bars::LowestBars, percent_rank::Prank, rate_of_change::Roc,
         relative_strength_index::Rsi,
     },
 };
@@ -44,8 +39,8 @@ impl IncrementalDefault for ConnorsRelativeStrengthIndexConfig {
 pub struct ConnorsRelativeStrengthIndex {
     pub config: ConnorsRelativeStrengthIndexConfig,
     pub ctx: Context,
-    prev_src: Option<f64>,
-    prev_ud: Option<f64>,
+    prev_src: f64,
+    prev_ud: f64,
     rsi: Rsi,
     up_down_rsi: Rsi,
     percent_rank: Prank,
@@ -61,36 +56,32 @@ impl ConnorsRelativeStrengthIndex {
             percent_rank: Prank::new(ctx.clone(), config.length_roc),
             roc: Roc::new(ctx.clone(), 1),
             config,
-            prev_src: None,
-            prev_ud: None,
+            prev_src: f64::NAN,
+            prev_ud: f64::NAN,
         };
     }
 
-    fn compute_up_down(
-        src: Option<f64>,
-        prev_src: Option<f64>,
-        prev_ud: Option<f64>,
-    ) -> Option<f64> {
+    fn compute_up_down(src: f64, prev_src: f64, prev_ud: f64) -> f64 {
         if prev_src == src {
-            return Some(0.0);
+            return 0.0;
         }
-        let prev_ud = ps_nz(prev_ud);
-        if src.is_some() && prev_src.is_some() && src.unwrap() > prev_src.unwrap() {
+        let prev_ud = prev_ud.ps_nz();
+        if src > prev_src {
             if prev_ud <= 0.0 {
-                return Some(1.0);
+                return 1.0;
             } else {
-                return Some(prev_ud + 1.0);
+                return prev_ud + 1.0;
             }
         } else if prev_ud >= 0.0 {
-            return Some(-1.0);
+            return -1.0;
         } else {
-            return Some(prev_ud - 1.0);
+            return prev_ud - 1.0;
         }
     }
 }
 
-impl Incremental<(), Option<f64>> for ConnorsRelativeStrengthIndex {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for ConnorsRelativeStrengthIndex {
+    fn next(&mut self, _: ()) -> f64 {
         let src = self.config.src.next(());
 
         let rsi = self.rsi.next(src);
@@ -101,12 +92,7 @@ impl Incremental<(), Option<f64>> for ConnorsRelativeStrengthIndex {
         let roc = self.roc.next(src);
         let percent_rank = self.percent_rank.next(roc);
 
-        let crsi = match (rsi, up_down_rsi, percent_rank) {
-            (Some(rsi), Some(up_down_rsi), Some(percent_rank)) => {
-                Some((rsi + up_down_rsi + percent_rank) / 3.0)
-            }
-            _ => None,
-        };
+        let crsi = (rsi + up_down_rsi + percent_rank) / 3.0;
 
         self.prev_ud = up_down;
         self.prev_src = src;
@@ -151,19 +137,17 @@ impl ConnorsRelativeStrengthIndexStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for ConnorsRelativeStrengthIndexStrategy {
-    fn next(&mut self, rsi: Option<f64>) -> Option<TradeDirection> {
+impl Incremental<f64, StrategySignal> for ConnorsRelativeStrengthIndexStrategy {
+    fn next(&mut self, rsi: f64) -> StrategySignal {
         let is_cross_over = self.cross_overbought.next(rsi);
         let is_cross_under = self.cross_oversold.next(rsi);
 
-        let result = if is_cross_over {
-            Some(TradeDirection::Long)
-        } else if is_cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

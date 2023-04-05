@@ -6,17 +6,11 @@ use crate::{
     },
     strategy::trade::TradeDirection,
     ta::{
-        average_true_range::Atr,
-        cross::Cross,
-        cross_over_threshold::CrossOverThreshold,
-        cross_under_threshold::CrossUnderThreshold,
-        highest::Highest,
-        highest_bars::HighestBars,
-        lowest::Lowest,
-        lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
-        sum::Sum,
+        average_true_range::Atr, cross::Cross, cross_over_threshold::CrossOverThreshold,
+        cross_under_threshold::CrossUnderThreshold, highest::Highest, highest_bars::HighestBars,
+        lowest::Lowest, lowest_bars::LowestBars, sum::Sum,
     },
+    utils::float::Float64Utils,
 };
 
 pub struct ChoppinessIndexConfig {
@@ -56,25 +50,15 @@ impl ChoppinessIndex {
     }
 }
 
-impl Incremental<(), Option<f64>> for ChoppinessIndex {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for ChoppinessIndex {
+    fn next(&mut self, _: ()) -> f64 {
         let atr = self.atr.next(());
         let atr_sum = self.atr_sum.next(atr);
 
         let highest = self.highest.next(self.ctx.bar.high());
         let lowest = self.lowest.next(self.ctx.bar.low());
 
-        let chop: Option<f64> = match (atr_sum, highest, lowest) {
-            (Some(atr_sum), Some(highest), Some(lowest)) => {
-                let diff = highest - lowest;
-                if diff == 0.0 {
-                    None
-                } else {
-                    Some(100.0 * f64::log10(atr_sum / diff) / self.log10_length)
-                }
-            }
-            _ => None,
-        };
+        let chop = 100.0 * f64::log10(atr_sum / (highest - lowest).normalize()) / self.log10_length;
 
         return chop;
     }

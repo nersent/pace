@@ -29,8 +29,8 @@ mod tests {
         ))
     }
 
-    fn _test(target: &mut BalanceOfPower, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test(target: &mut BalanceOfPower, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let output = target.next(());
             snapshot.push(output);
@@ -40,7 +40,7 @@ mod tests {
 
     #[test]
     fn default() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("default.csv"));
+        let (df, ctx) = Fixture::load(&format_path("default.csv"));
         _test(&mut BalanceOfPower::new(ctx.clone()), &df.test_target());
     }
 }

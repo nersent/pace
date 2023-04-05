@@ -1,6 +1,7 @@
 use crate::{
-    common::window_cache::WindowCache,
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
+    pinescript::common::PineScriptFloat64,
 };
 
 /// Rate of Change. Calculates the percentage of change (rate of change) between the current value of `source` and its value `length` bars ago.
@@ -9,37 +10,31 @@ use crate::{
 pub struct Roc {
     pub length: usize,
     pub ctx: Context,
-    input_cache: WindowCache<Option<f64>>,
+    series: FloatSeries,
+    _at_size: usize,
 }
 
 impl Roc {
     pub fn new(ctx: Context, length: usize) -> Self {
         assert!(length >= 1, "Roc must have a length of at least 1");
         return Self {
-            ctx: ctx.clone(),
             length,
-            input_cache: WindowCache::new(ctx.clone(), length + 1),
+            ctx: ctx.clone(),
+            series: FloatSeries::new(ctx.clone()),
+            _at_size: length + 1,
         };
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Roc {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        self.input_cache.next(value);
+impl Incremental<f64, f64> for Roc {
+    fn next(&mut self, value: f64) -> f64 {
+        self.series.next(value);
 
-        let first_value = self.input_cache.first_unwrapped();
-        let last_value = self.input_cache.last_unwrapped();
-        let is_filled = self.input_cache.is_filled();
-
-        if !is_filled || first_value.is_none() || last_value.is_none() {
-            return None;
+        if self.series.is_filled(self._at_size) {
+            let back = self.series[self.length];
+            return 100.0 * (value - back) / back;
         }
 
-        let first_value = first_value.unwrap();
-        if first_value == 0.0 {
-            return None;
-        }
-        let last_value = last_value.unwrap();
-        return Some(100.0 * (last_value - first_value) / first_value);
+        return f64::NAN;
     }
 }

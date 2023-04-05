@@ -4,6 +4,7 @@ mod tests {
 
     use crate::{
         core::incremental::Incremental,
+        polars::series::SeriesCastUtils,
         ta::symmetrically_weighted_moving_average::Swma,
         testing::{
             array_snapshot::ArraySnapshot,
@@ -16,8 +17,8 @@ mod tests {
         format_pace_fixture_path(&format!("tests/ta/swma/{}", path))
     }
 
-    fn _test(target: &mut Swma, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test(target: &mut Swma, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let output = target.next(target.ctx.bar.close());
             snapshot.push(output);
@@ -29,9 +30,9 @@ mod tests {
     //     cctx: &mut ComponentContext,
     //     target: &mut SymmetricallyWeightedMovingAverageComponent,
     //     target_rsi: &mut RelativeStrengthIndexIndicator,
-    //     expected: &[Option<f64>],
+    //     expected: &[f64],
     // ) {
-    //     let mut snapshot = ArraySnapshot::<Option<f64>::new();
+    //     let mut snapshot = ArraySnapshot::<f64::new();
     //     for _ in target.ctx.clone() {
     //         let rsi = target_rsi.next();
     //         let output = target.next(rsi.rsi);
@@ -42,7 +43,7 @@ mod tests {
 
     #[test]
     fn close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("close.csv"));
         _test(&mut Swma::new(ctx.clone()), &df.test_target());
     }
 

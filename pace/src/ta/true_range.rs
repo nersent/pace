@@ -1,31 +1,32 @@
-use crate::core::{context::Context, incremental::Incremental};
+use crate::{
+    core::{context::Context, incremental::Incremental},
+    pinescript::common::PineScriptFloat64,
+};
 
 /// Similar to PineScript `ta.tr(handle_na)`, but it requires for all values to be provided.
 pub fn true_range(
     current_high: f64,
     current_low: f64,
-    prev_high: Option<f64>,
-    prev_low: Option<f64>,
-    prev_close: Option<f64>,
+    prev_high: f64,
+    prev_low: f64,
+    prev_close: f64,
     handle_na: bool,
-) -> Option<f64> {
-    if prev_high.is_none() || prev_low.is_none() || prev_close.is_none() {
+) -> f64 {
+    if prev_high.is_nan() || prev_low.is_nan() || prev_close.is_nan() {
         if handle_na {
-            return Some(current_high - current_low);
+            return current_high - current_low;
         } else {
-            return None;
+            return f64::NAN;
         }
     }
 
-    let prev_close = prev_close.unwrap();
-
-    return Some(f64::max(
+    return f64::max(
         f64::max(
             current_high - current_low,
             f64::abs(current_high - prev_close),
         ),
         f64::abs(current_low - prev_close),
-    ));
+    );
 }
 
 /// True Range.
@@ -46,11 +47,13 @@ impl Tr {
     }
 }
 
-impl Incremental<(), Option<f64>> for Tr {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for Tr {
+    fn next(&mut self, _: ()) -> f64 {
+        let bar = &self.ctx.bar;
+
         return true_range(
-            self.ctx.bar.high().unwrap(),
-            self.ctx.bar.low().unwrap(),
+            bar.high(),
+            bar.low(),
             self.ctx.high(1),
             self.ctx.low(1),
             self.ctx.close(1),

@@ -12,7 +12,7 @@ use crate::strategy::trade::{trade_direction_from_f64, TradeDirection};
 
 pub trait SeriesCastUtils {
     fn to_bool(&self) -> Vec<Option<bool>>;
-    fn to_f64(&self) -> Vec<Option<f64>>;
+    fn to_f64(&self) -> Vec<f64>;
     fn to_i32(&self) -> Vec<Option<i32>>;
     fn to_usize(&self) -> Vec<Option<usize>>;
     fn to_duration(&self) -> Vec<Option<Duration>>;
@@ -37,7 +37,7 @@ impl SeriesCastUtils for Series {
             .collect::<Vec<_>>();
     }
 
-    fn to_f64(&self) -> Vec<Option<f64>> {
+    fn to_f64(&self) -> Vec<f64> {
         return self
             .cast(&DataType::Float64)
             .unwrap()
@@ -46,9 +46,9 @@ impl SeriesCastUtils for Series {
             .into_iter()
             .map(|val| {
                 if val.is_none() || val.unwrap().is_nan() {
-                    None
+                    f64::NAN
                 } else {
-                    val
+                    val.unwrap()
                 }
             })
             .collect::<Vec<_>>();

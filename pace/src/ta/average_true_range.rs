@@ -24,8 +24,8 @@ impl Atr {
     }
 }
 
-impl Incremental<(), Option<f64>> for Atr {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for Atr {
+    fn next(&mut self, _: ()) -> f64 {
         let true_range = self.tr.next(());
         let atr = self.rma.next(true_range);
         return atr;

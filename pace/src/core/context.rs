@@ -41,36 +41,36 @@ impl Bar {
 
     /// Returns `true` if current bar is **green** (returns are positive).
     pub fn is_up(&self) -> bool {
-        return self.close().unwrap() >= self.open().unwrap();
+        return self.close() >= self.open();
     }
 
     /// Checks if it's possible to perform calculations based on last `length` values.
     pub fn at_length(&self, length: usize) -> bool {
-        return self.index.get() >= length - 1;
+        return self.index.get() + 1 >= length; //
     }
 
     /// Same as PineScript `open`.
-    pub fn open(&self) -> Option<f64> {
+    pub fn open(&self) -> f64 {
         return self.data.get_open(self.index.get());
     }
 
     /// Same as PineScript `high`.
-    pub fn high(&self) -> Option<f64> {
+    pub fn high(&self) -> f64 {
         return self.data.get_high(self.index.get());
     }
 
     /// Same as PineScript `low`.
-    pub fn low(&self) -> Option<f64> {
+    pub fn low(&self) -> f64 {
         return self.data.get_low(self.index.get());
     }
 
     /// Same as PineScript `close`.
-    pub fn close(&self) -> Option<f64> {
+    pub fn close(&self) -> f64 {
         return self.data.get_close(self.index.get());
     }
 
     /// Same as PineScript `volume`.
-    pub fn volume(&self) -> Option<f64> {
+    pub fn volume(&self) -> f64 {
         return self.data.get_volume(self.index.get());
     }
 }
@@ -126,67 +126,67 @@ impl Context {
     }
 
     /// Returns **`N`** previous high price.
-    pub fn high(&self, n: usize) -> Option<f64> {
+    pub fn high(&self, n: usize) -> f64 {
         let tick = self.bar.index.get();
         if tick < n {
-            return None;
+            return f64::NAN;
         }
         return self.data.get_high(tick - n);
     }
 
     /// Returns **`N`** previous low price.
-    pub fn low(&self, n: usize) -> Option<f64> {
+    pub fn low(&self, n: usize) -> f64 {
         let tick = self.bar.index.get();
         if tick < n {
-            return None;
+            return f64::NAN;
         }
         return self.data.get_low(tick - n);
     }
 
     /// Returns **`N`** previous open price.
-    pub fn close(&self, n: usize) -> Option<f64> {
+    pub fn close(&self, n: usize) -> f64 {
         let tick = self.bar.index.get();
         if tick < n {
-            return None;
+            return f64::NAN;
         }
         return self.data.get_close(tick - n);
     }
 
     /// Returns **`N`** previous volume.
-    pub fn volume(&self, n: usize) -> Option<f64> {
+    pub fn volume(&self, n: usize) -> f64 {
         let tick = self.bar.index.get();
         if tick < n {
-            return None;
+            return f64::NAN;
         }
         return self.data.get_volume(tick - n);
     }
 
     /// Returns a list of **`N`** previous open prices.
-    pub fn opens(&self, length: usize) -> &[Option<f64>] {
+    pub fn opens(&self, length: usize) -> &[f64] {
         let tick = self.bar.index.get();
         return self.data.get_open_for_range(tick - (length - 1), tick);
     }
 
     /// Returns a list of **`N`** previous high prices.
-    pub fn highs(&self, length: usize) -> &[Option<f64>] {
+    pub fn highs(&self, length: usize) -> &[f64] {
         let tick = self.bar.index.get();
         return self.data.get_high_for_range(tick - (length - 1), tick);
     }
 
     /// Returns a list of **`N`** previous low prices.
-    pub fn lows(&self, length: usize) -> &[Option<f64>] {
+    pub fn lows(&self, length: usize) -> &[f64] {
         let tick = self.bar.index.get();
         return self.data.get_low_for_range(tick - (length - 1), tick);
     }
 
     /// Returns a list of **`N`** previous close prices.
-    pub fn closes(&self, length: usize) -> &[Option<f64>] {
+    pub fn closes(&self, length: usize) -> &[f64] {
         let tick = self.bar.index.get();
         return self.data.get_close_for_range(tick - (length - 1), tick);
     }
 
     /// Returns a list of **`N`** previous volumes.
-    pub fn volumes(&self, length: usize) -> &[Option<f64>] {
+    pub fn volumes(&self, length: usize) -> &[f64] {
         let tick = self.bar.index.get();
         return self.data.get_volume_for_range(tick - (length - 1), tick);
     }

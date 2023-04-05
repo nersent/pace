@@ -14,6 +14,7 @@ mod highest_bars_test;
 mod highest_test;
 mod lowest_bars_test;
 mod lowest_test;
+mod nan_test;
 mod percent_rank_test;
 mod rate_of_change_test;
 mod relative_strength_index_test;

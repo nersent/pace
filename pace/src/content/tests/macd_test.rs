@@ -26,8 +26,8 @@ mod tests {
         format_pace_fixture_path(&format!("tests/content/macd/indicator/{}", path))
     }
 
-    fn _test(target: &mut Macd, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test(target: &mut Macd, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let (macd, signal) = target.next(());
             snapshot.push(macd);
@@ -37,8 +37,7 @@ mod tests {
 
     #[test]
     fn short_length_12_long_length_26_ema_close() {
-        let (df, ctx) =
-            Fixture::load_ctx(&format_path("short_length_12_long_length_26_ema_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("short_length_12_long_length_26_ema_close.csv"));
         _test(
             &mut Macd::new(
                 ctx.clone(),

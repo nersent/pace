@@ -1,53 +1,57 @@
-pub fn find_max_index(arr: &[Option<f64>]) -> usize {
+pub fn find_max_index(arr: &[f64]) -> usize {
     assert!(!arr.is_empty(), "Array must have at least one element");
 
-    let mut max_value: Option<f64> = None;
-    let mut max_value_index: Option<usize> = None;
+    let size = arr.len();
 
-    for i in 0..arr.len() {
-        let value = arr[i];
-        match (max_value, value) {
-            (None, Some(value)) => {
-                max_value = Some(value);
-                max_value_index = Some(i);
-            }
-            (Some(_max_value), Some(_value)) if _value > _max_value => {
-                max_value = value;
-                max_value_index = Some(i);
-            }
-            _ => {}
+    let mut max_value_index: usize = size - 1;
+    let mut max_value: f64 = arr[max_value_index];
+
+    for i in (0..size).rev() {
+        if arr[i].is_nan() {
+            return max_value_index;
+        }
+
+        if arr[i] >= max_value || max_value.is_nan() {
+            max_value = arr[i];
+            max_value_index = i;
         }
     }
-    if max_value_index.is_none() {
-        max_value_index = Some(arr.len() - 1);
-    }
 
-    return max_value_index.unwrap();
+    return max_value_index;
 }
 
-pub fn find_min_index(arr: &[Option<f64>]) -> usize {
+pub fn find_min_index(arr: &[f64]) -> usize {
     assert!(!arr.is_empty(), "Array must have at least one element");
 
-    let mut max_value: Option<f64> = None;
-    let mut max_value_index: Option<usize> = None;
+    let size = arr.len();
 
-    for i in 0..arr.len() {
-        let value = arr[i];
-        match (max_value, value) {
-            (None, Some(value)) => {
-                max_value = Some(value);
-                max_value_index = Some(i);
-            }
-            (Some(_max_value), Some(_value)) if _value < _max_value => {
-                max_value = value;
-                max_value_index = Some(i);
-            }
-            _ => {}
+    let mut min_value_index: usize = size - 1;
+    let mut min_value: f64 = arr[min_value_index];
+
+    // iterate backwards to find the first non-NaN value
+    for i in (0..size).rev() {
+        if arr[i].is_nan() {
+            return min_value_index;
+        }
+
+        if arr[i] <= min_value || min_value.is_nan() {
+            min_value = arr[i];
+            min_value_index = i;
         }
     }
-    if max_value_index.is_none() {
-        max_value_index = Some(arr.len() - 1);
-    }
 
-    return max_value_index.unwrap();
+    return min_value_index;
+
+    // if size >= 2 && arr[size - 2].is_nan() && !arr[size - 1].is_nan() {
+    //     return size - 1;
+    // }
+
+    // for i in 0..size {
+    //     if !arr[i].is_nan() && arr[i] < min_value || min_value.is_nan() {
+    //         min_value = arr[i];
+    //         min_value_index = i;
+    //     }
+    // }
+
+    // return min_value_index;
 }

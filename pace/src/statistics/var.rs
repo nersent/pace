@@ -1,5 +1,5 @@
 use crate::{
-    common::incremental_cache::IncrementalCache,
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
 };
 
@@ -15,7 +15,7 @@ use super::{common::var_from_mean, mean::Mean, welfords_var::WelfordsVar};
 pub struct Var {
     pub ctx: Context,
     pub fast: bool,
-    input_cache: IncrementalCache<f64>,
+    input_series: FloatSeries,
     welfords_var: WelfordsVar,
     mean: Mean,
 }
@@ -26,8 +26,8 @@ impl Var {
             ctx: ctx.clone(),
             fast,
             welfords_var: WelfordsVar::new(ctx.clone()),
+            input_series: FloatSeries::new(ctx.clone()),
             mean: Mean::new(ctx.clone()),
-            input_cache: IncrementalCache::new(ctx.clone()),
         };
     }
 
@@ -46,10 +46,10 @@ impl Incremental<f64, f64> for Var {
             return self.welfords_var.next(value);
         }
 
-        self.input_cache.next(value);
+        self.input_series.next(value);
 
         let mean = self.mean.next(value);
-        let values = self.input_cache.all();
+        let values = &self.input_series.values;
 
         return var_from_mean(values, mean);
     }

@@ -1,0 +1,60 @@
+//
+plot(ta.change(src, 1), title="_target_change_1_")
+plot(ta.change(src, 2), title="_target_change_2_")
+plot(ta.change(src, 3), title="_target_change_3_")
+plot(ta.change(src, 4), title="_target_change_4_")
+plot(ta.change(src, 5), title="_target_change_5_")
+plot(ta.change(src, 10), title="_target_change_10_")
+plot(ta.change(src, 14), title="_target_change_14_")
+
+plot(ta.roc(src, 1), title="_target_roc_1_")
+plot(ta.roc(src, 2), title="_target_roc_2_")
+plot(ta.roc(src, 3), title="_target_roc_3_")
+plot(ta.roc(src, 4), title="_target_roc_4_")
+plot(ta.roc(src, 5), title="_target_roc_5_")
+plot(ta.roc(src, 10), title="_target_roc_10_")
+plot(ta.roc(src, 14), title="_target_roc_14_")
+
+//
+plot(ta.percentrank(src, 1), title="_target_prank_1_")
+plot(ta.percentrank(src, 2), title="_target_prank_2_")
+plot(ta.percentrank(src, 3), title="_target_prank_3_")
+plot(ta.percentrank(src, 4), title="_target_prank_4_")
+plot(ta.percentrank(src, 5), title="_target_prank_5_")
+plot(ta.percentrank(src, 10), title="_target_prank_10_")
+plot(ta.percentrank(src, 14), title="_target_prank_14_")
+
+//
+plot(ta.stdev(src, 1, true), title="_target_biased_stdev_1_")
+plot(ta.stdev(src, 2, true), title="_target_biased_stdev_2_")
+plot(ta.stdev(src, 3, true), title="_target_biased_stdev_3_")
+plot(ta.stdev(src, 4, true), title="_target_biased_stdev_4_")
+plot(ta.stdev(src, 5, true), title="_target_biased_stdev_5_")
+plot(ta.stdev(src, 10, true), title="_target_biased_stdev_10_")
+plot(ta.stdev(src, 14, true), title="_target_biased_stdev_14_")
+
+plot(ta.stdev(src, 1, false), title="_target_unbiased_stdev_1_")
+plot(ta.stdev(src, 2, false), title="_target_unbiased_stdev_2_")
+plot(ta.stdev(src, 3, false), title="_target_unbiased_stdev_3_")
+plot(ta.stdev(src, 4, false), title="_target_unbiased_stdev_4_")
+plot(ta.stdev(src, 5, false), title="_target_unbiased_stdev_5_")
+plot(ta.stdev(src, 10, false), title="_target_unbiased_stdev_10_")
+plot(ta.stdev(src, 14, false), title="_target_unbiased_stdev_14_")
+
+plot(ta.dev(src, 1), title="_target_dev_1_")
+plot(ta.dev(src, 2), title="_target_dev_2_")
+plot(ta.dev(src, 3), title="_target_dev_3_")
+plot(ta.dev(src, 4), title="_target_dev_4_")
+plot(ta.dev(src, 5), title="_target_dev_5_")
+plot(ta.dev(src, 10), title="_target_dev_10_")
+plot(ta.dev(src, 14), title="_target_dev_14_")
+
+//
+plot(ta.stoch(src, src, src, 1), title="_target_stoch_1_")
+plot(ta.stoch(src, src, src, 2), title="_target_stoch_2_")
+plot(ta.stoch(src, src, src, 3), title="_target_stoch_3_")
+plot(ta.stoch(src, src, src, 4), title="_target_stoch_4_")
+plot(ta.stoch(src, src, src, 5), title="_target_stoch_5_")
+plot(ta.stoch(src, src, src, 10), title="_target_stoch_10_")
+plot(ta.stoch(src, src, src, 14), title="_target_stoch_14_")
+

@@ -29,8 +29,8 @@ mod tests {
         ))
     }
 
-    fn _test(target: &mut VolumeOscillator, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test(target: &mut VolumeOscillator, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let output = target.next(());
             snapshot.push(output);
@@ -40,7 +40,7 @@ mod tests {
 
     #[test]
     fn short_length_5_long_length_10_ema() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("short_length_5_long_length_10_ema.csv"));
+        let (df, ctx) = Fixture::load(&format_path("short_length_5_long_length_10_ema.csv"));
 
         _test(
             &mut VolumeOscillator::new(
@@ -56,7 +56,7 @@ mod tests {
 
     #[test]
     fn short_length_1_long_length_1_ema() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("short_length_1_long_length_1_ema.csv"));
+        let (df, ctx) = Fixture::load(&format_path("short_length_1_long_length_1_ema.csv"));
 
         _test(
             &mut VolumeOscillator::new(

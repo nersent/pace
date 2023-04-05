@@ -3,11 +3,6 @@ use std::fmt::Debug;
 
 use super::array_snapshot::{ArraySnapshot, Compare};
 
-// pub trait Compare<T> {
-//     fn compare(&self, other: &T) -> bool;
-// }
-
-// implement Compare for Option<f64>
 impl Compare<Option<f64>> for Option<f64> {
     fn compare(&self, other: &Option<f64>) -> bool {
         match (self, other) {

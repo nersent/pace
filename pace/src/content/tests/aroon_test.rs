@@ -18,18 +18,18 @@ mod tests {
         format_pace_fixture_path(&format!("tests/content/aroon/indicator/{}", path))
     }
 
-    fn _test(target: &mut Aroon, expected: &[Option<(Option<f64>, Option<f64>)>]) {
-        let mut snapshot = ArraySnapshot::<Option<(Option<f64>, Option<f64>)>>::new();
+    fn _test(target: &mut Aroon, expected: &[(f64, f64)]) {
+        let mut snapshot = ArraySnapshot::<(f64, f64)>::new();
         for _ in target.ctx.clone() {
             let output = target.next(());
-            snapshot.push(Some((output.up, output.down)));
+            snapshot.push((output.up, output.down));
         }
         snapshot.assert(expected);
     }
 
     #[test]
     fn length_14() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_14.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_14.csv"));
         let expected = df.merge_two_columns("_target_up_", "_target_down_");
         _test(
             &mut Aroon::new(ctx.clone(), AroonConfig { length: 14 }),

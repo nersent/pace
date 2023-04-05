@@ -1,6 +1,8 @@
 use crate::{
-    common::window_cache::WindowCache,
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
+    pinescript::common::PineScriptFloat64,
+    utils::float::Float64Utils,
 };
 
 use super::bars::{highest, lowest};
@@ -8,27 +10,17 @@ use super::bars::{highest, lowest};
 /// Stochastic.
 ///
 /// Similar to PineScript `ta.stoch(src, high, low, length)`, but `src` array requires to be truncated to the length and you need to keep track of the previous value of stoch.
-pub fn stoch(
-    value: Option<f64>,
-    high: &[Option<f64>],
-    low: &[Option<f64>],
-    prev_stoch: Option<f64>,
-) -> Option<f64> {
-    value?;
+pub fn stoch(value: f64, high: &[f64], low: &[f64], prev_stoch: f64) -> f64 {
     let high = highest(high);
     let low = lowest(low);
 
-    if high.is_none() || low.is_none() {
-        return None;
-    }
+    let diff = high - low;
 
-    let diff = high.unwrap() - low.unwrap();
-
-    if diff == 0.0 {
+    if diff.is_zero() || value.is_nan() || low.is_nan() || high.is_nan() {
         return prev_stoch;
     }
 
-    return Some(100.0 * (value.unwrap() - low.unwrap()) / diff);
+    return 100.0 * (value - low) / diff;
 }
 
 /// Stochastic.
@@ -37,9 +29,9 @@ pub fn stoch(
 pub struct Stoch {
     pub length: usize,
     pub ctx: Context,
-    prev_stoch: Option<f64>,
-    high_input_cache: WindowCache<Option<f64>>,
-    low_input_cache: WindowCache<Option<f64>>,
+    prev_stoch: f64,
+    high_series: FloatSeries,
+    low_series: FloatSeries,
 }
 
 impl Stoch {
@@ -48,27 +40,27 @@ impl Stoch {
         return Self {
             ctx: ctx.clone(),
             length,
-            prev_stoch: None,
-            high_input_cache: WindowCache::new(ctx.clone(), length),
-            low_input_cache: WindowCache::new(ctx.clone(), length),
+            prev_stoch: f64::NAN,
+            high_series: FloatSeries::new(ctx.clone()),
+            low_series: FloatSeries::new(ctx.clone()),
         };
     }
 }
 
-impl Incremental<(Option<f64>, Option<f64>, Option<f64>), Option<f64>> for Stoch {
+impl Incremental<(f64, f64, f64), f64> for Stoch {
     /// Input: `src, high, low`.
-    fn next(&mut self, (value, high, low): (Option<f64>, Option<f64>, Option<f64>)) -> Option<f64> {
-        self.high_input_cache.next(high);
-        self.low_input_cache.next(low);
+    fn next(&mut self, (value, high, low): (f64, f64, f64)) -> f64 {
+        self.high_series.next(high);
+        self.low_series.next(low);
 
-        if !self.ctx.bar.at_length(self.length) {
-            return None;
+        if !self.high_series.is_filled(self.length) {
+            return f64::NAN;
         }
 
         let _stoch = stoch(
             value,
-            self.high_input_cache.all(),
-            self.low_input_cache.all(),
+            self.high_series.window(self.length),
+            self.low_series.window(self.length),
             self.prev_stoch,
         );
         self.prev_stoch = _stoch;

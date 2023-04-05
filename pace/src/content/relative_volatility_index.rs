@@ -4,7 +4,7 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::Cross,
         cross_over_threshold::CrossOverThreshold,
@@ -12,7 +12,7 @@ use crate::{
         exponential_moving_average::Ema,
         highest_bars::HighestBars,
         lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
+        moving_average::{Ma, MaKind},
         stdev::Stdev,
     },
 };
@@ -43,7 +43,7 @@ pub struct RelativeVolatilityIndex {
     stdev: Stdev,
     upper_ema: Ema,
     lower_ema: Ema,
-    prev_src: Option<f64>,
+    prev_src: f64,
 }
 
 impl RelativeVolatilityIndex {
@@ -54,41 +54,32 @@ impl RelativeVolatilityIndex {
             upper_ema: Ema::new(ctx.clone(), config.ma_length),
             lower_ema: Ema::new(ctx.clone(), config.ma_length),
             config,
-            prev_src: None,
+            prev_src: f64::NAN,
         };
     }
 }
 
-impl Incremental<(), Option<f64>> for RelativeVolatilityIndex {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for RelativeVolatilityIndex {
+    fn next(&mut self, _: ()) -> f64 {
         let src = self.config.src.next(());
         let stdev = self.stdev.next(src);
-        let src_change = match (src, self.prev_src) {
-            (Some(src), Some(prev_src)) => Some(src - prev_src),
-            _ => None,
-        };
+        let change = src - self.prev_src;
 
-        let (upper, lower) = match src_change {
-            Some(change) => {
-                let upper = if change <= 0.0 { Some(0.0) } else { stdev };
-                let lower = if change > 0.0 { Some(0.0) } else { stdev };
-                (upper, lower)
-            }
-            _ => (None, None),
+        let (upper, lower) = if !change.is_nan() {
+            let upper = if change <= 0.0 { 0.0 } else { stdev };
+            let lower = if change > 0.0 { 0.0 } else { stdev };
+            (upper, lower)
+        } else {
+            (f64::NAN, f64::NAN)
         };
 
         let upper = self.upper_ema.next(upper);
         let lower = self.lower_ema.next(lower);
 
-        let rvi = match (upper, lower) {
-            (Some(upper), Some(lower)) => {
-                if upper == -lower {
-                    None
-                } else {
-                    Some(upper / (upper + lower) * 100.0)
-                }
-            }
-            _ => None,
+        let rvi = if !upper.is_nan() && !lower.is_nan() && upper != lower {
+            upper / (upper + lower) * 100.0
+        } else {
+            f64::NAN
         };
 
         self.prev_src = src;
@@ -133,19 +124,17 @@ impl RelativeVolatilityIndexStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for RelativeVolatilityIndexStrategy {
-    fn next(&mut self, rsi: Option<f64>) -> Option<TradeDirection> {
-        let cross_over = self.cross_over.next(rsi);
-        let cross_under = self.cross_under.next(rsi);
+impl Incremental<f64, StrategySignal> for RelativeVolatilityIndexStrategy {
+    fn next(&mut self, rsi: f64) -> StrategySignal {
+        let is_cross_over = self.cross_over.next(rsi);
+        let is_cross_under = self.cross_under.next(rsi);
 
-        let result = if cross_over {
-            Some(TradeDirection::Long)
-        } else if cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

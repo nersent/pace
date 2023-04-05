@@ -4,18 +4,13 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    pinescript::common::{ps_diff, ps_div},
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
-        cross::Cross,
-        cross_over_threshold::CrossOverThreshold,
-        cross_under_threshold::CrossUnderThreshold,
-        dev::Dev,
-        highest_bars::HighestBars,
-        lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
-        simple_moving_average::Sma,
+        cross::Cross, cross_over_threshold::CrossOverThreshold,
+        cross_under_threshold::CrossUnderThreshold, dev::Dev, highest_bars::HighestBars,
+        lowest_bars::LowestBars, simple_moving_average::Sma,
     },
+    utils::float::Float64Utils,
 };
 
 pub struct CommodityChannelIndexConfig {
@@ -51,13 +46,13 @@ impl CommodityChannelIndex {
     }
 }
 
-impl Incremental<(), Option<f64>> for CommodityChannelIndex {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for CommodityChannelIndex {
+    fn next(&mut self, _: ()) -> f64 {
         let src = self.config.src.next(());
         let ma = self.sma.next(src);
         let dev = self.dev.next(src);
 
-        let cci = ps_div(ps_diff(src, ma), dev.map(|x| x * 0.015));
+        let cci = (src - ma) / (dev * 0.015);
 
         return cci;
     }
@@ -99,19 +94,17 @@ impl CommodityChannelIndexStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for CommodityChannelIndexStrategy {
-    fn next(&mut self, cci: Option<f64>) -> Option<TradeDirection> {
+impl Incremental<f64, StrategySignal> for CommodityChannelIndexStrategy {
+    fn next(&mut self, cci: f64) -> StrategySignal {
         let is_cross_over = self.cross_over.next(cci);
         let is_cross_under = self.cross_under.next(cci);
 
-        let result = if is_cross_over {
-            Some(TradeDirection::Long)
-        } else if is_cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

@@ -4,17 +4,14 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    pinescript::common::ps_div,
-    strategy::trade::TradeDirection,
+    pinescript::common::PineScriptFloat64,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
-        cross::Cross,
-        cross_over_threshold::CrossOverThreshold,
-        cross_under_threshold::CrossUnderThreshold,
-        highest_bars::HighestBars,
-        lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
-        sum::Sum,
+        cross::Cross, cross_over_threshold::CrossOverThreshold,
+        cross_under_threshold::CrossUnderThreshold, highest_bars::HighestBars,
+        lowest_bars::LowestBars, sum::Sum,
     },
+    utils::float::Float64Utils,
 };
 
 pub struct ChaikinMoneyFlowConfig {
@@ -46,8 +43,8 @@ impl ChaikinMoneyFlow {
     }
 }
 
-impl Incremental<(), Option<f64>> for ChaikinMoneyFlow {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for ChaikinMoneyFlow {
+    fn next(&mut self, _: ()) -> f64 {
         let close = self.ctx.bar.close();
         let high = self.ctx.bar.high();
         let low = self.ctx.bar.low();
@@ -55,20 +52,13 @@ impl Incremental<(), Option<f64>> for ChaikinMoneyFlow {
 
         let volume_sum = self.volume_sum.next(volume);
 
-        let ad: Option<f64> = match (close, high, low, volume) {
-            (Some(close), Some(high), Some(low), Some(volume)) => {
-                if close == high && close == low || high == low {
-                    Some(0.0)
-                } else {
-                    Some(((2.0 * close - low - high) / (high - low)) * volume)
-                }
-            }
-            _ => None,
-        };
+        let ad = (((2.0 * close - low - high) / (high - low)) * volume)
+            .normalize()
+            .ps_nz();
 
         let ad_sum = self.ad_sum.next(ad);
 
-        let cmf = ps_div(ad_sum, volume_sum);
+        let cmf = ad_sum / volume_sum;
 
         return cmf;
     }
@@ -110,19 +100,17 @@ impl ChaikinMoneyFlowStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for ChaikinMoneyFlowStrategy {
-    fn next(&mut self, cmf: Option<f64>) -> Option<TradeDirection> {
+impl Incremental<f64, StrategySignal> for ChaikinMoneyFlowStrategy {
+    fn next(&mut self, cmf: f64) -> StrategySignal {
         let is_cross_over = self.cross_over.next(cmf);
         let is_cross_under = self.cross_under.next(cmf);
 
-        let result = if is_cross_over {
-            Some(TradeDirection::Long)
-        } else if is_cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

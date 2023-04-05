@@ -1,6 +1,6 @@
 use super::bars::lowest;
 use crate::{
-    common::window_cache::WindowCache,
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
 };
 
@@ -10,7 +10,7 @@ use crate::{
 pub struct Lowest {
     pub length: usize,
     pub ctx: Context,
-    input_cache: WindowCache<Option<f64>>,
+    series: FloatSeries,
 }
 
 impl Lowest {
@@ -19,19 +19,19 @@ impl Lowest {
         return Self {
             ctx: ctx.clone(),
             length,
-            input_cache: WindowCache::new(ctx.clone(), length),
+            series: FloatSeries::new(ctx.clone()),
         };
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Lowest {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        self.input_cache.next(value);
+impl Incremental<f64, f64> for Lowest {
+    fn next(&mut self, value: f64) -> f64 {
+        self.series.next(value);
 
-        if !self.ctx.bar.at_length(self.length) {
-            return None;
+        if !self.series.is_filled(self.length) || value.is_nan() {
+            return f64::NAN;
         }
 
-        return lowest(self.input_cache.all());
+        return lowest(self.series.window(self.length));
     }
 }

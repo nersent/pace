@@ -29,21 +29,18 @@ mod tests {
         ))
     }
 
-    fn _test(
-        target: &mut DonchianChannels,
-        expected: &[Option<(Option<f64>, Option<f64>, Option<f64>)>],
-    ) {
-        let mut snapshot = ArraySnapshot::<Option<(Option<f64>, Option<f64>, Option<f64>)>>::new();
+    fn _test(target: &mut DonchianChannels, expected: &[(f64, f64, f64)]) {
+        let mut snapshot = ArraySnapshot::<(f64, f64, f64)>::new();
         for _ in target.ctx.clone() {
             let output = target.next(());
-            snapshot.push(Some((output.upper, output.basis, output.lower)));
+            snapshot.push((output.upper, output.basis, output.lower));
         }
         snapshot.assert(expected);
     }
 
     #[test]
     fn length_14() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_14.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_14.csv"));
         let expected = df.merge_three_columns("_target_upper_", "_target_basis_", "_target_lower_");
         _test(
             &mut DonchianChannels::new(ctx.clone(), DonchianChannelsConfig { length: 14 }),

@@ -1,7 +1,7 @@
 use crate::{
-    common::window_cache::WindowCache,
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
-    testing::comparison::FloatComparison,
+    utils::float::Float64Utils,
 };
 
 use super::simple_moving_average::Sma;
@@ -17,7 +17,8 @@ pub struct Stdev {
     /// If `is_biased` is true, function will calculate using a biased estimate of the entire population, if false - unbiased estimate of a sample.
     pub is_biased: bool,
     sma: Sma,
-    input_cache: WindowCache<Option<f64>>,
+    series: FloatSeries,
+    _div_length: f64,
 }
 
 impl Stdev {
@@ -29,7 +30,12 @@ impl Stdev {
             length,
             is_biased,
             sma: Sma::new(ctx.clone(), length),
-            input_cache: WindowCache::new(ctx.clone(), length),
+            series: FloatSeries::new(ctx.clone()),
+            _div_length: if is_biased {
+                length as f64
+            } else {
+                (length - 1) as f64
+            },
         };
     }
 
@@ -42,43 +48,26 @@ impl Stdev {
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Stdev {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        if self.length == 1 {
-            if self.is_biased {
-                return Some(0.0);
-            } else {
-                return None;
-            }
+impl Incremental<f64, f64> for Stdev {
+    fn next(&mut self, value: f64) -> f64 {
+        if !value.is_nan() {
+            self.series.next(value);
         }
 
-        self.input_cache.next(value);
+        let mean = -self.sma.next(value);
 
-        let mean = self.sma.next(value);
+        if !self.series.is_filled(self.length) {
+            return f64::NAN;
+        }
 
-        mean?;
+        let mut sum = 0.0;
 
-        let mean = -mean.unwrap();
+        for v in self.series.window(self.length) {
+            sum += f64::powi(Self::compute_sum(*v, mean), 2);
+        }
 
-        let values = self.input_cache.all();
-        let sum = values
-            .iter()
-            .map(|v| {
-                if let Some(v) = v {
-                    let sum = Self::compute_sum(*v, mean);
-                    sum.powf(2.0)
-                } else {
-                    0.0
-                }
-            })
-            .sum::<f64>();
+        let stdev = (sum / self._div_length).sqrt();
 
-        let stdev = if self.is_biased {
-            (sum / self.length as f64).sqrt()
-        } else {
-            (sum / (self.length - 1) as f64).sqrt()
-        };
-
-        return Some(stdev);
+        return stdev;
     }
 }

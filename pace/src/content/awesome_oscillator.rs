@@ -1,25 +1,25 @@
 use crate::{
-    common::src::{AnySrc, Src, SrcKind},
+    common::src::{AnyProcessor, AnySrc, Src, SrcKind},
     core::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::Cross,
         cross_over_threshold::CrossOverThreshold,
         cross_under_threshold::CrossUnderThreshold,
         highest_bars::HighestBars,
         lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
+        moving_average::{Ma, MaKind},
     },
 };
 
 pub struct AwesomeOscillatorConfig {
     pub short_src: AnySrc,
     pub long_src: AnySrc,
-    pub short_ma: AnyMa,
-    pub long_ma: AnyMa,
+    pub short_ma: AnyProcessor,
+    pub long_ma: AnyProcessor,
 }
 
 impl IncrementalDefault for AwesomeOscillatorConfig {
@@ -37,7 +37,7 @@ impl IncrementalDefault for AwesomeOscillatorConfig {
 pub struct AwesomeOscillator {
     pub config: AwesomeOscillatorConfig,
     pub ctx: Context,
-    prev_ao: Option<f64>,
+    prev_ao: f64,
 }
 
 impl AwesomeOscillator {
@@ -45,28 +45,21 @@ impl AwesomeOscillator {
         return Self {
             ctx: ctx.clone(),
             config,
-            prev_ao: None,
+            prev_ao: f64::NAN,
         };
     }
 }
 
-impl Incremental<(), Option<f64>> for AwesomeOscillator {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for AwesomeOscillator {
+    fn next(&mut self, _: ()) -> f64 {
         let short_ma_src = self.config.short_src.next(());
         let long_ma_src = self.config.long_src.next(());
 
         let short_ma = self.config.short_ma.next(short_ma_src);
         let long_ma = self.config.long_ma.next(long_ma_src);
 
-        let ao = match (short_ma, long_ma) {
-            (Some(short_ma), Some(long_ma)) => Some(short_ma - long_ma),
-            _ => None,
-        };
-
-        let osc = match (ao, self.prev_ao) {
-            (Some(ao), Some(prev_ao)) => Some(ao - prev_ao),
-            _ => None,
-        };
+        let ao = short_ma - long_ma;
+        let osc = ao - self.prev_ao;
 
         self.prev_ao = ao;
 
@@ -110,19 +103,17 @@ impl AwesomeOscillatorStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for AwesomeOscillatorStrategy {
-    fn next(&mut self, ao: Option<f64>) -> Option<TradeDirection> {
+impl Incremental<f64, StrategySignal> for AwesomeOscillatorStrategy {
+    fn next(&mut self, ao: f64) -> StrategySignal {
         let is_cross_over = self.cross_over.next(ao);
         let is_cross_under = self.cross_under.next(ao);
 
-        let result = if is_cross_over {
-            Some(TradeDirection::Long)
-        } else if is_cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

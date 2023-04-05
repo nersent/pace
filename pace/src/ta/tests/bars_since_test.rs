@@ -14,28 +14,30 @@ mod tests {
             fixture::{DataFrameFixtureUtils, Fixture},
             pace::format_pace_fixture_path,
         },
+        utils::float::{Float64Utils, OptionFloatUtils},
     };
 
     fn format_path(path: &str) -> PathBuf {
         format_pace_fixture_path(&format!("tests/ta/bars_since/{}", path))
     }
 
-    fn _test(target: &mut BarsSince, expected: &[Option<f64>], condition: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test(target: &mut BarsSince, expected: &[f64], condition: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for i in target.ctx.clone() {
-            let _condition = match condition[i] {
-                Some(x) => x != 0.0,
-                _ => false,
-            };
+            // let _condition = match condition[i] {
+            //     Some(x) => x != 0.0,
+            //     _ => false,
+            // };
+            let _condition = !condition[i].is_zero();
             let output = target.next(_condition);
-            snapshot.push(output.map(|x| x as f64));
+            snapshot.push(output.unwrap_nan());
         }
         snapshot.assert(expected);
     }
 
     #[test]
     fn a() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("a.csv"));
+        let (df, ctx) = Fixture::load(&format_path("a.csv"));
         _test(
             &mut BarsSince::new(ctx.clone()),
             &df.test_target(),
@@ -45,7 +47,7 @@ mod tests {
 
     #[test]
     fn b() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("b.csv"));
+        let (df, ctx) = Fixture::load(&format_path("b.csv"));
         _test(
             &mut BarsSince::new(ctx.clone()),
             &df.test_target(),
@@ -55,7 +57,7 @@ mod tests {
 
     #[test]
     fn c() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("c.csv"));
+        let (df, ctx) = Fixture::load(&format_path("c.csv"));
         _test(
             &mut BarsSince::new(ctx.clone()),
             &df.test_target(),
@@ -65,7 +67,7 @@ mod tests {
 
     #[test]
     fn d() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("d.csv"));
+        let (df, ctx) = Fixture::load(&format_path("d.csv"));
         _test(
             &mut BarsSince::new(ctx.clone()),
             &df.test_target(),

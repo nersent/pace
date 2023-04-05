@@ -1,20 +1,16 @@
-use crate::{
-    common::window_cache::WindowCache,
-    core::{context::Context, incremental::Incremental},
-    pinescript::common::ps_diff,
-};
+use crate::core::{context::Context, incremental::Incremental};
 
 pub struct PrevChange {
     pub ctx: Context,
-    prev_value: Option<f64>,
+    prev_value: f64,
 }
 
 impl PrevChange {
     pub fn new(ctx: Context) -> Self {
-        return Self::with_initial(ctx, None);
+        return Self::with_initial(ctx, f64::NAN);
     }
 
-    pub fn with_initial(ctx: Context, initial_value: Option<f64>) -> Self {
+    pub fn with_initial(ctx: Context, initial_value: f64) -> Self {
         return Self {
             ctx: ctx.clone(),
             prev_value: initial_value,
@@ -22,9 +18,9 @@ impl PrevChange {
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for PrevChange {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        let diff = ps_diff(value, self.prev_value);
+impl Incremental<f64, f64> for PrevChange {
+    fn next(&mut self, value: f64) -> f64 {
+        let diff = value - self.prev_value;
         self.prev_value = value;
         return diff;
     }

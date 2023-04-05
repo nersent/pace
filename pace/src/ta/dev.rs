@@ -1,5 +1,5 @@
 use crate::{
-    common::window_cache::WindowCache,
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
 };
 
@@ -12,7 +12,7 @@ pub struct Dev {
     pub length: usize,
     pub ctx: Context,
     sma: Sma,
-    input_cache: WindowCache<Option<f64>>,
+    series: FloatSeries,
 }
 
 impl Dev {
@@ -23,34 +23,29 @@ impl Dev {
             ctx: ctx.clone(),
             length,
             sma: Sma::new(ctx.clone(), length),
-            input_cache: WindowCache::new(ctx.clone(), length),
+            series: FloatSeries::new(ctx.clone()),
         };
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Dev {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        if self.length == 1 {
-            return Some(0.0);
-        }
-
-        self.input_cache.next(value);
+impl Incremental<f64, f64> for Dev {
+    fn next(&mut self, value: f64) -> f64 {
+        self.series.next(value);
 
         let mean = self.sma.next(value);
 
-        if mean.is_none() || !self.input_cache.is_filled() {
-            return None;
+        if !self.series.is_filled(self.length) {
+            return f64::NAN;
         }
 
-        let mean = mean.unwrap();
+        let mut sum = 0.0;
 
-        let values = self.input_cache.all();
-        let sum = values
-            .iter()
-            .map(|v| (v.unwrap_or(mean) - mean).abs())
-            .sum::<f64>();
+        for item in self.series.window(self.length) {
+            sum += f64::abs(*item - mean);
+        }
 
         let dev = sum / self.length as f64;
-        return Some(dev);
+
+        return dev;
     }
 }

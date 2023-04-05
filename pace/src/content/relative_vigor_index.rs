@@ -4,18 +4,18 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    pinescript::common::ps_div,
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::{Cross, CrossMode},
         cross_over_threshold::CrossOverThreshold,
         cross_under_threshold::CrossUnderThreshold,
         highest_bars::HighestBars,
         lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
+        moving_average::{Ma, MaKind},
         sum::Sum,
         symmetrically_weighted_moving_average::Swma,
     },
+    utils::float::Float64Utils,
 };
 
 pub static RELATIVE_VIGOR_INDEX_MIN_VALUE: f64 = -1.0;
@@ -32,8 +32,8 @@ impl IncrementalDefault for RelativeVigorIndexConfig {
 }
 
 pub struct RelativeVigorIndexData {
-    pub rvi: Option<f64>,
-    pub sig: Option<f64>,
+    pub rvi: f64,
+    pub sig: f64,
 }
 
 /// Ported from https://www.tradingview.com/chart/?solution=43000591593
@@ -68,15 +68,8 @@ impl Incremental<(), RelativeVigorIndexData> for RelativeVigorIndex {
         let high = self.ctx.bar.high();
         let low = self.ctx.bar.low();
 
-        let close_open_diff = match (close, open) {
-            (Some(close), Some(open)) => Some(close - open),
-            _ => None,
-        };
-
-        let high_low_diff = match (high, low) {
-            (Some(high), Some(low)) => Some(high - low),
-            _ => None,
-        };
+        let close_open_diff = close - open;
+        let high_low_diff = high - low;
 
         let close_open_swma = self.swma_close_open.next(close_open_diff);
         let high_low_swma = self.swma_high_low.next(high_low_diff);
@@ -84,7 +77,7 @@ impl Incremental<(), RelativeVigorIndexData> for RelativeVigorIndex {
         let close_open_sum = self.sum_close_open.next(close_open_swma);
         let high_low_sum = self.sum_high_low.next(high_low_swma);
 
-        let rvi = ps_div(close_open_sum, high_low_sum);
+        let rvi = close_open_sum / high_low_sum;
 
         let sig = self.swma_sig.next(rvi);
 
@@ -107,19 +100,18 @@ impl RelativeVigorIndexStrategy {
     }
 }
 
-impl Incremental<&RelativeVigorIndexData, Option<TradeDirection>> for RelativeVigorIndexStrategy {
-    fn next(&mut self, rvgi: &RelativeVigorIndexData) -> Option<TradeDirection> {
+impl Incremental<&RelativeVigorIndexData, StrategySignal> for RelativeVigorIndexStrategy {
+    fn next(&mut self, rvgi: &RelativeVigorIndexData) -> StrategySignal {
         let rvi_s_cross = self.cross.next((rvgi.rvi, rvgi.sig));
 
-        let mut result: Option<TradeDirection> = None;
-
         if let Some(plus_minus_cross) = rvi_s_cross {
-            result = match plus_minus_cross {
-                CrossMode::Over => Some(TradeDirection::Long),
-                CrossMode::Under => Some(TradeDirection::Short),
+            if plus_minus_cross == CrossMode::Over {
+                return StrategySignal::Long;
+            } else if plus_minus_cross == CrossMode::Under {
+                return StrategySignal::Short;
             }
         }
 
-        return result;
+        return StrategySignal::Neutral;
     }
 }

@@ -1,4 +1,7 @@
-use crate::core::{context::Context, incremental::Incremental};
+use crate::{
+    common::float_series::FloatSeries,
+    core::{context::Context, incremental::Incremental},
+};
 
 use super::bars::highest_bars;
 
@@ -8,6 +11,7 @@ use super::bars::highest_bars;
 pub struct HighestBars {
     pub length: usize,
     pub ctx: Context,
+    series: FloatSeries,
 }
 
 impl HighestBars {
@@ -16,15 +20,19 @@ impl HighestBars {
         return Self {
             length,
             ctx: ctx.clone(),
+            series: FloatSeries::new(ctx.clone()),
         };
     }
 }
 
-impl Incremental<(), Option<i32>> for HighestBars {
-    fn next(&mut self, _: ()) -> Option<i32> {
-        if !self.ctx.bar.at_length(self.length) {
+impl Incremental<f64, Option<i32>> for HighestBars {
+    fn next(&mut self, value: f64) -> Option<i32> {
+        self.series.next(value);
+
+        if !self.series.is_filled(self.length) {
             return None;
         }
-        return highest_bars(self.ctx.highs(self.length), self.length);
+
+        return Some(highest_bars(&self.series.window(self.length), self.length));
     }
 }

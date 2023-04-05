@@ -6,15 +6,11 @@ use crate::{
     },
     strategy::trade::TradeDirection,
     ta::{
-        cross::Cross,
-        cross_over_threshold::CrossOverThreshold,
-        cross_under_threshold::CrossUnderThreshold,
-        highest_bars::HighestBars,
-        lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
-        simple_moving_average::Sma,
-        stdev::Stdev,
+        cross::Cross, cross_over_threshold::CrossOverThreshold,
+        cross_under_threshold::CrossUnderThreshold, highest_bars::HighestBars,
+        lowest_bars::LowestBars, simple_moving_average::Sma, stdev::Stdev,
     },
+    utils::float::Float64Utils,
 };
 
 pub static BBW_MULT: f64 = 2.0;
@@ -54,27 +50,21 @@ impl BollingerBandsWidth {
     }
 }
 
-impl Incremental<(), Option<f64>> for BollingerBandsWidth {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for BollingerBandsWidth {
+    fn next(&mut self, _: ()) -> f64 {
         let src = self.config.src.next(());
         let basis = self.basis.next(src);
         let dev = self.stdev.next(src);
 
-        if src.is_none() || basis.is_none() || dev.is_none() {
-            return None;
+        if basis.is_zero() {
+            return f64::NAN;
         }
 
-        let basis = basis.unwrap();
-
-        if basis == 0.0 {
-            return None;
-        }
-
-        let dev = dev.unwrap() * self.config.mult;
+        let dev = dev * self.config.mult;
         let upper = basis + dev;
         let lower = basis - dev;
         let bbw = (upper - lower) / basis;
 
-        return Some(bbw);
+        return bbw;
     }
 }

@@ -1,0 +1,1 @@
+cargo nextest run --lib

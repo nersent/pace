@@ -29,8 +29,8 @@ mod tests {
         ))
     }
 
-    fn _test(target: &mut RelativeVolatilityIndex, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test(target: &mut RelativeVolatilityIndex, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         let ctx = target.ctx.clone();
         for _ in target.ctx.clone() {
             let tick = ctx.bar.index();
@@ -47,7 +47,7 @@ mod tests {
 
     #[test]
     fn length_14_ma_14_ema_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_14_ma_14_ema_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_14_ma_14_ema_close.csv"));
         _test(
             &mut RelativeVolatilityIndex::new(
                 ctx.clone(),

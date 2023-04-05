@@ -4,17 +4,13 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
-        cross::Cross,
-        cross_over_threshold::CrossOverThreshold,
-        cross_under_threshold::CrossUnderThreshold,
-        highest_bars::HighestBars,
-        lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
-        simple_moving_average::Sma,
-        stdev::Stdev,
+        cross::Cross, cross_over_threshold::CrossOverThreshold,
+        cross_under_threshold::CrossUnderThreshold, highest_bars::HighestBars,
+        lowest_bars::LowestBars, simple_moving_average::Sma, stdev::Stdev,
     },
+    utils::float::Float64Utils,
 };
 
 pub static BOLLINGER_BANDS_PERCENT_B_MULT: f64 = 2.0;
@@ -54,30 +50,24 @@ impl BollingerBandsPercentB {
     }
 }
 
-impl Incremental<(), Option<f64>> for BollingerBandsPercentB {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for BollingerBandsPercentB {
+    fn next(&mut self, _: ()) -> f64 {
         let src = self.config.src.next(());
         let basis = self.basis.next(src);
         let dev = self.stdev.next(src);
 
-        if src.is_none() || basis.is_none() || dev.is_none() {
-            return None;
-        }
-
-        let src = src.unwrap();
-        let basis = basis.unwrap();
-        let dev = dev.unwrap() * self.config.mult;
+        let dev = dev * self.config.mult;
         let upper = basis + dev;
         let lower = basis - dev;
         let upper_lower_diff = upper - lower;
 
-        if upper_lower_diff == 0.0 {
-            return None;
+        if upper_lower_diff.is_zero() {
+            return f64::NAN;
         }
 
         let bbr = (src - lower) / upper_lower_diff;
 
-        return Some(bbr);
+        return bbr;
     }
 }
 
@@ -119,19 +109,17 @@ impl BollingerBandsPercentBStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for BollingerBandsPercentBStrategy {
-    fn next(&mut self, bbpb: Option<f64>) -> Option<TradeDirection> {
+impl Incremental<f64, StrategySignal> for BollingerBandsPercentBStrategy {
+    fn next(&mut self, bbpb: f64) -> StrategySignal {
         let is_cross_over = self.cross_over.next(bbpb);
         let is_cross_under = self.cross_under.next(bbpb);
 
-        let result = if is_cross_over {
-            Some(TradeDirection::Long)
-        } else if is_cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

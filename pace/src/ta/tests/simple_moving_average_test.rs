@@ -5,6 +5,7 @@ mod tests {
     use crate::{
         common::src::{Src, SrcKind},
         core::incremental::{Chained, Incremental},
+        polars::series::SeriesCastUtils,
         ta::simple_moving_average::Sma,
         testing::{
             array_snapshot::ArraySnapshot,
@@ -18,8 +19,8 @@ mod tests {
         format_pace_fixture_path(&format!("tests/ta/sma/{}", path))
     }
 
-    fn _test(target: &mut Sma, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test(target: &mut Sma, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let output = target.next(target.ctx.bar.close());
             snapshot.push(output);
@@ -29,50 +30,45 @@ mod tests {
 
     #[test]
     fn length_1_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_1_close.csv"));
-        test_incremental(
-            ctx.clone(),
-            Chained::new(
-                ctx.clone(),
-                Src::new(ctx.clone(), SrcKind::Close).to_box(),
-                Sma::new(ctx.clone(), 1).to_box(),
-            )
-            .to_box(),
-            &df.test_target(),
-        );
-        // test_incremental(ctx.clone(), );
-        // _test(&mut Sma::new(ctx.clone(), 1), &df.test_target());
+        let (df, ctx) = Fixture::load(&format_path("length_1_close.csv"));
+        _test(&mut Sma::new(ctx.clone(), 1), &df.test_target());
     }
 
     #[test]
     fn length_2_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_2_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_2_close.csv"));
         _test(&mut Sma::new(ctx.clone(), 2), &df.test_target());
     }
 
     #[test]
     fn length_3_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_3_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_3_close.csv"));
         _test(&mut Sma::new(ctx.clone(), 3), &df.test_target());
     }
 
     #[test]
     fn length_7_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_7_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_7_close.csv"));
         _test(&mut Sma::new(ctx.clone(), 7), &df.test_target());
     }
 
     #[test]
     fn length_14_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_14_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_14_close.csv"));
         _test(&mut Sma::new(ctx.clone(), 14), &df.test_target());
     }
 
     #[test]
     fn length_350_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_350_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_350_close.csv"));
         _test(&mut Sma::new(ctx.clone(), 350), &df.test_target());
     }
+
+    // #[test]
+    // fn xd_length_2_close() {
+    //     let (df, ctx) = Fixture::load(&format_path("length_1_close.csv"));
+    //     _test_xd(&mut SmaXd::new(ctx.clone(), 1), &df.test_target());
+    // }
 
     // #[test]
     // fn test_sma_btc_1d_sma_14_length_change_stdev_14_length_close() {
@@ -80,8 +76,8 @@ mod tests {
     //         Fixture::load("ta/moving_average/tests/fixtures/sma/change/stdev/btc_1d_sma_14_length_change_stdev_14_length_close.csv");
     //     let mut target_sma = SimpleMovingAverageComponent::new(ctx.clone(), 14);
     //     let mut target_stdev = StandardDeviationComponent::new(ctx.clone(), 14, true);
-    //     let mut prev_src: Option<f64> = None;
-    //     let mut snapshot = ArraySnapshot::<Option<f64>::new();
+    //     let mut prev_src: f64 = None;
+    //     let mut snapshot = ArraySnapshot::<f64::new();
     //     for cctx in ctx {
     //         let ctx = cctx.get();
     //         let src = ctx.close();
@@ -90,7 +86,7 @@ mod tests {
     //             (Some(src), Some(prev_src)) => Some(src - prev_src),
     //             _ => None,
     //         };
-    //         let change: Option<f64> = match src_change {
+    //         let change: f64 = match src_change {
     //             Some(src_change) => {
     //                 if src_change <= 0.0 {
     //                     Some(0.0)

@@ -1,5 +1,5 @@
 use crate::{
-    common::window_cache::WindowCache,
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
 };
 
@@ -9,7 +9,7 @@ use crate::{
 pub struct Prank {
     pub length: usize,
     pub ctx: Context,
-    input_cache: WindowCache<Option<f64>>,
+    series: FloatSeries,
 }
 
 impl Prank {
@@ -18,36 +18,29 @@ impl Prank {
         return Self {
             ctx: ctx.clone(),
             length,
-            input_cache: WindowCache::new(ctx.clone(), length + 1),
+            series: FloatSeries::new(ctx.clone()),
         };
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Prank {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        self.input_cache.next(value);
+impl Incremental<f64, f64> for Prank {
+    fn next(&mut self, value: f64) -> f64 {
+        let mut prank = f64::NAN;
 
-        if value.is_none() || !self.ctx.bar.at_length(self.length + 1) {
-            return None;
+        if self.series.is_filled(self.length) {
+            let mut count: f64 = 0.0;
+
+            for item in self.series.window(self.length) {
+                if !item.is_nan() && *item <= value {
+                    count += 1.0;
+                }
+            }
+
+            prank = count / self.length as f64 * 100.0;
         }
 
-        let last_value = value.unwrap();
+        self.series.next(value);
 
-        let values = self.input_cache.all();
-        let values = &values[0..values.len() - 1];
-
-        let count = values
-            .iter()
-            .filter(|v| {
-                if let Some(v) = v {
-                    return v <= &last_value;
-                }
-                return false;
-            })
-            .count() as f64;
-
-        let percent = count / self.length as f64 * 100.0;
-
-        return Some(percent);
+        return prank;
     }
 }

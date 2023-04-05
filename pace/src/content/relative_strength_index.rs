@@ -4,14 +4,14 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::Cross,
         cross_over_threshold::CrossOverThreshold,
         cross_under_threshold::CrossUnderThreshold,
         highest_bars::HighestBars,
         lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
+        moving_average::{Ma, MaKind},
         relative_strength_index::Rsi,
     },
 };
@@ -50,8 +50,8 @@ impl RelativeStrengthIndex {
     }
 }
 
-impl Incremental<(), Option<f64>> for RelativeStrengthIndex {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for RelativeStrengthIndex {
+    fn next(&mut self, _: ()) -> f64 {
         let src = self.config.src.next(());
         return self.rsi.next(src);
     }
@@ -92,19 +92,17 @@ impl RelativeStrengthIndexStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for RelativeStrengthIndexStrategy {
-    fn next(&mut self, rsi: Option<f64>) -> Option<TradeDirection> {
-        let cross_over = self.cross_over.next(rsi);
-        let cross_under = self.cross_under.next(rsi);
+impl Incremental<f64, StrategySignal> for RelativeStrengthIndexStrategy {
+    fn next(&mut self, rsi: f64) -> StrategySignal {
+        let is_cross_over = self.cross_over.next(rsi);
+        let is_cross_under = self.cross_under.next(rsi);
 
-        let result = if cross_over {
-            Some(TradeDirection::Long)
-        } else if cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

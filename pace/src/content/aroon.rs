@@ -1,15 +1,16 @@
 use crate::{
     core::{context::Context, incremental::Incremental},
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{cross::Cross, highest_bars::HighestBars, lowest_bars::LowestBars},
+    utils::float::OptionFloatUtils,
 };
 
 pub static AROON_MIN_VALUE: f64 = 0.0;
 pub static AROON_MAX_VALUE: f64 = 100.0;
 
 pub struct AroonData {
-    pub up: Option<f64>,
-    pub down: Option<f64>,
+    pub up: f64,
+    pub down: f64,
 }
 
 pub struct AroonConfig {
@@ -43,20 +44,16 @@ impl Aroon {
 
 impl Incremental<(), AroonData> for Aroon {
     fn next(&mut self, _: ()) -> AroonData {
-        if !self.ctx.bar.at_length(self.config.length) {
-            return AroonData {
-                up: None,
-                down: None,
-            };
-        }
-
-        let high = self.highest_bars.next(());
-        let low = self.lowest_bars.next(());
+        let high = self.highest_bars.next(self.ctx.bar.high());
+        let low = self.lowest_bars.next(self.ctx.bar.low());
 
         let length = self.config.length as f64;
 
-        let up = high.map(|high| (high as f64 + length) / length * 100.0);
-        let down = low.map(|low| (low as f64 + length) / length * 100.0);
+        let up = (high.unwrap_nan() + length) / length * 100.0;
+        let down = (low.unwrap_nan() + length) / length * 100.0;
+
+        // let up = high.map(|high| (high as f64 + length) / length * 100.0);
+        // let down = low.map(|low| (low as f64 + length) / length * 100.0);
 
         return AroonData { up, down };
     }
@@ -93,28 +90,20 @@ impl AroonStrategy {
     }
 }
 
-impl Incremental<&AroonData, Option<TradeDirection>> for AroonStrategy {
-    fn next(&mut self, aroon: &AroonData) -> Option<TradeDirection> {
-        self.data.up_trend_strength = match (aroon.up, aroon.down) {
-            (Some(up), Some(down)) => {
-                if up > 50.0 && down < 50.0 {
-                    1.0 - (100.0 - up) / 50.0
-                } else {
-                    0.0
-                }
-            }
-            _ => 0.0,
+impl Incremental<&AroonData, StrategySignal> for AroonStrategy {
+    fn next(&mut self, aroon: &AroonData) -> StrategySignal {
+        self.data.up_trend_strength = if aroon.up > 50.0 && aroon.down < 50.0 {
+            1.0 - (100.0 - aroon.up) / 50.0
+        } else {
+            0.0
         };
 
-        self.data.down_trend_strength = match (aroon.up, aroon.down) {
-            (Some(up), Some(down)) => {
-                if down > 50.0 && up < 50.0 {
-                    1.0 - (100.0 - down) / 50.0
-                } else {
-                    0.0
-                }
+        self.data.down_trend_strength = {
+            if aroon.down > 50.0 && aroon.up < 50.0 {
+                1.0 - (100.0 - aroon.down) / 50.0
+            } else {
+                0.0
             }
-            _ => 0.0,
         };
 
         let cross = self.cross.next((aroon.down, aroon.up));
@@ -136,14 +125,14 @@ impl Incremental<&AroonData, Option<TradeDirection>> for AroonStrategy {
             }
         }
 
-        let result = if up_trend_confirmation {
-            Some(TradeDirection::Long)
-        } else if down_trend_confirmation {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
+        if up_trend_confirmation {
+            return StrategySignal::Long;
+        }
 
-        return result;
+        if down_trend_confirmation {
+            return StrategySignal::Short;
+        }
+
+        return StrategySignal::Neutral;
     }
 }

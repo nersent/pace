@@ -10,8 +10,8 @@ mod tests {
         testing::array_snapshot::ArraySnapshot,
     };
 
-    fn _test(target: &mut FixNan, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test(target: &mut FixNan, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let output = target.next(target.ctx.bar.close());
             snapshot.push(output);
@@ -22,31 +22,13 @@ mod tests {
     #[test]
     fn all_non_nan() {
         let ctx = Context::new(
-            InMemoryDataProvider::from_values(Vec::from([
-                Some(1.0),
-                Some(2.0),
-                Some(3.0),
-                Some(4.0),
-                Some(5.0),
-                Some(6.0),
-                Some(7.0),
-                Some(8.0),
-            ]))
-            .to_arc(),
+            InMemoryDataProvider::from_values(Vec::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]))
+                .to_arc(),
         );
 
         _test(
             &mut FixNan::new(ctx.clone()),
-            &[
-                Some(1.0),
-                Some(2.0),
-                Some(3.0),
-                Some(4.0),
-                Some(5.0),
-                Some(6.0),
-                Some(7.0),
-                Some(8.0),
-            ],
+            &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
         );
     }
 
@@ -54,41 +36,14 @@ mod tests {
     fn all_nan() {
         let ctx = Context::new(
             InMemoryDataProvider::from_values(Vec::from([
-                None, None, None, None, None, None, None, None,
-            ]))
-            .to_arc(),
-        );
-
-        _test(
-            &mut FixNan::new(ctx.clone()),
-            &[None, None, None, None, None, None, None, None],
-        );
-    }
-
-    #[test]
-    fn mixed() {
-        let ctx = Context::new(
-            InMemoryDataProvider::from_values(Vec::from([
-                None,
-                None,
-                None,
-                None,
-                Some(1.0),
-                Some(2.0),
-                None,
-                None,
-                None,
-                Some(3.0),
-                None,
-                Some(4.0),
-                None,
-                None,
-                None,
-                None,
-                Some(5.0),
-                Some(6.0),
-                Some(7.0),
-                None,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
             ]))
             .to_arc(),
         );
@@ -96,26 +51,69 @@ mod tests {
         _test(
             &mut FixNan::new(ctx.clone()),
             &[
-                None,
-                None,
-                None,
-                None,
-                Some(1.0),
-                Some(2.0),
-                Some(2.0),
-                Some(2.0),
-                Some(2.0),
-                Some(3.0),
-                Some(3.0),
-                Some(4.0),
-                Some(4.0),
-                Some(4.0),
-                Some(4.0),
-                Some(4.0),
-                Some(5.0),
-                Some(6.0),
-                Some(7.0),
-                Some(7.0),
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+            ],
+        );
+    }
+
+    #[test]
+    fn mixed() {
+        let ctx = Context::new(
+            InMemoryDataProvider::from_values(Vec::from([
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                1.0,
+                2.0,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                3.0,
+                f64::NAN,
+                4.0,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                5.0,
+                6.0,
+                7.0,
+                f64::NAN,
+            ]))
+            .to_arc(),
+        );
+
+        _test(
+            &mut FixNan::new(ctx.clone()),
+            &[
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                f64::NAN,
+                1.0,
+                2.0,
+                2.0,
+                2.0,
+                2.0,
+                3.0,
+                3.0,
+                4.0,
+                4.0,
+                4.0,
+                4.0,
+                4.0,
+                5.0,
+                6.0,
+                7.0,
+                7.0,
             ],
         );
     }

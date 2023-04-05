@@ -4,8 +4,7 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    pinescript::common::{ps_abs, ps_diff, ps_div},
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         average_true_range::Atr,
         cross::{Cross, CrossMode},
@@ -13,7 +12,7 @@ use crate::{
         cross_under_threshold::CrossUnderThreshold,
         highest_bars::HighestBars,
         lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
+        moving_average::{Ma, MaKind},
         sum::Sum,
     },
 };
@@ -29,8 +28,8 @@ impl Default for VortexConfig {
 }
 
 pub struct VortexData {
-    pub plus: Option<f64>,
-    pub minus: Option<f64>,
+    pub plus: f64,
+    pub minus: f64,
 }
 
 /// Ported from https://www.tradingview.com/chart/?solution=43000591352
@@ -64,8 +63,8 @@ impl Incremental<(), VortexData> for Vortex {
         let prev_high = self.ctx.high(1);
         let prev_low = self.ctx.low(1);
 
-        let high_prev_low_diff = ps_abs(ps_diff(high, prev_low));
-        let low_prev_high_diff = ps_abs(ps_diff(low, prev_high));
+        let high_prev_low_diff = f64::abs(high - prev_low);
+        let low_prev_high_diff = f64::abs(low - prev_high);
 
         let vmp = self.vmp_sum.next(high_prev_low_diff);
         let vmm = self.vmm_sum.next(low_prev_high_diff);
@@ -73,8 +72,8 @@ impl Incremental<(), VortexData> for Vortex {
         let atr = self.atr.next(());
         let str = self.atr_sum.next(atr);
 
-        let vip = ps_div(vmp, str);
-        let vim = ps_div(vmm, str);
+        let vip = vmp / str;
+        let vim = vmm / str;
 
         return VortexData {
             plus: vip,
@@ -98,19 +97,18 @@ impl VortexStrategy {
     }
 }
 
-impl Incremental<&VortexData, Option<TradeDirection>> for VortexStrategy {
-    fn next(&mut self, vi: &VortexData) -> Option<TradeDirection> {
+impl Incremental<&VortexData, StrategySignal> for VortexStrategy {
+    fn next(&mut self, vi: &VortexData) -> StrategySignal {
         let vip_vim_cross = self.cross.next((vi.plus, vi.minus));
 
-        let mut result: Option<TradeDirection> = None;
-
         if let Some(plus_minus_cross) = vip_vim_cross {
-            result = match plus_minus_cross {
-                CrossMode::Over => Some(TradeDirection::Long),
-                CrossMode::Under => Some(TradeDirection::Short),
+            if plus_minus_cross == CrossMode::Over {
+                return StrategySignal::Long;
+            } else if plus_minus_cross == CrossMode::Under {
+                return StrategySignal::Short;
             }
         }
 
-        return result;
+        return StrategySignal::Neutral;
     }
 }

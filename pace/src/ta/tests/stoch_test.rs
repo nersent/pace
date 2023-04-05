@@ -18,8 +18,8 @@ mod tests {
         format_pace_fixture_path(&format!("tests/ta/stoch/{}", path))
     }
 
-    fn _test_close_high_low(target: &mut Stoch, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test_close_high_low(target: &mut Stoch, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let ouptut = target.next((
                 target.ctx.bar.close(),
@@ -31,8 +31,8 @@ mod tests {
         snapshot.assert(expected);
     }
 
-    fn _test_close_close_close(target: &mut Stoch, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test_close_close_close(target: &mut Stoch, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let ouptut = target.next((
                 target.ctx.bar.close(),
@@ -46,49 +46,49 @@ mod tests {
 
     #[test]
     fn length_14_close_high_low() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_14_close_high_low.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_14_close_high_low.csv"));
         _test_close_high_low(&mut Stoch::new(ctx.clone(), 14), &df.test_target());
     }
 
     #[test]
     fn length_1_close_high_low() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_1_close_high_low.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_1_close_high_low.csv"));
         _test_close_high_low(&mut Stoch::new(ctx.clone(), 1), &df.test_target());
     }
 
     #[test]
     fn length_2_close_high_low() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_2_close_high_low.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_2_close_high_low.csv"));
         _test_close_high_low(&mut Stoch::new(ctx.clone(), 2), &df.test_target());
     }
 
     #[test]
     fn length_3_close_high_low() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_3_close_high_low.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_3_close_high_low.csv"));
         _test_close_high_low(&mut Stoch::new(ctx.clone(), 3), &df.test_target());
     }
 
     #[test]
     fn length_1_close_close_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_1_close_close_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_1_close_close_close.csv"));
         _test_close_close_close(&mut Stoch::new(ctx.clone(), 1), &df.test_target());
     }
 
     #[test]
     fn length_2_close_close_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_2_close_close_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_2_close_close_close.csv"));
         _test_close_close_close(&mut Stoch::new(ctx.clone(), 2), &df.test_target());
     }
 
     #[test]
     fn length_3_close_close_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_3_close_close_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_3_close_close_close.csv"));
         _test_close_close_close(&mut Stoch::new(ctx.clone(), 3), &df.test_target());
     }
 
     #[test]
     fn length_14_close_close_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_14_close_close_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_14_close_close_close.csv"));
         _test_close_close_close(&mut Stoch::new(ctx.clone(), 14), &df.test_target());
     }
 }

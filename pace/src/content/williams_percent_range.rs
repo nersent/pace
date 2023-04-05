@@ -4,8 +4,7 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    pinescript::common::{ps_diff, ps_div},
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::Cross,
         cross_over_threshold::CrossOverThreshold,
@@ -14,7 +13,7 @@ use crate::{
         highest_bars::HighestBars,
         lowest::Lowest,
         lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
+        moving_average::{Ma, MaKind},
     },
 };
 
@@ -54,13 +53,13 @@ impl WilliamsPercentRank {
     }
 }
 
-impl Incremental<(), Option<f64>> for WilliamsPercentRank {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for WilliamsPercentRank {
+    fn next(&mut self, _: ()) -> f64 {
         let src = self.config.src.next(());
         let max = self.highest.next(self.ctx.bar.high());
         let min = self.lowest.next(self.ctx.bar.low());
 
-        let pr = ps_div(ps_diff(src, max), ps_diff(max, min)).map(|x| x * 100.0);
+        let pr = ((src - max) / (max - min)) * 100.0;
 
         return pr;
     }
@@ -102,19 +101,17 @@ impl WilliamsPercentRankStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for WilliamsPercentRankStrategy {
-    fn next(&mut self, wpr: Option<f64>) -> Option<TradeDirection> {
+impl Incremental<f64, StrategySignal> for WilliamsPercentRankStrategy {
+    fn next(&mut self, wpr: f64) -> StrategySignal {
         let is_cross_over = self.cross_overbought.next(wpr);
         let is_cross_under = self.cross_oversold.next(wpr);
 
-        let result = if is_cross_over {
-            Some(TradeDirection::Long)
-        } else if is_cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

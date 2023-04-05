@@ -1,10 +1,13 @@
-use crate::{
-    core::{context::Context, incremental::Incremental},
-    ta::moving_average::AnyMa,
-};
+use crate::core::{context::Context, incremental::Incremental};
 
-/// Any data source provider;
-pub type AnySrc = Box<dyn Incremental<(), Option<f64>>>;
+/// Any data producer.
+pub type AnySrc = Box<dyn Incremental<(), f64>>;
+
+/// Any data consumer.
+pub type AnyConsumer = Box<dyn Incremental<f64, ()>>;
+
+/// Any data consumer-producer.
+pub type AnyProcessor = Box<dyn Incremental<f64, f64>>;
 
 #[derive(Clone, Copy)]
 pub enum SrcKind {
@@ -32,7 +35,7 @@ pub fn hl2(high: f64, low: f64) -> f64 {
 
 pub struct Src {
     pub ctx: Context,
-    delegate: Box<dyn FnMut() -> Option<f64>>,
+    delegate: Box<dyn FnMut() -> f64>,
 }
 
 impl Src {
@@ -40,19 +43,19 @@ impl Src {
         return Self::from_delegate(ctx.clone(), Self::create_delegate(ctx.clone(), kind));
     }
 
-    pub fn from_delegate(ctx: Context, delegate: Box<dyn FnMut() -> Option<f64>>) -> Self {
+    pub fn from_delegate(ctx: Context, delegate: Box<dyn FnMut() -> f64>) -> Self {
         return Self { ctx, delegate };
     }
 
     pub fn from_consumer<T: 'static>(
         ctx: Context,
         mut src: Box<dyn Incremental<(), T>>,
-        mut consumer: Box<dyn Incremental<T, Option<f64>>>,
+        mut consumer: Box<dyn Incremental<T, f64>>,
     ) -> Self {
         return Self::from_delegate(ctx.clone(), Box::new(move || consumer.next(src.next(()))));
     }
 
-    fn create_delegate(ctx: Context, kind: SrcKind) -> Box<dyn FnMut() -> Option<f64>> {
+    fn create_delegate(ctx: Context, kind: SrcKind) -> Box<dyn FnMut() -> f64> {
         match kind {
             SrcKind::Open => Box::new(move || ctx.bar.open()),
             SrcKind::High => Box::new(move || ctx.bar.high()),
@@ -60,29 +63,21 @@ impl Src {
             SrcKind::Close => Box::new(move || ctx.bar.close()),
             SrcKind::Volume => Box::new(move || ctx.bar.volume()),
             SrcKind::OHLC4 => Box::new(move || {
-                Some(ohlc4(
-                    ctx.bar.open().unwrap(),
-                    ctx.bar.high().unwrap(),
-                    ctx.bar.low().unwrap(),
-                    ctx.bar.close().unwrap(),
-                ))
+                ohlc4(
+                    ctx.bar.open(),
+                    ctx.bar.high(),
+                    ctx.bar.low(),
+                    ctx.bar.close(),
+                )
             }),
-            SrcKind::HLC3 => Box::new(move || {
-                Some(hlc3(
-                    ctx.bar.high().unwrap(),
-                    ctx.bar.low().unwrap(),
-                    ctx.bar.close().unwrap(),
-                ))
-            }),
-            SrcKind::HL2 => {
-                Box::new(move || Some(hl2(ctx.bar.high().unwrap(), ctx.bar.low().unwrap())))
-            }
+            SrcKind::HLC3 => Box::new(move || hlc3(ctx.bar.high(), ctx.bar.low(), ctx.bar.close())),
+            SrcKind::HL2 => Box::new(move || hl2(ctx.bar.high(), ctx.bar.low())),
         }
     }
 }
 
-impl Incremental<(), Option<f64>> for Src {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for Src {
+    fn next(&mut self, _: ()) -> f64 {
         return self.delegate.as_mut()();
     }
 }
@@ -97,9 +92,12 @@ impl Hlc {
     }
 }
 
-impl Incremental<(), (Option<f64>, Option<f64>, Option<f64>)> for Hlc {
-    fn next(&mut self, _: ()) -> (Option<f64>, Option<f64>, Option<f64>) {
-        let bar = &self.ctx.bar;
-        return (bar.high(), bar.low(), bar.close());
+impl Incremental<(), (f64, f64, f64)> for Hlc {
+    fn next(&mut self, _: ()) -> (f64, f64, f64) {
+        return (
+            self.ctx.bar.high(),
+            self.ctx.bar.low(),
+            self.ctx.bar.close(),
+        );
     }
 }

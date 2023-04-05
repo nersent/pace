@@ -1,5 +1,5 @@
 use crate::{
-    common::window_cache::WindowCache,
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
 };
 
@@ -9,7 +9,8 @@ use crate::{
 pub struct Change {
     pub length: usize,
     pub ctx: Context,
-    input_cache: WindowCache<Option<f64>>,
+    series: FloatSeries,
+    _at_size: usize,
 }
 
 impl Change {
@@ -18,25 +19,20 @@ impl Change {
         return Self {
             ctx: ctx.clone(),
             length,
-            input_cache: WindowCache::new(ctx.clone(), length + 1),
+            series: FloatSeries::new(ctx.clone()),
+            _at_size: length + 1,
         };
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Change {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        self.input_cache.next(value);
-        let first_value = self.input_cache.first_unwrapped();
-        let last_value = self.input_cache.last_unwrapped();
-        let is_filled = self.input_cache.is_filled();
+impl Incremental<f64, f64> for Change {
+    fn next(&mut self, value: f64) -> f64 {
+        self.series.next(value);
 
-        if !is_filled || first_value.is_none() || last_value.is_none() {
-            return None;
+        if !self.series.is_filled(self._at_size) {
+            return f64::NAN;
         }
-        let first_value = first_value.unwrap();
-        if first_value == 0.0 {
-            return None;
-        }
-        return Some(last_value.unwrap() - first_value);
+
+        return value - self.series[self.length];
     }
 }

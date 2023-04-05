@@ -1,26 +1,26 @@
 use crate::{
-    common::src::{AnySrc, Src, SrcKind},
+    common::src::{AnyProcessor, AnySrc, Src, SrcKind},
     core::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::Cross,
         cross_over_threshold::CrossOverThreshold,
         cross_under_threshold::CrossUnderThreshold,
         highest_bars::HighestBars,
         lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
+        moving_average::{Ma, MaKind},
     },
 };
 
 pub struct MacdConfig {
     pub short_src: AnySrc,
     pub long_src: AnySrc,
-    pub short_ma: AnyMa,
-    pub long_ma: AnyMa,
-    pub signal_ma: AnyMa,
+    pub short_ma: AnyProcessor,
+    pub long_ma: AnyProcessor,
+    pub signal_ma: AnyProcessor,
 }
 
 impl IncrementalDefault for MacdConfig {
@@ -52,18 +52,15 @@ impl Macd {
     }
 }
 
-impl Incremental<(), (Option<f64>, Option<f64>)> for Macd {
-    fn next(&mut self, _: ()) -> (Option<f64>, Option<f64>) {
+impl Incremental<(), (f64, f64)> for Macd {
+    fn next(&mut self, _: ()) -> (f64, f64) {
         let short_ma_src = self.config.short_src.next(());
         let long_ma_src = self.config.long_src.next(());
 
         let short_ma = self.config.short_ma.next(short_ma_src);
         let long_ma = self.config.long_ma.next(long_ma_src);
 
-        let macd = match (short_ma, long_ma) {
-            (Some(short_ma), Some(long_ma)) => Some(short_ma - long_ma),
-            _ => None,
-        };
+        let macd = short_ma - long_ma;
 
         let signal = self.config.signal_ma.next(macd);
 
@@ -87,17 +84,17 @@ impl MacdStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for MacdStrategy {
-    fn next(&mut self, macd_delta: Option<f64>) -> Option<TradeDirection> {
-        let cross_over = self.cross_over.next(macd_delta);
-        let cross_under = self.cross_under.next(macd_delta);
+impl Incremental<f64, StrategySignal> for MacdStrategy {
+    fn next(&mut self, macd_delta: f64) -> StrategySignal {
+        let is_cross_over = self.cross_over.next(macd_delta);
+        let is_cross_under = self.cross_under.next(macd_delta);
 
-        if cross_over {
-            return Some(TradeDirection::Long);
-        } else if cross_under {
-            return Some(TradeDirection::Short);
+        if is_cross_over {
+            return StrategySignal::Long;
         }
-
-        return None;
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

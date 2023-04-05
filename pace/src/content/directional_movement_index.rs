@@ -7,18 +7,17 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    pinescript::common::{ps_diff, ps_div},
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::{Cross, CrossMode},
         cross_over_threshold::CrossOverThreshold,
         cross_under_threshold::CrossUnderThreshold,
         highest_bars::HighestBars,
         lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
         running_moving_average::Rma,
         true_range::Tr,
     },
+    utils::float::Float64Utils,
 };
 
 pub static DIRECTIONAL_MOVEMENT_INDEX_MIN_VALUE: f64 = 0.0;
@@ -39,9 +38,9 @@ impl Default for DirectionalMovementIndexConfig {
 }
 
 pub struct DirectionalMovementIndexData {
-    pub plus: Option<f64>,
-    pub minus: Option<f64>,
-    pub adx: Option<f64>,
+    pub plus: f64,
+    pub minus: f64,
+    pub adx: f64,
 }
 
 /// Ported from https://www.tradingview.com/chart/?solution=43000502250
@@ -80,29 +79,27 @@ impl Incremental<(), DirectionalMovementIndexData> for DirectionalMovementIndex 
         let prev_high = self.ctx.high(1);
         let prev_low = self.ctx.low(1);
 
-        let up = ps_diff(high, prev_high);
-        let down = ps_diff(prev_low, low);
+        let up = high - prev_high;
+        let down = prev_low - low;
 
-        let plus_dm = match (up, down) {
-            (Some(up), Some(down)) => {
-                if up > down && up > 0.0 {
-                    Some(up)
-                } else {
-                    Some(0.0)
-                }
+        let plus_dm = if !up.is_nan() && !down.is_nan() {
+            if up > down && up > 0.0 {
+                up
+            } else {
+                0.0
             }
-            _ => None,
+        } else {
+            f64::NAN
         };
 
-        let minus_dm = match (up, down) {
-            (Some(up), Some(down)) => {
-                if down > up && down > 0.0 {
-                    Some(down)
-                } else {
-                    Some(0.0)
-                }
+        let minus_dm = if !up.is_nan() && !down.is_nan() {
+            if down > up && down > 0.0 {
+                down
+            } else {
+                0.0
             }
-            _ => None,
+        } else {
+            f64::NAN
         };
 
         let true_range = self.true_range.next(());
@@ -111,19 +108,16 @@ impl Incremental<(), DirectionalMovementIndexData> for DirectionalMovementIndex 
         let plus_dm_rma = self.plus_dm_rma.next(plus_dm);
         let minus_dm_rma = self.minus_dm_rma.next(minus_dm);
 
-        let plus = ps_div(plus_dm_rma, true_range_rma).map(|x| x * 100.0);
-        let minus = ps_div(minus_dm_rma, true_range_rma).map(|x| x * 100.0);
+        let plus = (plus_dm_rma / true_range_rma) * 100.0;
+        let minus = (minus_dm_rma / true_range_rma) * 100.0;
 
         let plus = self.plus_fix_nan.next(plus);
         let minus = self.minus_fix_nan.next(minus);
 
-        let adx: Option<f64> = match (plus, minus) {
-            (Some(plus), Some(minus)) => {
-                Some((plus - minus).abs() / (if plus == -minus { 0.0 } else { plus + minus }))
-            }
-            _ => None,
-        };
-        let adx = self.adx.next(adx).map(|x| x * 100.0);
+        let div = if plus == -minus { 0.0 } else { plus + minus };
+
+        let adx = ((plus - minus).abs() / div).normalize();
+        let adx = self.adx.next(adx) * 100.0;
 
         return DirectionalMovementIndexData { plus, minus, adx };
     }
@@ -163,33 +157,26 @@ impl DirectionalMovementIndexStrategy {
     }
 }
 
-impl Incremental<&DirectionalMovementIndexData, Option<TradeDirection>>
+impl Incremental<&DirectionalMovementIndexData, StrategySignal>
     for DirectionalMovementIndexStrategy
 {
-    fn next(&mut self, dmi: &DirectionalMovementIndexData) -> Option<TradeDirection> {
-        let is_strong_trend = dmi
-            .adx
-            .map(|x| x > self.config.threshold_strong_trend)
-            .unwrap_or(false);
+    fn next(&mut self, dmi: &DirectionalMovementIndexData) -> StrategySignal {
+        let is_strong_trend = dmi.adx > self.config.threshold_strong_trend;
 
-        let is_weak_trend = dmi
-            .adx
-            .map(|x| x < self.config.threshold_weak_trend)
-            .unwrap_or(false);
+        let is_weak_trend = !dmi.adx.is_nan() && dmi.adx < self.config.threshold_weak_trend;
 
         let plus_minus_cross = self.cross.next((dmi.plus, dmi.minus));
 
-        let mut result: Option<TradeDirection> = None;
-
         if is_strong_trend {
             if let Some(plus_minus_cross) = plus_minus_cross {
-                result = match plus_minus_cross {
-                    CrossMode::Over => Some(TradeDirection::Long),
-                    CrossMode::Under => Some(TradeDirection::Short),
+                if plus_minus_cross == CrossMode::Over {
+                    return StrategySignal::Long;
+                } else if plus_minus_cross == CrossMode::Under {
+                    return StrategySignal::Short;
                 }
             }
         }
 
-        return result;
+        return StrategySignal::Neutral;
     }
 }

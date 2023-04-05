@@ -4,16 +4,11 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
-        cross::Cross,
-        cross_over_threshold::CrossOverThreshold,
-        cross_under_threshold::CrossUnderThreshold,
-        highest_bars::HighestBars,
-        lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
-        rate_of_change::Roc,
-        weighted_moving_average::Wma,
+        cross::Cross, cross_over_threshold::CrossOverThreshold,
+        cross_under_threshold::CrossUnderThreshold, highest_bars::HighestBars,
+        lowest_bars::LowestBars, rate_of_change::Roc, weighted_moving_average::Wma,
     },
 };
 
@@ -56,16 +51,13 @@ impl CoppockCurve {
     }
 }
 
-impl Incremental<(), Option<f64>> for CoppockCurve {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for CoppockCurve {
+    fn next(&mut self, _: ()) -> f64 {
         let src = self.config.src.next(());
 
         let long_roc = self.long_roc.next(src);
         let short_roc = self.short_roc.next(src);
-        let roc = match (long_roc, short_roc) {
-            (Some(long_roc), Some(short_roc)) => Some(long_roc + short_roc),
-            _ => None,
-        };
+        let roc = long_roc + short_roc;
         let curve = self.ma.next(roc);
 
         return curve;
@@ -108,19 +100,17 @@ impl CoppockCurveStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for CoppockCurveStrategy {
-    fn next(&mut self, cc: Option<f64>) -> Option<TradeDirection> {
+impl Incremental<f64, StrategySignal> for CoppockCurveStrategy {
+    fn next(&mut self, cc: f64) -> StrategySignal {
         let is_cross_over = self.cross_over.next(cc);
         let is_cross_under = self.cross_under.next(cc);
 
-        let result = if is_cross_over {
-            Some(TradeDirection::Long)
-        } else if is_cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

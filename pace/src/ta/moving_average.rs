@@ -1,4 +1,7 @@
-use crate::core::{context::Context, incremental::Incremental};
+use crate::{
+    common::src::AnyProcessor,
+    core::{context::Context, incremental::Incremental},
+};
 
 use super::{
     exponential_moving_average::Ema, running_moving_average::Rma, simple_moving_average::Sma,
@@ -13,15 +16,12 @@ pub enum MaKind {
     SWMA,
 }
 
-/// Any incremental moving average.
-pub type AnyMa = Box<dyn Incremental<Option<f64>, Option<f64>>>;
-
 /// A simplified way of creating a moving average component.
 pub struct Ma {
     pub length: usize,
     pub kind: MaKind,
     pub ctx: Context,
-    ma: AnyMa,
+    ma: AnyProcessor,
 }
 
 impl Ma {
@@ -34,7 +34,7 @@ impl Ma {
         };
     }
 
-    fn create_ma(ctx: Context, kind: MaKind, length: usize) -> AnyMa {
+    fn create_ma(ctx: Context, kind: MaKind, length: usize) -> AnyProcessor {
         match kind {
             MaKind::SMA => Box::new(Sma::new(ctx, length)),
             MaKind::EMA => Box::new(Ema::new(ctx, length)),
@@ -44,8 +44,8 @@ impl Ma {
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Ma {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
+impl Incremental<f64, f64> for Ma {
+    fn next(&mut self, value: f64) -> f64 {
         return self.ma.next(value);
     }
 }

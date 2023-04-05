@@ -4,15 +4,13 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
-        cross::Cross,
-        cross_over_threshold::CrossOverThreshold,
-        cross_under_threshold::CrossUnderThreshold,
-        highest_bars::HighestBars,
+        cross::Cross, cross_over_threshold::CrossOverThreshold,
+        cross_under_threshold::CrossUnderThreshold, highest_bars::HighestBars,
         lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
     },
+    utils::float::Float64Utils,
 };
 
 pub static BALANCE_OF_POWER_MIN_VALUE: f64 = -1.0;
@@ -31,23 +29,14 @@ impl BalanceOfPower {
     }
 }
 
-impl Incremental<(), Option<f64>> for BalanceOfPower {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for BalanceOfPower {
+    fn next(&mut self, _: ()) -> f64 {
         let close = self.ctx.bar.close();
         let open = self.ctx.bar.open();
         let high = self.ctx.bar.high();
         let low = self.ctx.bar.low();
 
-        let value = match (close, open, high, low) {
-            (Some(close), Some(open), Some(high), Some(low)) => {
-                if high == low {
-                    return None;
-                }
-
-                return Some((close - open) / (high - low));
-            }
-            _ => None,
-        };
+        let value = (close - open) / (high - low).normalize();
 
         return value;
     }
@@ -89,19 +78,17 @@ impl BalanceOfPowerStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for BalanceOfPowerStrategy {
-    fn next(&mut self, value: Option<f64>) -> Option<TradeDirection> {
+impl Incremental<f64, StrategySignal> for BalanceOfPowerStrategy {
+    fn next(&mut self, value: f64) -> StrategySignal {
         let is_cross_over = self.cross_over.next(value);
         let is_cross_under = self.cross_under.next(value);
 
-        let result = if is_cross_over {
-            Some(TradeDirection::Long)
-        } else if is_cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

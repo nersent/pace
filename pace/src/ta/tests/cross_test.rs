@@ -25,11 +25,11 @@ mod tests {
     fn _test(
         target: &mut Cross,
         target_rsi: &mut Rsi,
-        threshold: Option<f64>,
+        threshold: f64,
         mode: CrossMode,
-        expected: &[Option<f64>],
+        expected: &[f64],
     ) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let output_rsi = target_rsi.next(target.ctx.bar.close());
             let output = target.next((output_rsi, threshold));
@@ -37,19 +37,18 @@ mod tests {
                 Some(output) => output == mode,
                 None => false,
             };
-            let output = if output { 1.0 } else { 0.0 };
-            snapshot.push(Some(output));
+            snapshot.push(output as i32 as f64);
         }
         snapshot.assert(expected);
     }
 
     #[test]
     fn over_with_rsi_length_14_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("over/rsi/length_14_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("over/rsi/length_14_close.csv"));
         _test(
             &mut Cross::new(ctx.clone()),
             &mut Rsi::new(ctx.clone(), 14),
-            Some(30.0),
+            30.0,
             CrossMode::Over,
             &df.test_target(),
         );
@@ -57,11 +56,11 @@ mod tests {
 
     #[test]
     fn under_with_rsi_length_14_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("under/rsi/length_14_close.csv"));
+        let (df, ctx) = Fixture::load(&format_path("under/rsi/length_14_close.csv"));
         _test(
             &mut Cross::new(ctx.clone()),
             &mut Rsi::new(ctx.clone(), 14),
-            Some(70.0),
+            70.0,
             CrossMode::Under,
             &df.test_target(),
         );

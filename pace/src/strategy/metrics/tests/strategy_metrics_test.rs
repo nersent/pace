@@ -491,7 +491,7 @@ mod tests {
 
     #[test]
     fn on_next_bar_open_continous_extensive() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("next_bar_continous.csv"));
+        let (df, ctx) = Fixture::load(&format_path("next_bar_continous.csv"));
         let expected = _load_metrics(&df);
 
         _test_metrics(

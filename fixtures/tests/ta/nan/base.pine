@@ -1,0 +1,23 @@
+// @version=5
+indicator('xd', 'xd', true, precision=8) 
+plot(volume,title='volume')
+
+src = close
+
+
+// a
+condition =  bar_index == 20 or bar_index == 25 or bar_index == 26 or  bar_index == 27 or bar_index == 28 or bar_index == 30 or bar_index == 32 or bar_index == 50 or bar_index == 53 or bar_index == 54 or bar_index == 58 or bar_index == 60 or bar_index == 65 or bar_index == 90
+// b
+condition =  bar_index == 1 or bar_index == 2 or bar_index == 26 or  bar_index == 27 or bar_index == 28 or bar_index == 30 or bar_index == 32 or bar_index == 50 or bar_index == 53 or bar_index == 54 or bar_index == 58 or bar_index == 60 or bar_index == 65 or bar_index == 90
+// c
+condition =  bar_index == 0 or bar_index == 1 or bar_index == 2 or bar_index == 3 or bar_index == 4 or bar_index == 8 or bar_index == 12 or bar_index == 16 or bar_index == 26 or  bar_index == 27 or bar_index == 28 or bar_index == 30 or bar_index == 32 or bar_index == 50 or bar_index == 53 or bar_index == 54 or bar_index == 58 or bar_index == 60 or bar_index == 65 or bar_index == 90
+// d
+condition =  bar_index == 0 or bar_index == 2 or bar_index == 4 or bar_index == 6 or bar_index == 8  or bar_index == 26 or  bar_index == 27 or bar_index == 28 or bar_index == 30 or bar_index == 32 or bar_index == 50 or bar_index == 53 or bar_index == 54 or bar_index == 58 or bar_index == 60 or bar_index == 65 or bar_index == 90
+
+
+if condition
+    src := na
+
+plot(src, title="_target_src_")
+plot(condition ? 1 : 0, title="_target_condition_")
+plot(bar_index, title="_bar_index_")

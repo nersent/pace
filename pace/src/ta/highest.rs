@@ -1,5 +1,5 @@
 use crate::{
-    common::window_cache::WindowCache,
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
 };
 
@@ -11,7 +11,7 @@ use super::bars::highest;
 pub struct Highest {
     pub length: usize,
     pub ctx: Context,
-    input_cache: WindowCache<Option<f64>>,
+    series: FloatSeries,
 }
 
 impl Highest {
@@ -20,19 +20,19 @@ impl Highest {
         return Self {
             ctx: ctx.clone(),
             length,
-            input_cache: WindowCache::new(ctx.clone(), length),
+            series: FloatSeries::new(ctx.clone()),
         };
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Highest {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        self.input_cache.next(value);
+impl Incremental<f64, f64> for Highest {
+    fn next(&mut self, value: f64) -> f64 {
+        self.series.next(value);
 
-        if !self.ctx.bar.at_length(self.length) {
-            return None;
+        if !self.series.is_filled(self.length) || value.is_nan() {
+            return f64::NAN;
         }
 
-        return highest(self.input_cache.all());
+        return highest(self.series.window(self.length));
     }
 }

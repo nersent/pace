@@ -1,6 +1,7 @@
 use crate::{
-    common::{window_cache::WindowCache, window_validator::WindowValidator},
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
+    pinescript::common::PineScriptFloat64,
 };
 
 /// Weighted Moving Average. In wma weighting factors decrease in arithmetical progression.
@@ -9,46 +10,66 @@ use crate::{
 pub struct Wma {
     pub length: usize,
     pub ctx: Context,
-    input_cache: WindowCache<Option<f64>>,
-    batch_validator: WindowValidator,
+    series: FloatSeries,
+    weights: Vec<f64>,
+    norm: f64,
+    is_initialized: bool,
+    non_nan_count: usize,
 }
 
 impl Wma {
     pub fn new(ctx: Context, length: usize) -> Self {
         assert!(length >= 1, "Wma must have a length of at least 1");
-        return Self {
+        let mut _self = Self {
             ctx: ctx.clone(),
             length,
-            input_cache: WindowCache::new(ctx.clone(), length),
-            batch_validator: WindowValidator::new(ctx.clone(), length),
+            series: FloatSeries::new(ctx.clone()),
+            weights: vec![0.0; length],
+            norm: 0.0,
+            is_initialized: false,
+            non_nan_count: 0,
         };
+
+        _self.init_weights();
+
+        return _self;
+    }
+
+    fn init_weights(&mut self) {
+        for i in 1..=self.length {
+            let weight = i as f64 * self.length as f64;
+            self.weights[i - 1] = weight;
+            self.norm += weight;
+        }
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Wma {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        self.input_cache.next(value);
-        let is_valid = self.batch_validator.next(value);
+impl Incremental<f64, f64> for Wma {
+    fn next(&mut self, value: f64) -> f64 {
+        self.series.next(value);
 
-        if !self.ctx.bar.at_length(self.length) || !is_valid {
-            return None;
+        if !self.is_initialized {
+            if !value.is_nan() {
+                self.non_nan_count += 1;
+            }
+
+            if self.series.is_filled(self.length) && self.non_nan_count >= self.length {
+                self.is_initialized = true;
+            } else {
+                return f64::NAN;
+            }
         }
 
-        let values = self.input_cache.all();
+        if value.is_nan() {
+            return f64::NAN;
+        }
 
-        let (sum, norm) = values
-            .iter()
-            .rev()
-            .enumerate()
-            .fold((0.0, 0.0), |acc, (i, value)| {
-                let value = value.unwrap();
-                let weight = ((self.length - i) * self.length) as f64;
-                let weighted_value = value * weight;
-                (acc.0 + weighted_value, acc.1 + weight)
-            });
+        let mut sum = 0.0;
 
-        let wma = sum / norm;
+        for (i, item) in self.series.window(self.length).iter().enumerate() {
+            sum += item.ps_nz() * self.weights[i];
+        }
 
-        return Some(wma);
+        return sum / self.norm;
     }
 }

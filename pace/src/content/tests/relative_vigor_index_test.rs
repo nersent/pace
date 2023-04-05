@@ -29,18 +29,18 @@ mod tests {
         ))
     }
 
-    fn _test(target: &mut RelativeVigorIndex, expected: &[Option<(Option<f64>, Option<f64>)>]) {
-        let mut snapshot = ArraySnapshot::<Option<(Option<f64>, Option<f64>)>>::new();
+    fn _test(target: &mut RelativeVigorIndex, expected: &[(f64, f64)]) {
+        let mut snapshot = ArraySnapshot::<(f64, f64)>::new();
         for _ in target.ctx.clone() {
             let output = target.next(());
-            snapshot.push(Some((output.rvi, output.sig)));
+            snapshot.push((output.rvi, output.sig));
         }
         snapshot.assert(expected);
     }
 
     #[test]
     fn length_14() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_14.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_14.csv"));
         let expected = df.merge_two_columns("_target_rvi_", "_target_sig_");
         _test(
             &mut RelativeVigorIndex::new(ctx.clone(), RelativeVigorIndexConfig { length: 14 }),
@@ -50,7 +50,7 @@ mod tests {
 
     #[test]
     fn length_1() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_1.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_1.csv"));
         let expected = df.merge_two_columns("_target_rvi_", "_target_sig_");
         _test(
             &mut RelativeVigorIndex::new(ctx.clone(), RelativeVigorIndexConfig { length: 1 }),
@@ -60,7 +60,7 @@ mod tests {
 
     #[test]
     fn length_2() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_2.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_2.csv"));
         let expected = df.merge_two_columns("_target_rvi_", "_target_sig_");
         _test(
             &mut RelativeVigorIndex::new(ctx.clone(), RelativeVigorIndexConfig { length: 2 }),
@@ -70,7 +70,7 @@ mod tests {
 
     #[test]
     fn length_3() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_3.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_3.csv"));
         let expected = df.merge_two_columns("_target_rvi_", "_target_sig_");
         _test(
             &mut RelativeVigorIndex::new(ctx.clone(), RelativeVigorIndexConfig { length: 3 }),
@@ -80,7 +80,7 @@ mod tests {
 
     #[test]
     fn length_365() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_365.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_365.csv"));
         let expected = df.merge_two_columns("_target_rvi_", "_target_sig_");
         _test(
             &mut RelativeVigorIndex::new(ctx.clone(), RelativeVigorIndexConfig { length: 365 }),

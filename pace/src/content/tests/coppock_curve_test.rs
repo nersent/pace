@@ -26,8 +26,8 @@ mod tests {
         format_pace_fixture_path(&format!("tests/content/coppock_curve/indicator/{}", path))
     }
 
-    fn _test(target: &mut CoppockCurve, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test(target: &mut CoppockCurve, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let output = target.next(());
             snapshot.push(output);
@@ -37,7 +37,7 @@ mod tests {
 
     #[test]
     fn long_roc_length_14_short_roc_length_11_ma_length_10_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path(
+        let (df, ctx) = Fixture::load(&format_path(
             "long_roc_length_14_short_roc_length_11_ma_length_10_close.csv",
         ));
 

@@ -4,14 +4,14 @@ use crate::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::Cross,
         cross_over_threshold::CrossOverThreshold,
         cross_under_threshold::CrossUnderThreshold,
         highest_bars::HighestBars,
         lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
+        moving_average::{Ma, MaKind},
         relative_strength_index::Rsi,
         simple_moving_average::Sma,
         stoch::Stoch,
@@ -42,8 +42,8 @@ impl IncrementalDefault for StochRelativeStrengthIndexConfig {
 }
 
 pub struct StochRelativeStrengthIndexData {
-    pub k: Option<f64>,
-    pub d: Option<f64>,
+    pub k: f64,
+    pub d: f64,
 }
 /// Ported from https://www.tradingview.com/chart/?solution=43000502333
 pub struct StochRelativeStrengthIndex {
@@ -117,21 +117,19 @@ impl StochRelativeStrengthIndexStrategy {
     }
 }
 
-impl Incremental<&StochRelativeStrengthIndexData, Option<TradeDirection>>
+impl Incremental<&StochRelativeStrengthIndexData, StrategySignal>
     for StochRelativeStrengthIndexStrategy
 {
-    fn next(&mut self, stoch_rsi: &StochRelativeStrengthIndexData) -> Option<TradeDirection> {
+    fn next(&mut self, stoch_rsi: &StochRelativeStrengthIndexData) -> StrategySignal {
         let is_cross_over = self.cross_overbought.next(stoch_rsi.k);
         let is_cross_under = self.cross_oversold.next(stoch_rsi.k);
 
-        let result = if is_cross_over {
-            Some(TradeDirection::Long)
-        } else if is_cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

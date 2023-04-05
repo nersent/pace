@@ -1,18 +1,17 @@
 use crate::{
-    common::src::{AnySrc, Src, SrcKind},
+    common::src::{AnyProcessor, AnySrc, Src, SrcKind},
     core::{
         context::Context,
         incremental::{Incremental, IncrementalDefault},
     },
-    pinescript::common::{ps_diff, ps_div},
-    strategy::trade::TradeDirection,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::Cross,
         cross_over_threshold::CrossOverThreshold,
         cross_under_threshold::CrossUnderThreshold,
         highest_bars::HighestBars,
         lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
+        moving_average::{Ma, MaKind},
     },
 };
 
@@ -20,8 +19,8 @@ pub static VOLUME_OSCILLATOR_MIN_VALUE: f64 = -100.0;
 pub static VOLUME_OSCILLATOR_MAX_VALUE: f64 = 100.0;
 
 pub struct VolumeOscillatorConfig {
-    pub short_ma: AnyMa,
-    pub long_ma: AnyMa,
+    pub short_ma: AnyProcessor,
+    pub long_ma: AnyProcessor,
 }
 
 impl IncrementalDefault for VolumeOscillatorConfig {
@@ -48,14 +47,14 @@ impl VolumeOscillator {
     }
 }
 
-impl Incremental<(), Option<f64>> for VolumeOscillator {
-    fn next(&mut self, _: ()) -> Option<f64> {
+impl Incremental<(), f64> for VolumeOscillator {
+    fn next(&mut self, _: ()) -> f64 {
         let volume = self.ctx.bar.volume();
 
         let short_ma = self.config.short_ma.next(volume);
         let long_ma = self.config.long_ma.next(volume);
 
-        let osc = ps_div(ps_diff(short_ma, long_ma), long_ma).map(|x| x * 100.0);
+        let osc = ((short_ma - long_ma) / long_ma) * 100.0;
 
         return osc;
     }
@@ -95,19 +94,17 @@ impl VolumeOscillatorStrategy {
     }
 }
 
-impl Incremental<Option<f64>, Option<TradeDirection>> for VolumeOscillatorStrategy {
-    fn next(&mut self, vo: Option<f64>) -> Option<TradeDirection> {
+impl Incremental<f64, StrategySignal> for VolumeOscillatorStrategy {
+    fn next(&mut self, vo: f64) -> StrategySignal {
         let is_cross_over = self.cross_over.next(vo);
         let is_cross_under = self.cross_under.next(vo);
 
-        let result = if is_cross_over {
-            Some(TradeDirection::Long)
-        } else if is_cross_under {
-            Some(TradeDirection::Short)
-        } else {
-            None
-        };
-
-        return result;
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Neutral;
     }
 }

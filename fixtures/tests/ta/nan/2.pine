@@ -1,0 +1,26 @@
+//
+plot(math.sum(src, 1), title="_target_sum_1_")
+plot(math.sum(src, 2), title="_target_sum_2_")
+plot(math.sum(src, 3), title="_target_sum_3_")
+plot(math.sum(src, 4), title="_target_sum_4_")
+plot(math.sum(src, 5), title="_target_sum_5_")
+plot(math.sum(src, 10), title="_target_sum_10_")
+plot(math.sum(src, 14), title="_target_sum_14_")
+
+//
+plot(ta.rsi(src, 1), title="_target_rsi_1_")
+plot(ta.rsi(src, 2), title="_target_rsi_2_")
+plot(ta.rsi(src, 3), title="_target_rsi_3_")
+plot(ta.rsi(src, 4), title="_target_rsi_4_")
+plot(ta.rsi(src, 5), title="_target_rsi_5_")
+plot(ta.rsi(src, 10), title="_target_rsi_10_")
+plot(ta.rsi(src, 14), title="_target_rsi_14_")
+
+//
+plot(ta.cci(src, 1), title="_target_cci_1_")
+plot(ta.cci(src, 2), title="_target_cci_2_")
+plot(ta.cci(src, 3), title="_target_cci_3_")
+plot(ta.cci(src, 4), title="_target_cci_4_")
+plot(ta.cci(src, 5), title="_target_cci_5_")
+plot(ta.cci(src, 10), title="_target_cci_10_")
+plot(ta.cci(src, 14), title="_target_cci_14_")

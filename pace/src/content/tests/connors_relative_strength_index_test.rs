@@ -31,8 +31,8 @@ mod tests {
         ))
     }
 
-    fn _test(target: &mut ConnorsRelativeStrengthIndex, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test(target: &mut ConnorsRelativeStrengthIndex, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let output = target.next(());
             snapshot.push(output);
@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     fn length_3_up_down_len_2_roc_length_100_close() {
-        let (df, ctx) = Fixture::load_ctx(&format_path(
+        let (df, ctx) = Fixture::load(&format_path(
             "length_3_up_down_len_2_roc_length_100_close.csv",
         ));
 

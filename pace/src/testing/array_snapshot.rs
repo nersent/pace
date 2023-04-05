@@ -1,13 +1,12 @@
-use colored::Colorize;
+use colored::{ColoredString, Colorize};
 
-use crate::strategy::trade::TradeDirection;
-
-use super::comparison::FloatComparison;
+use crate::{strategy::trade::TradeDirection, utils::float::Float64Utils};
 
 pub struct ArraySnapshot<T> {
     pub debug_mode: bool,
     pub print_max_index: Option<usize>,
     pub actual: Vec<T>,
+    pub name: Option<String>,
 }
 
 pub trait Compare<T> {
@@ -20,6 +19,7 @@ impl<T: std::fmt::Debug> ArraySnapshot<T> {
             actual: Vec::new(),
             debug_mode: false,
             print_max_index: None,
+            name: None,
         };
     }
 
@@ -60,7 +60,12 @@ impl<T: std::fmt::Debug> ArraySnapshot<T> {
                     format!("{:?}", expected).black().on_green().bold(),
                 );
                 if !self.debug_mode {
-                    panic!("Array snapshot assertion failed at index {}", i);
+                    let mut prefix: String = "".to_string();
+                    if let Some(name) = &self.name {
+                        println!("Test {} failed", name.bright_red().black().bold());
+                        prefix = format!("[{}]: ", name);
+                    }
+                    panic!("{}Array snapshot assertion failed at index {}", prefix, i);
                 }
             }
             if self.debug_mode
@@ -73,6 +78,41 @@ impl<T: std::fmt::Debug> ArraySnapshot<T> {
                 );
             }
         }
+    }
+}
+
+impl ArraySnapshot<f64> {
+    pub fn assert(&self, expected: &[f64]) {
+        self.assert_iter(expected, |actual, expected| (*actual).compare(*expected));
+    }
+}
+
+impl ArraySnapshot<(f64, f64)> {
+    pub fn assert(&self, expected: &[(f64, f64)]) {
+        self.assert_iter(expected, |actual, expected| {
+            (actual.0).compare(expected.0) && (actual.1).compare(expected.1)
+        });
+    }
+}
+
+impl ArraySnapshot<(f64, f64, f64)> {
+    pub fn assert(&self, expected: &[(f64, f64, f64)]) {
+        self.assert_iter(expected, |actual, expected| {
+            (actual.0).compare(expected.0)
+                && (actual.1).compare(expected.1)
+                && (actual.2).compare(expected.2)
+        });
+    }
+}
+
+impl ArraySnapshot<(f64, f64, f64, f64)> {
+    pub fn assert(&self, expected: &[(f64, f64, f64, f64)]) {
+        self.assert_iter(expected, |actual, expected| {
+            (actual.0).compare(expected.0)
+                && (actual.1).compare(expected.1)
+                && (actual.2).compare(expected.2)
+                && (actual.3).compare(expected.3)
+        });
     }
 }
 

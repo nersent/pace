@@ -173,8 +173,31 @@ impl TradeEntries {
 #[derive(PartialEq, Copy, Debug, Clone)]
 pub enum StrategySignal {
     Neutral,
+    Long,
+    Short,
     LongEntry,
     ShortEntry,
     LongExit,
     ShortExit,
+}
+
+impl Into<i32> for StrategySignal {
+    fn into(self) -> i32 {
+        return match self {
+            StrategySignal::Neutral => 0,
+            StrategySignal::Long => 1,
+            StrategySignal::Short => -1,
+            StrategySignal::LongEntry => 2,
+            StrategySignal::ShortEntry => -2,
+            StrategySignal::LongExit => 3,
+            StrategySignal::ShortExit => -3,
+        };
+    }
+}
+
+impl Into<f64> for StrategySignal {
+    fn into(self) -> f64 {
+        let value: i32 = self.into();
+        return value as f64;
+    }
 }

@@ -1,6 +1,7 @@
 use crate::{
-    common::{window_cache::WindowCache, window_validator::WindowValidator},
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
+    pinescript::common::PineScriptFloat64,
 };
 
 /// The sum function returns the sliding sum of last y values of x.
@@ -10,8 +11,9 @@ pub struct Sum {
     pub length: usize,
     pub ctx: Context,
     sum: f64,
-    input_cache: WindowCache<Option<f64>>,
-    batch_validator: WindowValidator,
+    _sum: f64,
+    series: FloatSeries,
+    _first_item_length: usize,
 }
 
 impl Sum {
@@ -20,32 +22,27 @@ impl Sum {
         return Self {
             ctx: ctx.clone(),
             length,
+            series: FloatSeries::new(ctx.clone()),
+            _first_item_length: length - 1,
             sum: 0.0,
-            batch_validator: WindowValidator::new(ctx.clone(), length),
-            input_cache: WindowCache::new(ctx.clone(), length),
+            _sum: f64::NAN,
         };
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Sum {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        self.input_cache.next(value);
-        let first_value = self.input_cache.first_unwrapped();
-        let last_value = self.input_cache.last_unwrapped();
-        let is_filled = self.input_cache.is_filled();
+impl Incremental<f64, f64> for Sum {
+    fn next(&mut self, value: f64) -> f64 {
+        if !value.is_nan() {
+            self.series.next(value);
 
-        let is_valid = self.batch_validator.next(value);
-        let mut sum: Option<f64> = None;
+            self.sum += value;
 
-        if let Some(last_value) = last_value {
-            self.sum += last_value;
+            if self.series.is_filled(self.length) {
+                self._sum = self.sum;
+                self.sum -= self.series[self._first_item_length];
+            }
         }
-        if is_filled && is_valid {
-            sum = Some(self.sum);
-        }
-        if let Some(first_value) = first_value {
-            self.sum -= first_value;
-        }
-        return sum;
+
+        return self._sum;
     }
 }

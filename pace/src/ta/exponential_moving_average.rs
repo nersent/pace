@@ -10,7 +10,9 @@ pub struct Ema {
     pub length: usize,
     pub ctx: Context,
     sma: Sma,
-    prev_value: Option<f64>,
+    prev_value: f64,
+    at_length: usize,
+    alpha_mult: f64,
 }
 
 impl Ema {
@@ -25,30 +27,25 @@ impl Ema {
             alpha,
             ctx: ctx.clone(),
             sma: Sma::new(ctx.clone(), length),
-            prev_value: None,
+            at_length: length + 1,
+            prev_value: f64::NAN,
+            alpha_mult: 1.0 - alpha,
         };
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Ema {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        if self.length == 1 {
-            return value;
+impl Incremental<f64, f64> for Ema {
+    fn next(&mut self, value: f64) -> f64 {
+        if !self.ctx.bar.at_length(self.at_length) || self.prev_value.is_nan() {
+            self.prev_value = self.sma.next(value);
+            return self.prev_value;
         }
-        if !self.ctx.bar.at_length(self.length - 1) {
-            self.sma.next(value);
-            return None;
+
+        if value.is_nan() {
+            return f64::NAN;
         }
-        match self.prev_value {
-            Some(prev_value) => {
-                let ema = self.alpha * value.unwrap() + (1.0 - self.alpha) * prev_value;
-                self.prev_value = Some(ema);
-                return self.prev_value;
-            }
-            None => {
-                self.prev_value = self.sma.next(value);
-                return self.prev_value;
-            }
-        }
+
+        self.prev_value = self.alpha * value + self.alpha_mult * self.prev_value;
+        return self.prev_value;
     }
 }

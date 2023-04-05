@@ -1,7 +1,4 @@
-use crate::{
-    common::window_cache::WindowCache,
-    core::{context::Context, incremental::Incremental},
-};
+use crate::core::{context::Context, incremental::Incremental};
 
 /// Same as PineScript `ta.barssince(condition)`
 pub struct BarsSince {

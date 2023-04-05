@@ -1,6 +1,7 @@
 use crate::{
-    common::{window_cache::WindowCache, window_validator::WindowValidator},
+    common::float_series::FloatSeries,
     core::{context::Context, incremental::Incremental},
+    pinescript::common::PineScriptFloat64,
 };
 
 /// Symmetrically Weighted Moving Average with fixed length: 4. Weights: [1/6, 2/6, 2/6, 1/6].
@@ -9,8 +10,7 @@ use crate::{
 pub struct Swma {
     pub length: usize,
     pub ctx: Context,
-    input_cache: WindowCache<Option<f64>>,
-    batch_validator: WindowValidator,
+    series: FloatSeries,
 }
 
 static WEIGHTS: [f64; 4] = [1.0 / 6.0, 2.0 / 6.0, 2.0 / 6.0, 1.0 / 6.0];
@@ -21,30 +21,27 @@ impl Swma {
         return Self {
             ctx: ctx.clone(),
             length,
-            input_cache: WindowCache::new(ctx.clone(), length),
-            batch_validator: WindowValidator::new(ctx.clone(), length),
+            series: FloatSeries::new(ctx.clone()),
         };
     }
 }
 
-impl Incremental<Option<f64>, Option<f64>> for Swma {
-    fn next(&mut self, value: Option<f64>) -> Option<f64> {
-        self.input_cache.next(value);
-        let is_valid = self.batch_validator.next(value);
+impl Incremental<f64, f64> for Swma {
+    fn next(&mut self, value: f64) -> f64 {
+        self.series.next(value);
 
-        if !self.ctx.bar.at_length(self.length) || !is_valid {
-            return None;
+        if !self.series.is_filled(self.length) {
+            return f64::NAN;
         }
 
-        let values = self.input_cache.all();
+        let mut swma = 0.0;
 
-        let swma = values.iter().enumerate().fold(0.0, |acc, (i, value)| {
-            let value = value.unwrap();
+        for (i, value) in self.series.window(self.length).iter().enumerate() {
             let weight = WEIGHTS[i];
             let weighted_value = value * weight;
-            acc + weighted_value
-        });
+            swma += weighted_value;
+        }
 
-        return Some(swma);
+        return swma;
     }
 }

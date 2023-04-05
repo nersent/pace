@@ -29,8 +29,8 @@ mod tests {
         ))
     }
 
-    fn _test(target: &mut ChaikinMoneyFlow, expected: &[Option<f64>]) {
-        let mut snapshot = ArraySnapshot::<Option<f64>>::new();
+    fn _test(target: &mut ChaikinMoneyFlow, expected: &[f64]) {
+        let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let output = target.next(());
             snapshot.push(output);
@@ -40,7 +40,7 @@ mod tests {
 
     #[test]
     fn length_14() {
-        let (df, ctx) = Fixture::load_ctx(&format_path("length_14.csv"));
+        let (df, ctx) = Fixture::load(&format_path("length_14.csv"));
         _test(
             &mut ChaikinMoneyFlow::new(ctx.clone(), ChaikinMoneyFlowConfig { length: 14 }),
             &df.test_target(),

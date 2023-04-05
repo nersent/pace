@@ -6,29 +6,29 @@ use std::{
     sync::Arc,
 };
 
-use nersent_pace::{
-    content::relative_strength_index::{
-        RelativeStrengthIndex, RelativeStrengthIndexConfig, RelativeStrengthIndexStrategy,
-        RelativeStrengthIndexStrategyConfig,
-    },
-    core::{
-        context::Context,
-        data_provider::DataProvider,
-        in_memory_data_provider::InMemoryDataProvider,
-        incremental::{Incremental, IncrementalDefault},
-    },
-    pinescript::pinescript_exporter::{PineScriptExportStrategyConfig, PineScriptExporter},
-    polars::io::read_df,
-    strategy::{
-        metrics::{
-            cobra_metrics::{CobraMetrics, CobraMetricsConfig},
-            tradingview_metrics::{TradingViewMetrics, TradingViewMetricsConfig},
-        },
-        optimization::{fit_trades, FitTradesConfig},
-        strategy::{Strategy, StrategyConfig},
-    },
-    ta::relative_strength_index::Rsi,
-};
+// use nersent_pace::{
+//     content::relative_strength_index::{
+//         RelativeStrengthIndex, RelativeStrengthIndexConfig, RelativeStrengthIndexStrategy,
+//         RelativeStrengthIndexStrategyConfig,
+//     },
+//     core::{
+//         context::Context,
+//         data_provider::DataProvider,
+//         in_memory_data_provider::InMemoryDataProvider,
+//         incremental::{Incremental, IncrementalDefault},
+//     },
+//     pinescript::pinescript_exporter::{PineScriptExportStrategyConfig, PineScriptExporter},
+//     polars::io::read_df,
+//     strategy::{
+//         metrics::{
+//             cobra_metrics::{CobraMetrics, CobraMetricsConfig},
+//             tradingview_metrics::{TradingViewMetrics, TradingViewMetricsConfig},
+//         },
+//         optimization::{fit_trades, FitTradesConfig},
+//         strategy::{Strategy, StrategyConfig},
+//     },
+//     ta::relative_strength_index::Rsi,
+// };
 
 // pub trait IncrementalNew<T, R> {
 //     fn next(&self, data: T) -> R;
@@ -90,80 +90,89 @@ use nersent_pace::{
 // }
 
 fn main() {
+    // println!("sum: {}", 2.0 + f64::NAN);
+    // println!("mult: {}", 2.0 * f64::NAN);
+    // println!("pow: {}", f64::powf(2.0, f64::NAN));
+    // println!("pow: {}", f64::powf(f64::NAN, 2.0));
+    println!("max: {}", f64::max(f64::NAN, 2.0));
+    println!("diff: {}", 1.0 - f64::NAN);
+
+    return;
+
     // let aha_src = AhaSrc::new().;
 
     // AhaSrc::ch
 
-    let data_path = Path::new("example/fixtures/btc_1d.csv");
-    let df = read_df(&data_path);
+    // let data_path = Path::new("example/fixtures/btc_1d.csv");
+    // let df = read_df(&data_path);
 
-    let ctx = Context::new(InMemoryDataProvider::from_df(&df).to_arc());
+    // let ctx = Context::new(InMemoryDataProvider::from_df(&df).to_arc());
 
-    let mut strategy = Strategy::new(
-        ctx.clone(),
-        StrategyConfig {
-            initial_capital: 1000.0,
-            continous: true,
-            buy_with_equity: false,
-            ..StrategyConfig::default()
-        },
-    );
+    // let mut strategy = Strategy::new(
+    //     ctx.clone(),
+    //     StrategyConfig {
+    //         initial_capital: 1000.0,
+    //         continous: true,
+    //         buy_with_equity: false,
+    //         ..StrategyConfig::default()
+    //     },
+    // );
 
-    let mut metrics = TradingViewMetrics::new(
-        ctx.clone(),
-        &strategy,
-        TradingViewMetricsConfig {
-            risk_free_rate: 0.0,
-            ..TradingViewMetricsConfig::default()
-        },
-    );
+    // let mut metrics = TradingViewMetrics::new(
+    //     ctx.clone(),
+    //     &strategy,
+    //     TradingViewMetricsConfig {
+    //         risk_free_rate: 0.0,
+    //         ..TradingViewMetricsConfig::default()
+    //     },
+    // );
 
-    let mut rsi_indicator = RelativeStrengthIndex::new(
-        ctx.clone(),
-        RelativeStrengthIndexConfig::default(ctx.clone()),
-    );
-    let mut rsi_strategy = RelativeStrengthIndexStrategy::new(
-        ctx.clone(),
-        RelativeStrengthIndexStrategyConfig {
-            threshold_overbought: 50.0,
-            threshold_oversold: 50.0,
-        },
-    );
+    // let mut rsi_indicator = RelativeStrengthIndex::new(
+    //     ctx.clone(),
+    //     RelativeStrengthIndexConfig::default(ctx.clone()),
+    // );
+    // let mut rsi_strategy = RelativeStrengthIndexStrategy::new(
+    //     ctx.clone(),
+    //     RelativeStrengthIndexStrategyConfig {
+    //         threshold_overbought: 50.0,
+    //         threshold_oversold: 50.0,
+    //     },
+    // );
 
-    let best_strategy = fit_trades(
-        Arc::clone(&ctx.data),
-        FitTradesConfig {
-            // start_index: 0,
-            // end_index: 50,
-            // start_index: 365,
-            // end_index: 365 * 2,
-            start_index: strategy.ctx.last_bar_index - 90,
-            end_index: strategy.ctx.last_bar_index,
-        },
-    );
+    // let best_strategy = fit_trades(
+    //     Arc::clone(&ctx.data),
+    //     FitTradesConfig {
+    //         // start_index: 0,
+    //         // end_index: 50,
+    //         // start_index: 365,
+    //         // end_index: 365 * 2,
+    //         start_index: strategy.ctx.last_bar_index - 90,
+    //         end_index: strategy.ctx.last_bar_index,
+    //     },
+    // );
 
-    for i in ctx.clone() {
-        ctx.bar.index.set(i);
+    // for i in ctx.clone() {
+    //     ctx.bar.index.set(i);
 
-        let signal = best_strategy.to_signal(i);
-        strategy.next(signal);
-        metrics.next(&strategy);
+    //     let signal = best_strategy.to_signal(i);
+    //     strategy.next(signal);
+    //     metrics.next(&strategy);
 
-        // let rsi = rsi_indicator.next(());
-        // let rsi_signal = rsi_strategy.next(rsi);
+    //     // let rsi = rsi_indicator.next(());
+    //     // let rsi_signal = rsi_strategy.next(rsi);
 
-        // strategy.next(rsi_signal);
-        // metrics.next(&strategy);
-    }
+    //     // strategy.next(rsi_signal);
+    //     // metrics.next(&strategy);
+    // }
 
-    println!("{:?}", best_strategy);
+    // println!("{:?}", best_strategy);
 
-    let currency = "USD";
-    metrics.data.print_overview(currency);
-    metrics.data.plot_net_equity((236, 100));
-    metrics.data.print_summary(currency);
+    // let currency = "USD";
+    // metrics.data.print_overview(currency);
+    // metrics.data.plot_net_equity((236, 100));
+    // metrics.data.print_summary(currency);
 
-    let ps_exporter = PineScriptExporter::new();
-    let ps = ps_exporter.to_strategy(&strategy, PineScriptExportStrategyConfig::default());
-    println!("{}", ps);
+    // let ps_exporter = PineScriptExporter::new();
+    // let ps = ps_exporter.to_strategy(&strategy, PineScriptExportStrategyConfig::default());
+    // println!("{}", ps);
 }

@@ -6,15 +6,9 @@ use crate::{
     },
     strategy::trade::TradeDirection,
     ta::{
-        average_true_range::Atr,
-        cross::Cross,
-        cross_over_threshold::CrossOverThreshold,
-        cross_under_threshold::CrossUnderThreshold,
-        highest::Highest,
-        highest_bars::HighestBars,
-        lowest::Lowest,
-        lowest_bars::LowestBars,
-        moving_average::{AnyMa, Ma, MaKind},
+        average_true_range::Atr, cross::Cross, cross_over_threshold::CrossOverThreshold,
+        cross_under_threshold::CrossUnderThreshold, highest::Highest, highest_bars::HighestBars,
+        lowest::Lowest, lowest_bars::LowestBars,
     },
 };
 
@@ -35,10 +29,10 @@ impl Default for ChandeKrollStopConfig {
 }
 
 pub struct ChandeKrollStopData {
-    pub first_high_stop: Option<f64>,
-    pub first_low_stop: Option<f64>,
-    pub stop_long: Option<f64>,
-    pub stop_short: Option<f64>,
+    pub first_high_stop: f64,
+    pub first_low_stop: f64,
+    pub stop_long: f64,
+    pub stop_short: f64,
 }
 
 /// Ported from https://www.tradingview.com/chart/?solution=43000589105
@@ -72,15 +66,8 @@ impl Incremental<(), ChandeKrollStopData> for ChandeKrollStop {
         let first_high_stop_highest = self.first_high_stop_highest.next(self.ctx.bar.high());
         let first_low_stop_lowest = self.first_low_stop_lowest.next(self.ctx.bar.low());
 
-        let (first_high_stop, first_low_stop) =
-            match (first_high_stop_highest, first_low_stop_lowest, atr) {
-                (Some(first_high_stop_highest), Some(first_low_stop_lowest), Some(atr)) => {
-                    let first_high_stop = first_high_stop_highest - self.config.x * atr;
-                    let first_low_stop = first_low_stop_lowest + self.config.x * atr;
-                    (Some(first_high_stop), Some(first_low_stop))
-                }
-                _ => (None, None),
-            };
+        let first_high_stop = first_high_stop_highest - self.config.x * atr;
+        let first_low_stop = first_low_stop_lowest + self.config.x * atr;
 
         let stop_short = self.stop_short_highest.next(first_high_stop);
         let stop_long = self.stop_long_lowest.next(first_low_stop);
