@@ -229,15 +229,13 @@ impl Incremental<&Strategy, ()> for CobraMetrics {
             self.data.profitable = percent_profitable(
                 strategy.metrics.winning_trades,
                 strategy.metrics.closed_trades,
-            )
-            .unwrap_or(0.0);
+            );
             self.data.profit_factor =
-                profit_factor(strategy.metrics.gross_profit, strategy.metrics.gross_loss)
-                    .unwrap_or(0.0);
+                profit_factor(strategy.metrics.gross_profit, strategy.metrics.gross_loss);
             self.data.trades = strategy.metrics.closed_trades;
 
             let intra_trade_max_drawdown_percent =
-                self.current_trade_max_drawdown / e.trade.entry_price.unwrap();
+                self.current_trade_max_drawdown / e.trade.entry_price;
 
             self.data.intra_trade_max_dd = f64::max(
                 intra_trade_max_drawdown_percent,
@@ -249,8 +247,7 @@ impl Incremental<&Strategy, ()> for CobraMetrics {
             self.data.net_profit_l_s_ratio = long_net_profit_ratio(
                 strategy.metrics.long_net_profit,
                 strategy.metrics.short_net_profit,
-            )
-            .unwrap_or(0.0);
+            );
         }
 
         self.equity_metrics.next(strategy);

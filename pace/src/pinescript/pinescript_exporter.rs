@@ -30,17 +30,17 @@ impl PineScriptExporter {
         return format!("array.from({})", joined_items);
     }
 
-    pub fn to_strategy(
-        &self,
-        strategy: &Strategy,
-        config: PineScriptExportStrategyConfig,
-    ) -> String {
+    pub fn strategy(&self, strategy: &Strategy, config: PineScriptExportStrategyConfig) -> String {
         let mut ps = format!(
             r#"
 //@version=5
-strategy(title="{}", initial_capital={}, currency="{}", overlay=false, pyramiding=0, risk_free_rate = {})
+strategy(title="{}", initial_capital={}, currency="{}", overlay=false, pyramiding=0, risk_free_rate = {}, process_orders_on_close = {})
 "#,
-            config.title, strategy.config.initial_capital, config.currency, config.risk_free_rate
+            config.title,
+            strategy.config.initial_capital,
+            config.currency,
+            config.risk_free_rate,
+            strategy.config.on_bar_close
         );
 
         if config.include_cobra_metrics {
@@ -70,23 +70,15 @@ plot(table.curve(disp_ind))
 
             let entry_tick = trade.entry_tick.unwrap() as i32 + offset;
 
-            if strategy.config.continous {
-                if trade.direction == TradeDirection::Long {
-                    long_entries.push(entry_tick);
-                } else if trade.direction == TradeDirection::Short {
-                    short_entries.push(entry_tick);
+            if trade.direction == TradeDirection::Long {
+                long_entries.push(entry_tick);
+                if trade.exit_tick.is_some() {
+                    long_exits.push(trade.exit_tick.unwrap() as i32 + offset);
                 }
-            } else {
-                if trade.direction == TradeDirection::Long {
-                    long_entries.push(entry_tick);
-                    if trade.exit_tick.is_some() {
-                        long_exits.push(trade.exit_tick.unwrap() as i32 + offset);
-                    }
-                } else if trade.direction == TradeDirection::Short {
-                    short_entries.push(entry_tick);
-                    if trade.exit_tick.is_some() {
-                        short_exits.push(trade.exit_tick.unwrap() as i32 + offset);
-                    }
+            } else if trade.direction == TradeDirection::Short {
+                short_entries.push(entry_tick);
+                if trade.exit_tick.is_some() {
+                    short_exits.push(trade.exit_tick.unwrap() as i32 + offset);
                 }
             }
         }

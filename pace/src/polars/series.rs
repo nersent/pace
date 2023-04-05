@@ -8,7 +8,10 @@ use polars::{
     series::Series,
 };
 
-use crate::strategy::trade::{trade_direction_from_f64, TradeDirection};
+use crate::{
+    strategy::trade::{trade_direction_from_f64, StrategySignal, TradeDirection},
+    utils::float::OptionFloatUtils,
+};
 
 pub trait SeriesCastUtils {
     fn to_bool(&self) -> Vec<Option<bool>>;
@@ -16,7 +19,7 @@ pub trait SeriesCastUtils {
     fn to_i32(&self) -> Vec<Option<i32>>;
     fn to_usize(&self) -> Vec<Option<usize>>;
     fn to_duration(&self) -> Vec<Option<Duration>>;
-    fn to_trade_dir(&self) -> Vec<Option<TradeDirection>>;
+    fn to_signal(&self) -> Vec<StrategySignal>;
 }
 
 impl SeriesCastUtils for Series {
@@ -105,19 +108,19 @@ impl SeriesCastUtils for Series {
             .collect::<Vec<_>>();
     }
 
-    fn to_trade_dir(&self) -> Vec<Option<TradeDirection>> {
+    fn to_signal(&self) -> Vec<StrategySignal> {
         return self
-            .cast(&DataType::Float64)
+            .cast(&DataType::Int32)
             .unwrap()
             .f64()
             .unwrap()
             .into_iter()
             .map(|val| {
-                if val.is_none() || val.unwrap().is_nan() {
-                    None
-                } else {
-                    trade_direction_from_f64(val)
+                let val = val.unwrap_nan();
+                if val.is_nan() {
+                    return StrategySignal::Neutral;
                 }
+                return StrategySignal::from(val);
             })
             .collect::<Vec<_>>();
     }

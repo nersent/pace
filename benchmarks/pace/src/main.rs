@@ -111,22 +111,7 @@ impl PaceBenchmarkRunner {
 
         let mut benchmarks: Vec<Benchmark> = Vec::new();
 
-        // benchmarks.push(Benchmark::run("sma_14", count, &mut || {
-        //     let ctx = create_ctx(Arc::clone(&data_provider));
-        //     let mut target = Sma::new(ctx.clone(), 14);
-        //     let _ctx = target.ctx.clone();
-        //     let start_time = Instant::now();
-
-        //     for i in ctx.first_bar_index..=ctx.last_bar_index {
-        //         ctx.bar.index.set(i);
-        //         target.next(ctx.bar.close());
-        //     }
-
-        //     return (start_time, Instant::now());
-        // }));
-        // benchmarks.last().unwrap().print();
-
-        benchmarks.push(Benchmark::run("sma_xd_14", count, &mut || {
+        benchmarks.push(Benchmark::run("sma_14", count, &mut || {
             let ctx = create_ctx(Arc::clone(&data_provider));
             let mut target = Sma::new(ctx.clone(), 14);
             let _ctx = target.ctx.clone();
@@ -134,42 +119,27 @@ impl PaceBenchmarkRunner {
 
             for i in ctx.first_bar_index..=ctx.last_bar_index {
                 ctx.bar.index.set(i);
-                target.next(ctx.data.get_close(i));
+                target.next(ctx.bar.close());
             }
 
             return (start_time, Instant::now());
         }));
         benchmarks.last().unwrap().print();
 
-        benchmarks.push(Benchmark::run("rsi_xd_14", count, &mut || {
+        benchmarks.push(Benchmark::run("ema_14", count, &mut || {
             let ctx = create_ctx(Arc::clone(&data_provider));
-            let mut target = Rsi::new(ctx.clone(), 14);
+            let mut target = Ema::new(ctx.clone(), 14);
             let _ctx = target.ctx.clone();
             let start_time = Instant::now();
 
             for i in ctx.first_bar_index..=ctx.last_bar_index {
                 ctx.bar.index.set(i);
-                target.next(ctx.data.get_close(i));
+                target.next(target.ctx.bar.close());
             }
 
             return (start_time, Instant::now());
         }));
         benchmarks.last().unwrap().print();
-
-        // benchmarks.push(Benchmark::run("ema_14", count, &mut || {
-        //     let ctx = create_ctx(Arc::clone(&data_provider));
-        //     let mut target = Ema::new(ctx.clone(), 14);
-        //     let _ctx = target.ctx.clone();
-        //     let start_time = Instant::now();
-
-        //     for i in ctx.first_bar_index..=ctx.last_bar_index {
-        //         ctx.bar.index.set(i);
-        //         target.next(target.ctx.bar.close().unwrap_or(f64::NAN));
-        //     }
-
-        //     return (start_time, Instant::now());
-        // }));
-        // benchmarks.last().unwrap().print();
 
         // benchmarks.push(Benchmark::run("swma", count, &mut || {
         //     let ctx = create_ctx(Arc::clone(&data_provider));
@@ -180,109 +150,108 @@ impl PaceBenchmarkRunner {
         //     for i in ctx.first_bar_index..=ctx.last_bar_index {
         //         ctx.bar.index.set(i);
         //         target.next(target.ctx.bar.close());
-        //         // target.next(target.ctx.bar.close().unwrap_or(f64::NAN));
         //     }
 
         //     return (start_time, Instant::now());
         // }));
         // benchmarks.last().unwrap().print();
 
-        // benchmarks.push(Benchmark::run("rsi_14", count, &mut || {
-        //     let ctx = create_ctx(Arc::clone(&data_provider));
-        //     let mut target = Rsi::new(ctx.clone(), 14);
-        //     let _ctx = target.ctx.clone();
-        //     let start_time = Instant::now();
+        benchmarks.push(Benchmark::run("rsi_14", count, &mut || {
+            let ctx = create_ctx(Arc::clone(&data_provider));
+            let mut target = Rsi::new(ctx.clone(), 14);
+            let _ctx = target.ctx.clone();
+            let start_time = Instant::now();
 
-        //     for i in ctx.first_bar_index..=ctx.last_bar_index {
-        //         ctx.bar.index.set(i);
-        //         target.next(target.ctx.bar.close());
-        //     }
+            for i in ctx.first_bar_index..=ctx.last_bar_index {
+                ctx.bar.index.set(i);
+                target.next(target.ctx.bar.close());
+            }
 
-        //     return (start_time, Instant::now());
-        // }));
-        // benchmarks.last().unwrap().print();
+            return (start_time, Instant::now());
+        }));
+        benchmarks.last().unwrap().print();
 
-        // benchmarks.push(Benchmark::run("stoch_14", count, &mut || {
-        //     let ctx = create_ctx(Arc::clone(&data_provider));
-        //     let mut target = Stoch::new(ctx.clone(), 14);
-        //     let _ctx = target.ctx.clone();
-        //     let start_time = Instant::now();
+        benchmarks.push(Benchmark::run("stoch_14", count, &mut || {
+            let ctx = create_ctx(Arc::clone(&data_provider));
+            let mut target = Stoch::new(ctx.clone(), 14);
+            let _ctx = target.ctx.clone();
+            let start_time = Instant::now();
 
-        //     for i in ctx.first_bar_index..=ctx.last_bar_index {
-        //         ctx.bar.index.set(i);
-        //         let close = target.ctx.bar.close();
-        //         target.next((close, close, close));
-        //     }
+            for i in ctx.first_bar_index..=ctx.last_bar_index {
+                ctx.bar.index.set(i);
+                let close = target.ctx.bar.close();
+                target.next((close, close, close));
+            }
 
-        //     return (start_time, Instant::now());
-        // }));
-        // benchmarks.last().unwrap().print();
+            return (start_time, Instant::now());
+        }));
+        benchmarks.last().unwrap().print();
 
-        // benchmarks.push(Benchmark::run("atr_14", count, &mut || {
-        //     let ctx = create_ctx(Arc::clone(&data_provider));
-        //     let mut target = Atr::new(ctx.clone(), 14);
-        //     let _ctx = target.ctx.clone();
-        //     let start_time = Instant::now();
+        benchmarks.push(Benchmark::run("atr_14", count, &mut || {
+            let ctx = create_ctx(Arc::clone(&data_provider));
+            let mut target = Atr::new(ctx.clone(), 14);
+            let _ctx = target.ctx.clone();
+            let start_time = Instant::now();
 
-        //     for i in ctx.first_bar_index..=ctx.last_bar_index {
-        //         ctx.bar.index.set(i);
-        //         target.next(());
-        //     }
+            for i in ctx.first_bar_index..=ctx.last_bar_index {
+                ctx.bar.index.set(i);
+                target.next(());
+            }
 
-        //     return (start_time, Instant::now());
-        // }));
-        // benchmarks.last().unwrap().print();
+            return (start_time, Instant::now());
+        }));
+        benchmarks.last().unwrap().print();
 
-        // benchmarks.push(Benchmark::run("macd_12_26", count, &mut || {
-        //     let ctx = create_ctx(Arc::clone(&data_provider));
-        //     let mut target = Macd::new(
-        //         ctx.clone(),
-        //         MacdConfig {
-        //             short_ma: Ma::new(ctx.clone(), MaKind::EMA, 12).to_box(),
-        //             long_ma: Ma::new(ctx.clone(), MaKind::EMA, 26).to_box(),
-        //             short_src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
-        //             long_src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
-        //             signal_ma: Ma::new(ctx.clone(), MaKind::EMA, 9).to_box(),
-        //         },
-        //     );
+        benchmarks.push(Benchmark::run("macd_12_26", count, &mut || {
+            let ctx = create_ctx(Arc::clone(&data_provider));
+            let mut target = Macd::new(
+                ctx.clone(),
+                MacdConfig {
+                    short_ma: Ma::new(ctx.clone(), MaKind::EMA, 12).to_box(),
+                    long_ma: Ma::new(ctx.clone(), MaKind::EMA, 26).to_box(),
+                    short_src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
+                    long_src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
+                    signal_ma: Ma::new(ctx.clone(), MaKind::EMA, 9).to_box(),
+                },
+            );
 
-        //     let _ctx = target.ctx.clone();
-        //     let start_time = Instant::now();
+            let _ctx = target.ctx.clone();
+            let start_time = Instant::now();
 
-        //     for i in ctx.first_bar_index..=ctx.last_bar_index {
-        //         ctx.bar.index.set(i);
-        //         target.next(());
-        //     }
+            for i in ctx.first_bar_index..=ctx.last_bar_index {
+                ctx.bar.index.set(i);
+                target.next(());
+            }
 
-        //     return (start_time, Instant::now());
-        // }));
-        // benchmarks.last().unwrap().print();
+            return (start_time, Instant::now());
+        }));
+        benchmarks.last().unwrap().print();
 
-        // benchmarks.push(Benchmark::run("macd_12_26_rsi_14", count, &mut || {
-        //     let ctx = create_ctx(Arc::clone(&data_provider));
-        //     let mut target_macd = Macd::new(
-        //         ctx.clone(),
-        //         MacdConfig {
-        //             short_ma: Ma::new(ctx.clone(), MaKind::EMA, 12).to_box(),
-        //             long_ma: Ma::new(ctx.clone(), MaKind::EMA, 26).to_box(),
-        //             short_src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
-        //             long_src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
-        //             signal_ma: Ma::new(ctx.clone(), MaKind::EMA, 9).to_box(),
-        //         },
-        //     );
-        //     let mut target_rsi = Rsi::new(ctx.clone(), 14);
-        //     let _ctx = target_macd.ctx.clone();
-        //     let start_time = Instant::now();
+        benchmarks.push(Benchmark::run("macd_12_26_rsi_14", count, &mut || {
+            let ctx = create_ctx(Arc::clone(&data_provider));
+            let mut target_macd = Macd::new(
+                ctx.clone(),
+                MacdConfig {
+                    short_ma: Ma::new(ctx.clone(), MaKind::EMA, 12).to_box(),
+                    long_ma: Ma::new(ctx.clone(), MaKind::EMA, 26).to_box(),
+                    short_src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
+                    long_src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
+                    signal_ma: Ma::new(ctx.clone(), MaKind::EMA, 9).to_box(),
+                },
+            );
+            let mut target_rsi = Rsi::new(ctx.clone(), 14);
+            let _ctx = target_macd.ctx.clone();
+            let start_time = Instant::now();
 
-        //     for i in ctx.first_bar_index..=ctx.last_bar_index {
-        //         ctx.bar.index.set(i);
-        //         target_macd.next(());
-        //         target_rsi.next(target_rsi.ctx.bar.close());
-        //     }
+            for i in ctx.first_bar_index..=ctx.last_bar_index {
+                ctx.bar.index.set(i);
+                target_macd.next(());
+                target_rsi.next(target_rsi.ctx.bar.close());
+            }
 
-        //     return (start_time, Instant::now());
-        // }));
-        // benchmarks.last().unwrap().print();
+            return (start_time, Instant::now());
+        }));
+        benchmarks.last().unwrap().print();
 
         // xddddddddd
 

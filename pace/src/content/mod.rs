@@ -23,4 +23,4 @@ pub mod volume_oscillator;
 pub mod vortex;
 pub mod williams_percent_range;
 
-// mod tests;
+mod tests;

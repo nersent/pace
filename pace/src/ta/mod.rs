@@ -29,4 +29,4 @@ pub mod symmetrically_weighted_moving_average;
 pub mod true_range;
 pub mod weighted_moving_average;
 
-// mod tests;
+mod tests;

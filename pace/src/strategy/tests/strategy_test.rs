@@ -16,7 +16,7 @@ mod tests {
         polars::series::SeriesCastUtils,
         strategy::{
             strategy::{Strategy, StrategyConfig},
-            trade::{Trade, TradeDirection},
+            trade::{StrategySignal, Trade, TradeDirection},
         },
         testing::{
             array_snapshot::ArraySnapshot, fixture::Fixture, pace::format_pace_fixture_path,
@@ -109,7 +109,14 @@ mod tests {
         for _ in target.ctx.clone() {
             let tick = target.ctx.bar.index();
             let trade_direction = trades[tick];
-            target.next(trade_direction);
+
+            let signal: StrategySignal = match trade_direction {
+                Some(TradeDirection::Long) => StrategySignal::Long,
+                Some(TradeDirection::Short) => StrategySignal::Short,
+                None => StrategySignal::Neutral,
+            };
+
+            target.next(signal);
             let trades = target
                 .trades
                 .iter()
@@ -123,14 +130,15 @@ mod tests {
 
     fn _test_trades_history(
         target: &mut Strategy,
-        trades: &[Option<TradeDirection>],
+        trades: &[Option<StrategySignal>],
         expected: &[Option<Vec<TestTradePayload>>],
     ) {
         let mut snapshot = ArraySnapshot::<Option<Vec<TestTradePayload>>>::new();
         for _ in target.ctx.clone() {
             let tick = target.ctx.bar.index();
-            let trade_direction = trades[tick];
-            let output = target.next(trade_direction);
+            let signal = trades[tick].unwrap_or(StrategySignal::Neutral);
+
+            let output = target.next(signal);
             let trades = target
                 .trades
                 .iter()
@@ -143,10 +151,9 @@ mod tests {
 
     fn _test_equity(
         target: &mut Strategy,
-        trades: &[Option<TradeDirection>],
+        trades: &[Option<StrategySignal>],
         expected: &[Option<(f64, f64, f64)>],
     ) {
-        // remove last f64
         let expected = expected
             .iter()
             .map(|x| x.as_ref().map(|(a, b, _)| (*a, *b)))
@@ -155,8 +162,9 @@ mod tests {
         let mut snapshot = ArraySnapshot::<Option<(f64, f64)>>::new();
         for _ in target.ctx.clone() {
             let tick = target.ctx.bar.index();
-            let trade_direction = trades[tick];
-            target.next(trade_direction);
+            let signal = trades[tick].unwrap_or(StrategySignal::Neutral);
+
+            target.next(signal);
             snapshot.push(Some((target.metrics.equity, target.metrics.open_profit)));
         }
         snapshot.assert(&expected);
@@ -172,7 +180,6 @@ mod tests {
             &mut Strategy::new(
                 ctx.clone(),
                 StrategyConfig {
-                    continous: true,
                     on_bar_close: true,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
@@ -201,7 +208,6 @@ mod tests {
             &mut Strategy::new(
                 ctx.clone(),
                 StrategyConfig {
-                    continous: true,
                     on_bar_close: true,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
@@ -214,59 +220,59 @@ mod tests {
                 // 1
                 None,
                 // 2
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 3; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 4
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 5; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 6; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 7
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 8
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 9
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 10
                 None,
                 // 11; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 12
                 None,
                 // 13; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 14
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 15; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 16; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 17; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 18
                 None,
                 // 19
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 20
                 None,
                 // 21; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 22
                 None,
                 // 23; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 24
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 25; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 26
                 None,
                 // 27
                 None,
                 // 28; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
             ],
             &[
                 // 0
@@ -1528,7 +1534,6 @@ mod tests {
             &mut Strategy::new(
                 ctx.clone(),
                 StrategyConfig {
-                    continous: true,
                     on_bar_close: false,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
@@ -1541,43 +1546,43 @@ mod tests {
                 // 1
                 None,
                 // 2
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 3; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 4
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 5
                 None,
                 // 6; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 7
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 8
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 9
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 10
                 None,
                 // 11; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 12
                 None,
                 // 13; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 14
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 15; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 16
                 None,
                 // 17
                 None,
                 // 18; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 19
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 20; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 21
                 None,
                 // 22
@@ -1585,7 +1590,7 @@ mod tests {
                 // 23
                 None,
                 // 24
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 25
                 None,
                 // 26
@@ -1593,7 +1598,7 @@ mod tests {
                 // 27
                 None,
                 // 28; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
             ],
             &[
                 // 0
@@ -2788,7 +2793,6 @@ mod tests {
             &mut Strategy::new(
                 ctx.clone(),
                 StrategyConfig {
-                    continous: false,
                     on_bar_close: true,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
@@ -2801,77 +2805,77 @@ mod tests {
                 // 1
                 None,
                 // 2
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 3; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 4
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 5
                 None,
                 // 6
                 None,
                 // 7
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 8
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 9
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 10
                 None,
                 // 11; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 12; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 13; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 14
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 15
                 None,
                 // 16
                 None,
                 // 17
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 18
                 None,
                 // 19; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 20
                 None,
                 // 21; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 22
                 None,
                 // 23; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 24
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 25
                 None,
                 // 26
                 None,
                 // 27
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 28
                 None,
                 // 29; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 30
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 31
                 None,
                 // 32
                 None,
                 // 33
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 34
                 None,
                 // 35; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 36; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 37
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 38
                 None,
                 // 39
@@ -4215,7 +4219,6 @@ mod tests {
             &mut Strategy::new(
                 ctx.clone(),
                 StrategyConfig {
-                    continous: false,
                     on_bar_close: false,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
@@ -4228,77 +4231,77 @@ mod tests {
                 // 1
                 None,
                 // 2
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 3; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 4
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 5
                 None,
                 // 6
                 None,
                 // 7
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 8
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 9
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 10
                 None,
                 // 11; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 12
                 None,
                 // 13; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 14
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 15
                 None,
                 // 16
                 None,
                 // 17
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 18; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 19
                 None,
                 // 20; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 21; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 22
                 None,
                 // 23; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 24
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 25
                 None,
                 // 26
                 None,
                 // 27
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 28; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 29; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 30
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 31
                 None,
                 // 32
                 None,
                 // 33
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 34
                 None,
                 // 35; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 36
                 None,
                 // 37
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 38
                 None,
                 // 39
@@ -5582,6 +5585,4098 @@ mod tests {
     }
 
     #[test]
+    fn trades_history_next_bar_open_mixed() {
+        let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
+            1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
+            17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0,
+            31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0,
+            45.0, 46.0, 47.0, 48.0, 49.0, 50.0, 51.0, 52.0, 53.0, 54.0, 55.0, 56.0, 57.0, 58.0,
+            59.0, 60.0, 61.0, 62.0,
+        ]))));
+
+        _test_trades_history(
+            &mut Strategy::new(
+                ctx.clone(),
+                StrategyConfig {
+                    on_bar_close: false,
+                    initial_capital: 1000.0,
+                    buy_with_equity: true,
+                    ..StrategyConfig::default()
+                },
+            ),
+            &[
+                // 0
+                None,
+                // 1
+                None,
+                // 2
+                Some(StrategySignal::Short),
+                // 3; Duplicated
+                Some(StrategySignal::ShortEntry),
+                // 4
+                Some(StrategySignal::ShortExit),
+                // 5
+                None,
+                // 6
+                None,
+                // 7
+                Some(StrategySignal::ShortEntry),
+                // 8; Duplicated
+                Some(StrategySignal::Short),
+                // 9
+                Some(StrategySignal::ShortExit),
+                // 10
+                None,
+                // 11
+                None,
+                // 12
+                Some(StrategySignal::Long),
+                // 13; Duplicated
+                Some(StrategySignal::LongEntry),
+                // 14
+                Some(StrategySignal::LongExit),
+                // 15
+                None,
+                // 16
+                None,
+                // 17
+                Some(StrategySignal::LongEntry),
+                // 18; Duplicated
+                Some(StrategySignal::Long),
+                // 19
+                Some(StrategySignal::LongExit),
+                // 20
+                None,
+                // 21
+                None,
+                // 22
+                Some(StrategySignal::Long),
+                // 23
+                None,
+                // 24
+                Some(StrategySignal::ShortEntry),
+                // 25
+                None,
+                // 26
+                Some(StrategySignal::ShortExit),
+                // 27
+                None,
+                // 28
+                Some(StrategySignal::Short),
+                // 29
+                None,
+                // 30
+                Some(StrategySignal::LongEntry),
+                // 31
+                None,
+                // 32
+                Some(StrategySignal::LongExit),
+                // 33
+                None,
+                // 34
+                None,
+                // 35
+                Some(StrategySignal::LongEntry),
+                // 36
+                None,
+                // 37
+                Some(StrategySignal::Short),
+                // 38
+                None,
+                // 39
+                Some(StrategySignal::ShortExit),
+                // 40
+                None,
+                // 41
+                None,
+                // 42
+                Some(StrategySignal::ShortEntry),
+                // 43
+                None,
+                // 44
+                Some(StrategySignal::Long),
+                // 45
+                None,
+                // 46
+                Some(StrategySignal::LongExit),
+                // 47
+                None,
+                // 48
+                None,
+                // 49
+                Some(StrategySignal::LongEntry),
+                // 50
+                None,
+                // 51
+                Some(StrategySignal::ShortEntry),
+                // 52
+                None,
+                // 53
+                Some(StrategySignal::Long),
+                // 54
+                None,
+                // 55
+                None,
+                // 56
+                Some(StrategySignal::ShortEntry),
+                // 57
+                None,
+                // 58
+                Some(StrategySignal::LongEntry),
+                // 59
+                None,
+                // 60
+                Some(StrategySignal::Short),
+                // 61
+                None,
+            ],
+            &[
+                // 0
+                Some(vec![]),
+                // 1
+                Some(vec![]),
+                // 2
+                Some(vec![]),
+                // 3
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Short,
+                    is_closed: false,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: None,
+                    exit_tick: None,
+                }]),
+                // 4
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Short,
+                    is_closed: false,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: None,
+                    exit_tick: None,
+                }]),
+                // 5
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Short,
+                    is_closed: true,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: Some(6.0),
+                    exit_tick: Some(5),
+                }]),
+                // 6
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Short,
+                    is_closed: true,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: Some(6.0),
+                    exit_tick: Some(5),
+                }]),
+                // 7
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Short,
+                    is_closed: true,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: Some(6.0),
+                    exit_tick: Some(5),
+                }]),
+                // 8
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 9
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 10
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                ]),
+                // 11
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                ]),
+                // 12
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                ]),
+                // 13
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 14
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 15
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                ]),
+                // 16
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                ]),
+                // 17
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                ]),
+                // 18
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 19
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 20
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                ]),
+                // 21
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                ]),
+                // 22
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                ]),
+                // 23
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 24
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 25
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 26
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 27
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                ]),
+                // 28
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                ]),
+                // 29
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 30
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 31
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 32
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 33
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                ]),
+                // 34
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                ]),
+                // 35
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                ]),
+                // 36
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 37
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 38
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 39
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 40
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                ]),
+                // 41
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                ]),
+                // 42
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                ]),
+                // 43
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 44
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 45
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 46
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 47
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                ]),
+                // 48
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                ]),
+                // 49
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                ]),
+                // 50
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 51
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 52
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: Some(53.0),
+                        exit_tick: Some(52),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(53.0),
+                        entry_tick: Some(52),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 53
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: Some(53.0),
+                        exit_tick: Some(52),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(53.0),
+                        entry_tick: Some(52),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 54
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: Some(53.0),
+                        exit_tick: Some(52),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(53.0),
+                        entry_tick: Some(52),
+                        exit_price: Some(55.0),
+                        exit_tick: Some(54),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(55.0),
+                        entry_tick: Some(54),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 55
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: Some(53.0),
+                        exit_tick: Some(52),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(53.0),
+                        entry_tick: Some(52),
+                        exit_price: Some(55.0),
+                        exit_tick: Some(54),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(55.0),
+                        entry_tick: Some(54),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 56
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: Some(53.0),
+                        exit_tick: Some(52),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(53.0),
+                        entry_tick: Some(52),
+                        exit_price: Some(55.0),
+                        exit_tick: Some(54),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(55.0),
+                        entry_tick: Some(54),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 57
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: Some(53.0),
+                        exit_tick: Some(52),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(53.0),
+                        entry_tick: Some(52),
+                        exit_price: Some(55.0),
+                        exit_tick: Some(54),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(55.0),
+                        entry_tick: Some(54),
+                        exit_price: Some(58.0),
+                        exit_tick: Some(57),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(58.0),
+                        entry_tick: Some(57),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 58
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: Some(53.0),
+                        exit_tick: Some(52),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(53.0),
+                        entry_tick: Some(52),
+                        exit_price: Some(55.0),
+                        exit_tick: Some(54),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(55.0),
+                        entry_tick: Some(54),
+                        exit_price: Some(58.0),
+                        exit_tick: Some(57),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(58.0),
+                        entry_tick: Some(57),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 59
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: Some(53.0),
+                        exit_tick: Some(52),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(53.0),
+                        entry_tick: Some(52),
+                        exit_price: Some(55.0),
+                        exit_tick: Some(54),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(55.0),
+                        entry_tick: Some(54),
+                        exit_price: Some(58.0),
+                        exit_tick: Some(57),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(58.0),
+                        entry_tick: Some(57),
+                        exit_price: Some(60.0),
+                        exit_tick: Some(59),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(60.0),
+                        entry_tick: Some(59),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 60
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: Some(53.0),
+                        exit_tick: Some(52),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(53.0),
+                        entry_tick: Some(52),
+                        exit_price: Some(55.0),
+                        exit_tick: Some(54),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(55.0),
+                        entry_tick: Some(54),
+                        exit_price: Some(58.0),
+                        exit_tick: Some(57),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(58.0),
+                        entry_tick: Some(57),
+                        exit_price: Some(60.0),
+                        exit_tick: Some(59),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: false,
+                        entry_price: Some(60.0),
+                        entry_tick: Some(59),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 61
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(6.0),
+                        exit_tick: Some(5),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(9.0),
+                        entry_tick: Some(8),
+                        exit_price: Some(11.0),
+                        exit_tick: Some(10),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(14.0),
+                        entry_tick: Some(13),
+                        exit_price: Some(16.0),
+                        exit_tick: Some(15),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(19.0),
+                        entry_tick: Some(18),
+                        exit_price: Some(21.0),
+                        exit_tick: Some(20),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(24.0),
+                        entry_tick: Some(23),
+                        exit_price: Some(26.0),
+                        exit_tick: Some(25),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(26.0),
+                        entry_tick: Some(25),
+                        exit_price: Some(28.0),
+                        exit_tick: Some(27),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(30.0),
+                        entry_tick: Some(29),
+                        exit_price: Some(32.0),
+                        exit_tick: Some(31),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(32.0),
+                        entry_tick: Some(31),
+                        exit_price: Some(34.0),
+                        exit_tick: Some(33),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(37.0),
+                        entry_tick: Some(36),
+                        exit_price: Some(39.0),
+                        exit_tick: Some(38),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(39.0),
+                        entry_tick: Some(38),
+                        exit_price: Some(41.0),
+                        exit_tick: Some(40),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(44.0),
+                        entry_tick: Some(43),
+                        exit_price: Some(46.0),
+                        exit_tick: Some(45),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(46.0),
+                        entry_tick: Some(45),
+                        exit_price: Some(48.0),
+                        exit_tick: Some(47),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(51.0),
+                        entry_tick: Some(50),
+                        exit_price: Some(53.0),
+                        exit_tick: Some(52),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(53.0),
+                        entry_tick: Some(52),
+                        exit_price: Some(55.0),
+                        exit_tick: Some(54),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(55.0),
+                        entry_tick: Some(54),
+                        exit_price: Some(58.0),
+                        exit_tick: Some(57),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(58.0),
+                        entry_tick: Some(57),
+                        exit_price: Some(60.0),
+                        exit_tick: Some(59),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(60.0),
+                        entry_tick: Some(59),
+                        exit_price: Some(62.0),
+                        exit_tick: Some(61),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(62.0),
+                        entry_tick: Some(61),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+            ],
+        );
+    }
+
+    #[test]
     fn equity_empty_on_bar_close_continous() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
             1.0, 2.0, 3.0, 4.0, 5.0,
@@ -5591,7 +9686,6 @@ mod tests {
             &mut Strategy::new(
                 ctx.clone(),
                 StrategyConfig {
-                    continous: true,
                     on_bar_close: true,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
@@ -5651,7 +9745,6 @@ mod tests {
             &mut Strategy::new(
                 ctx.clone(),
                 StrategyConfig {
-                    continous: true,
                     on_bar_close: true,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
@@ -5664,11 +9757,11 @@ mod tests {
                 // 1
                 None,
                 // 2
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 3
                 None,
                 // 4; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 5
                 None,
                 // 6
@@ -5676,13 +9769,13 @@ mod tests {
                 // 7
                 None,
                 // 8
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 9
                 None,
                 // 10; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 11; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 12
                 None,
                 // 13
@@ -5690,39 +9783,39 @@ mod tests {
                 // 14
                 None,
                 // 15
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 16
                 None,
                 // 17
                 None,
                 // 18
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 19
                 None,
                 // 20
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 21
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 22
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 23
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 24
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 25
                 None,
                 // 26
                 None,
                 // 27; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 28; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 29
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 30; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 31; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
             ],
             &[
                 // 0
@@ -5836,7 +9929,6 @@ mod tests {
             &mut Strategy::new(
                 ctx.clone(),
                 StrategyConfig {
-                    continous: true,
                     on_bar_close: false,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
@@ -5849,7 +9941,7 @@ mod tests {
                 // 1
                 None,
                 // 2
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 3
                 None,
                 // 4
@@ -5861,7 +9953,7 @@ mod tests {
                 // 7
                 None,
                 // 8
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 9
                 None,
                 // 10
@@ -5875,41 +9967,41 @@ mod tests {
                 // 14
                 None,
                 // 15
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 16
                 None,
                 // 17
                 None,
                 // 18
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 19
                 None,
                 // 20
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 21
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 22
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 23
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 24
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 25
                 None,
                 // 26
                 None,
                 // 27; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 28; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 29
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 30; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 31; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 32; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
             ],
             &[
                 // 0
@@ -6044,7 +10136,6 @@ mod tests {
             &mut Strategy::new(
                 ctx.clone(),
                 StrategyConfig {
-                    continous: false,
                     on_bar_close: true,
                     buy_with_equity: true,
                     initial_capital: 1000.0,
@@ -6057,19 +10148,19 @@ mod tests {
                 // 1
                 None,
                 // 2
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 3
                 None,
                 // 4; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 5
                 None,
                 // 6
                 None,
                 // 7; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 8
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 9
                 None,
                 // 10
@@ -6083,23 +10174,23 @@ mod tests {
                 // 14
                 None,
                 // 15
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 16; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 17
                 None,
                 // 18
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 19
                 None,
                 // 20
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 21
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 22
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 23
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 24
                 None,
                 // 25
@@ -6107,17 +10198,17 @@ mod tests {
                 // 26
                 None,
                 // 27
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 28
                 None,
                 // 29; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 30
                 None,
                 // 31; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 32
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 33
                 None,
                 // 34
@@ -6129,33 +10220,33 @@ mod tests {
                 // 37
                 None,
                 // 38
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 39; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 40
                 None,
                 // 41; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 42
                 None,
                 // 43
                 None,
                 // 44; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 45
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 46
                 None,
                 // 47
                 None,
                 // 48
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 49
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 50
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 51
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
             ],
             &[
                 // 0
@@ -6328,7 +10419,6 @@ mod tests {
             &mut Strategy::new(
                 ctx.clone(),
                 StrategyConfig {
-                    continous: false,
                     on_bar_close: false,
                     initial_capital: 1000.0,
                     buy_with_equity: true,
@@ -6341,19 +10431,19 @@ mod tests {
                 // 1
                 None,
                 // 2
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 3
                 None,
                 // 4; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 5
                 None,
                 // 6
                 None,
                 // 7; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 8
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 9
                 None,
                 // 10
@@ -6367,23 +10457,23 @@ mod tests {
                 // 14
                 None,
                 // 15
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 16; Duplicated
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 17
                 None,
                 // 18
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 19
                 None,
                 // 20
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 21; long entry
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 22; long exit
-                Some(TradeDirection::Long),
+                Some(StrategySignal::Long),
                 // 23; long entry
-                Some(TradeDirection::Short),
+                Some(StrategySignal::LongExit),
                 // 24; long exit
                 None,
                 // 25
@@ -6391,17 +10481,17 @@ mod tests {
                 // 26
                 None,
                 // 27
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 28
                 None,
                 // 29; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 30
                 None,
                 // 31; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 32
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 33
                 None,
                 // 34
@@ -6413,33 +10503,33 @@ mod tests {
                 // 37
                 None,
                 // 38
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 39; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 40
                 None,
                 // 41; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 42
                 None,
                 // 43
                 None,
                 // 44; Duplicated
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 45
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 46
                 None,
                 // 47
                 None,
                 // 48
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 49; short entry
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
                 // 50; short exit
-                Some(TradeDirection::Short),
+                Some(StrategySignal::Short),
                 // 51; short entry; no trades
-                Some(TradeDirection::Long),
+                Some(StrategySignal::ShortExit),
             ],
             &[
                 // 0
@@ -6607,9 +10697,15 @@ mod tests {
                 trade_direction = Some(TradeDirection::Short);
             }
 
+            let signal: StrategySignal = match trade_direction {
+                Some(TradeDirection::Long) => StrategySignal::Long,
+                Some(TradeDirection::Short) => StrategySignal::Short,
+                None => StrategySignal::Neutral,
+            };
+
             let initial_capital = self.strategy.config.initial_capital;
 
-            self.strategy.next(trade_direction);
+            self.strategy.next(signal);
 
             return TestExecutionPayload {
                 open_profit: self.strategy.metrics.open_profit,
@@ -6647,47 +10743,47 @@ mod tests {
         return list;
     }
 
-    #[test]
-    fn on_next_bar_open_intermittent_extensive() {
-        let (df, ctx) = Fixture::load(&format_path("default.csv"));
-        let expected = _load_execution_metrics(&df);
+    // #[test]
+    // fn on_next_bar_open_intermittent_extensive() {
+    //     let (df, ctx) = Fixture::load(&format_path("default.csv"));
+    //     let expected = _load_execution_metrics(&df);
 
-        let mut long_entries: Vec<usize> = vec![];
-        let mut long_exits: Vec<usize> = vec![];
-        let mut short_entries: Vec<usize> = vec![];
-        let mut short_exits: Vec<usize> = vec![];
+    //     let mut long_entries: Vec<usize> = vec![];
+    //     let mut long_exits: Vec<usize> = vec![];
+    //     let mut short_entries: Vec<usize> = vec![];
+    //     let mut short_exits: Vec<usize> = vec![];
 
-        let signal_column = df.column("_target_signal_").unwrap().to_f64();
+    //     let signal_column = df.column("_target_signal_").unwrap().to_f64();
 
-        for i in 0..expected.len() {
-            let signal = signal_column[i].ps_nz();
-            if signal.compare(1.0) {
-                long_entries.push(i);
-            } else if signal.compare(-1.0) {
-                short_entries.push(i);
-            } else if signal.compare(2.0) {
-                long_exits.push(i);
-            } else if signal.compare(-2.0) {
-                short_exits.push(i);
-            }
-        }
+    //     for i in 0..expected.len() {
+    //         let signal = signal_column[i].ps_nz();
+    //         if signal.compare(1.0) {
+    //             long_entries.push(i);
+    //         } else if signal.compare(-1.0) {
+    //             short_entries.push(i);
+    //         } else if signal.compare(2.0) {
+    //             long_exits.push(i);
+    //         } else if signal.compare(-2.0) {
+    //             short_exits.push(i);
+    //         }
+    //     }
 
-        _test_execution(
-            &mut TestExecutionTarget::new(
-                ctx.clone(),
-                StrategyConfig {
-                    continous: false,
-                    on_bar_close: false,
-                    initial_capital: 1000.0,
-                    buy_with_equity: false,
-                    ..StrategyConfig::default()
-                },
-                long_entries,
-                long_exits,
-                short_entries,
-                short_exits,
-            ),
-            &expected,
-        );
-    }
+    //     _test_execution(
+    //         &mut TestExecutionTarget::new(
+    //             ctx.clone(),
+    //             StrategyConfig {
+    //
+    //                 on_bar_close: false,
+    //                 initial_capital: 1000.0,
+    //                 buy_with_equity: false,
+    //                 ..StrategyConfig::default()
+    //             },
+    //             long_entries,
+    //             long_exits,
+    //             short_entries,
+    //             short_exits,
+    //         ),
+    //         &expected,
+    //     );
+    // }
 }

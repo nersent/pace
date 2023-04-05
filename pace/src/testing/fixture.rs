@@ -26,15 +26,10 @@ impl Fixture {
 
 pub trait DataFrameFixtureUtils {
     fn test_target(&self) -> Vec<f64>;
-    fn test_trade_dir_target(&self) -> Vec<Option<TradeDirection>>;
 }
 
 impl DataFrameFixtureUtils for DataFrame {
     fn test_target(&self) -> Vec<f64> {
         return self.column("_target_").unwrap().to_f64();
-    }
-
-    fn test_trade_dir_target(&self) -> Vec<Option<TradeDirection>> {
-        return self.column("_target_").unwrap().to_trade_dir();
     }
 }

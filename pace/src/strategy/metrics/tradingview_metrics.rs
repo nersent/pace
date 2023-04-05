@@ -301,8 +301,7 @@ impl Incremental<&Strategy, ()> for TradingViewMetrics {
             gross_loss_percent(strategy.metrics.gross_loss, initial_capital);
 
         self.data.profit_factor =
-            profit_factor(strategy.metrics.gross_profit, strategy.metrics.gross_loss)
-                .unwrap_or(0.0);
+            profit_factor(strategy.metrics.gross_profit, strategy.metrics.gross_loss);
 
         self.data.open_pl = strategy.metrics.open_profit;
         self.data.total_closed_trades = strategy.metrics.closed_trades;
@@ -311,22 +310,20 @@ impl Incremental<&Strategy, ()> for TradingViewMetrics {
         self.data.percent_profitable = percent_profitable(
             strategy.metrics.winning_trades,
             strategy.metrics.closed_trades,
-        )
-        .unwrap_or(0.0);
+        );
+
         self.data.avg_trade =
-            avg_trade(strategy.metrics.net_profit, strategy.metrics.closed_trades).unwrap_or(0.0);
+            avg_trade(strategy.metrics.net_profit, strategy.metrics.closed_trades);
+
         self.data.avg_winning_trade = avg_winning_trade(
             strategy.metrics.gross_profit,
             strategy.metrics.winning_trades,
-        )
-        .unwrap_or(0.0);
-        self.data.avg_losing_trade =
-            avg_losing_trade(strategy.metrics.gross_loss, self.data.number_losing_trades)
-                .unwrap_or(0.0);
+        );
 
+        self.data.avg_losing_trade =
+            avg_losing_trade(strategy.metrics.gross_loss, self.data.number_losing_trades);
         self.data.ratio_avg_win_avg_loss =
-            avg_win_loss_ratio(self.data.avg_winning_trade, self.data.avg_losing_trade)
-                .unwrap_or(0.0);
+            avg_win_loss_ratio(self.data.avg_winning_trade, self.data.avg_losing_trade);
 
         self.returns.next(equity_metrics.net_equity);
         let returns = &self.returns.data;

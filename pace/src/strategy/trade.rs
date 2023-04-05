@@ -15,6 +15,15 @@ impl TradeDirection {
     }
 }
 
+impl Into<StrategySignal> for TradeDirection {
+    fn into(self) -> StrategySignal {
+        return match self {
+            TradeDirection::Long => StrategySignal::Long,
+            TradeDirection::Short => StrategySignal::Short,
+        };
+    }
+}
+
 pub fn trade_direction_to_f64(direction: Option<TradeDirection>) -> f64 {
     return match direction {
         Some(TradeDirection::Long) => 1.0,
@@ -84,52 +93,6 @@ impl Trade {
     pub fn is_active(&self) -> bool {
         return self.entry_tick.is_some() && !self.is_closed;
     }
-
-    pub fn to_colored_string(&self, current_tick: usize) -> ColoredString {
-        if !self.is_closed {
-            if self.direction == TradeDirection::Long {
-                return "▲ [LONG]".green().bold();
-            } else {
-                return "▼ [SHORT]".red().bold();
-            }
-        } else if current_tick == self.exit_tick.unwrap() {
-            if self.direction == TradeDirection::Long {
-                return format!("{} {}", "▼".red(), "[LONG_EXIT]".green()).bold();
-            } else {
-                return format!("{} {}", "▲".green(), "[SHORT_EXIT]".red()).bold();
-            }
-        }
-        return "No Trade".bright_black();
-    }
-
-    pub fn get_triangle_colored_string(&self, current_tick: usize) -> ColoredString {
-        if !self.is_closed && self.entry_tick.is_some() && self.entry_tick.unwrap() == current_tick
-        {
-            if self.direction == TradeDirection::Long {
-                return "▲".green().bold();
-            } else {
-                return "▼".red().bold();
-            }
-        } else if self.exit_tick.is_some() && current_tick == self.exit_tick.unwrap() {
-            if self.direction == TradeDirection::Long {
-                return "▼".red().bold();
-            } else {
-                return "▲".green().bold();
-            }
-        }
-        if self.exit_tick.is_none() {
-            if self.direction == TradeDirection::Long {
-                return "—".green().bold();
-            } else {
-                return "—".red().bold();
-            }
-        }
-        if self.direction == TradeDirection::Long {
-            return "—".black().bold();
-        } else {
-            return "—".black().bold();
-        }
-    }
 }
 
 pub fn trade_pnl(fill_size: f64, fill_price: f64, current_price: f64, is_long: bool) -> f64 {
@@ -144,32 +107,6 @@ pub fn fill_size(equity: f64, current_price: f64) -> f64 {
     return equity / current_price;
 }
 
-#[derive(Debug, Clone)]
-pub struct TradeEntries {
-    pub long_entries: Vec<usize>,
-    pub short_entries: Vec<usize>,
-    pub long_exits: Vec<usize>,
-    pub short_exits: Vec<usize>,
-}
-
-impl TradeEntries {
-    pub fn to_signal(&self, tick: usize) -> Option<TradeDirection> {
-        if self.long_entries.contains(&tick) {
-            return Some(TradeDirection::Long);
-        }
-        if self.short_entries.contains(&tick) {
-            return Some(TradeDirection::Short);
-        }
-        if self.long_exits.contains(&tick) {
-            return Some(TradeDirection::Short);
-        }
-        if self.short_exits.contains(&tick) {
-            return Some(TradeDirection::Long);
-        }
-        return None;
-    }
-}
-
 #[derive(PartialEq, Copy, Debug, Clone)]
 pub enum StrategySignal {
     Neutral,
@@ -179,6 +116,74 @@ pub enum StrategySignal {
     ShortEntry,
     LongExit,
     ShortExit,
+}
+
+impl StrategySignal {
+    pub fn continous(self) -> Option<TradeDirection> {
+        return match self {
+            StrategySignal::Long => Some(TradeDirection::Long),
+            StrategySignal::Short => Some(TradeDirection::Short),
+            StrategySignal::LongEntry => Some(TradeDirection::Long),
+            StrategySignal::ShortEntry => Some(TradeDirection::Short),
+            StrategySignal::LongExit => Some(TradeDirection::Short),
+            StrategySignal::ShortExit => Some(TradeDirection::Long),
+            _ => None,
+        };
+    }
+
+    pub fn is_explicit_entry(self) -> bool {
+        return self == StrategySignal::LongEntry || self == StrategySignal::ShortEntry;
+    }
+
+    pub fn is_explicit_exit(self) -> bool {
+        return self == StrategySignal::LongExit || self == StrategySignal::ShortExit;
+    }
+
+    // pub fn to_colored_string(&self, current_tick: usize) -> ColoredString {
+    //     if !self.is_closed {
+    //         if self.direction == TradeDirection::Long {
+    //             return "▲ [LONG]".green().bold();
+    //         } else {
+    //             return "▼ [SHORT]".red().bold();
+    //         }
+    //     } else if current_tick == self.exit_tick.unwrap() {
+    //         if self.direction == TradeDirection::Long {
+    //             return format!("{} {}", "▼".red(), "[LONG_EXIT]".green()).bold();
+    //         } else {
+    //             return format!("{} {}", "▲".green(), "[SHORT_EXIT]".red()).bold();
+    //         }
+    //     }
+    //     return "No Trade".bright_black();
+    // }
+
+    // pub fn get_triangle_colored_string(&self, current_tick: usize) -> ColoredString {
+    //     if !self.is_closed && self.entry_tick.is_some() && self.entry_tick.unwrap() == current_tick
+    //     {
+    //         if self.direction == TradeDirection::Long {
+    //             return "▲".green().bold();
+    //         } else {
+    //             return "▼".red().bold();
+    //         }
+    //     } else if self.exit_tick.is_some() && current_tick == self.exit_tick.unwrap() {
+    //         if self.direction == TradeDirection::Long {
+    //             return "▼".red().bold();
+    //         } else {
+    //             return "▲".green().bold();
+    //         }
+    //     }
+    //     if self.exit_tick.is_none() {
+    //         if self.direction == TradeDirection::Long {
+    //             return "—".green().bold();
+    //         } else {
+    //             return "—".red().bold();
+    //         }
+    //     }
+    //     if self.direction == TradeDirection::Long {
+    //         return "—".black().bold();
+    //     } else {
+    //         return "—".black().bold();
+    //     }
+    // }
 }
 
 impl Into<i32> for StrategySignal {
@@ -199,5 +204,53 @@ impl Into<f64> for StrategySignal {
     fn into(self) -> f64 {
         let value: i32 = self.into();
         return value as f64;
+    }
+}
+
+impl From<i32> for StrategySignal {
+    fn from(value: i32) -> Self {
+        return match value {
+            0 => StrategySignal::Neutral,
+            1 => StrategySignal::Long,
+            -1 => StrategySignal::Short,
+            2 => StrategySignal::LongEntry,
+            -2 => StrategySignal::ShortEntry,
+            3 => StrategySignal::LongExit,
+            -3 => StrategySignal::ShortExit,
+            _ => StrategySignal::Neutral,
+        };
+    }
+}
+
+impl From<f64> for StrategySignal {
+    fn from(value: f64) -> Self {
+        let value: i32 = value as i32;
+        return StrategySignal::from(value);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SignalFixture {
+    pub long_entries: Vec<usize>,
+    pub short_entries: Vec<usize>,
+    pub long_exits: Vec<usize>,
+    pub short_exits: Vec<usize>,
+}
+
+impl SignalFixture {
+    pub fn get(&self, tick: usize) -> StrategySignal {
+        if self.long_entries.contains(&tick) {
+            return StrategySignal::LongEntry;
+        }
+        if self.short_entries.contains(&tick) {
+            return StrategySignal::ShortEntry;
+        }
+        if self.long_exits.contains(&tick) {
+            return StrategySignal::LongExit;
+        }
+        if self.short_exits.contains(&tick) {
+            return StrategySignal::ShortExit;
+        }
+        return StrategySignal::Neutral;
     }
 }

@@ -156,7 +156,7 @@ Visit [docs](/docs/readme.md) to view the full documentation.
 
    There is only one main loop, which iterates over the entire dataset. For every loop tick, each indicator is updated in constant O(1) time. This is the best approach if you care about computation delay, as it is fast and memory efficient. In the most cases, it's the easiest way to implement new features. Also, PineScript is incremental by design, so it's easy to port PineScript code to similar architecture.
 
-   Incremental architecture, has it's drawback - it is slower than vectorization, but not that much. For **1M** bars and `SMA(14)` the difference between Pace and talib is **5ms**.
+   Incremental architecture, has it's drawback - it is slower than vectorization, but not that much. For **1M** bars and `SMA(14)` the difference between Pace and talib is **2ms**.
 
    See [benchmarks](#benchmarks) section below for more details.
 

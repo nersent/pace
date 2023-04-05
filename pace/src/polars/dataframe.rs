@@ -8,10 +8,7 @@ use polars::{
     series::Series,
 };
 
-use crate::{
-    strategy::trade::{trade_direction_from_f64, TradeDirection},
-    utils::fs::{ensure_dir, get_filename_extension},
-};
+use crate::utils::fs::{ensure_dir, get_filename_extension};
 
 use super::series::SeriesCastUtils;
 

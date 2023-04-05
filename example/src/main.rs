@@ -6,6 +6,20 @@ use std::{
     sync::Arc,
 };
 
+use nersent_pace::{
+    core::{
+        context::Context, data_provider::DataProvider,
+        in_memory_data_provider::InMemoryDataProvider, incremental::Incremental,
+    },
+    pinescript::pinescript_exporter::{PineScriptExportStrategyConfig, PineScriptExporter},
+    polars::io::read_df,
+    strategy::{
+        optimization::{force_curve_fit, ForceCurveFitConfig},
+        strategy::{Strategy, StrategyConfig},
+        trade::SignalFixture,
+    },
+};
+
 // use nersent_pace::{
 //     content::relative_strength_index::{
 //         RelativeStrengthIndex, RelativeStrengthIndexConfig, RelativeStrengthIndexStrategy,
@@ -90,12 +104,60 @@ use std::{
 // }
 
 fn main() {
+    let data_path = Path::new("example/fixtures/btc_1d.csv");
+    let df = read_df(&data_path);
+
+    let ctx = Context::new(InMemoryDataProvider::from_df(&df).to_arc());
+    let mut strategy = Strategy::new(ctx.clone(), StrategyConfig::default());
+
+    let signals = force_curve_fit(
+        Arc::clone(&ctx.data),
+        ForceCurveFitConfig {
+            start_index: 0,
+            end_index: 365,
+        },
+    );
+
+    for i in ctx.clone() {
+        ctx.bar.index.set(i);
+
+        strategy.next(signals.get(i));
+        // metrics.next(&strategy);
+
+        // let rsi = rsi_indicator.next(());
+        // let rsi_signal = rsi_strategy.next(rsi);
+
+        // strategy.next(rsi_signal);
+        // metrics.next(&strategy);
+    }
+
+    let ps_exporter = PineScriptExporter::new();
+    // let ps = ps_exporter.strategy(&strategy, PineScriptExportStrategyConfig::default());
+
+    // println!("{}", ps);
+
+    // let signals = SignalFixture {
+    //     long_entries: vec![2],
+    //     long_exits: vec![],
+    //     short_entries: vec![5],
+    //     short_exits: vec![],
+    //     // long_entries: vec![2, 8],
+    //     // long_exits: vec![14],
+    //     // short_entries: vec![5, 17],
+    //     // short_exits: vec![20],
+    // };
+
+    // for i in ctx.clone() {
+    //     ctx.bar.index.set(i);
+    //     strategy.next(signals.get(i));
+    // }
+
     // println!("sum: {}", 2.0 + f64::NAN);
     // println!("mult: {}", 2.0 * f64::NAN);
     // println!("pow: {}", f64::powf(2.0, f64::NAN));
     // println!("pow: {}", f64::powf(f64::NAN, 2.0));
-    println!("max: {}", f64::max(f64::NAN, 2.0));
-    println!("diff: {}", 1.0 - f64::NAN);
+    // println!("max: {}", f64::max(f64::NAN, 2.0));
+    // println!("diff: {}", 1.0 - f64::NAN);
 
     return;
 

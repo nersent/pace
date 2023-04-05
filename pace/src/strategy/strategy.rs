@@ -8,7 +8,7 @@ use crate::{
     core::{context::Context, incremental::Incremental},
 };
 
-use super::trade::{fill_size, Trade, TradeDirection};
+use super::trade::{fill_size, StrategySignal, Trade, TradeDirection};
 
 pub struct StrategyOnTradeEntryEvent {
     pub trade: Trade,
@@ -29,22 +29,16 @@ pub struct StrategyConfig {
     Enables an additional calculation on bar close, allowing market orders to enter on the same tick the order is placed
     */
     pub on_bar_close: bool,
-    pub continous: bool,
     pub initial_capital: f64,
     pub buy_with_equity: bool,
-    pub use_ohlc4_as_entry_price: bool,
-    pub use_ohlc4_as_exit_price: bool,
 }
 
 impl Default for StrategyConfig {
     fn default() -> Self {
         return Self {
             buy_with_equity: false,
-            continous: true,
             on_bar_close: false,
             initial_capital: 1000.0,
-            use_ohlc4_as_entry_price: false,
-            use_ohlc4_as_exit_price: false,
         };
     }
 }
@@ -96,9 +90,10 @@ pub struct Strategy {
     pub ctx: Context,
     pub config: StrategyConfig,
     pub trades: Vec<Trade>,
-    pub unfilled_trade_direction: Option<TradeDirection>,
     pub events: StrategyEvents,
     pub metrics: StrategyMetrics,
+    unfilled_signal: StrategySignal,
+    current_dir: Option<TradeDirection>,
 }
 
 impl Strategy {
@@ -106,7 +101,8 @@ impl Strategy {
         return Self {
             ctx: ctx.clone(),
             trades: Vec::new(),
-            unfilled_trade_direction: None,
+            unfilled_signal: StrategySignal::Neutral,
+            current_dir: None,
             events: StrategyEvents {
                 on_trade_entry: None,
                 on_trade_exit: None,
@@ -117,27 +113,23 @@ impl Strategy {
     }
 }
 
-impl Incremental<Option<TradeDirection>, ()> for Strategy {
-    fn next(&mut self, direction: Option<TradeDirection>) {
+impl Incremental<StrategySignal, ()> for Strategy {
+    fn next(&mut self, signal: StrategySignal) {
         let bar = &self.ctx.bar;
         let tick = bar.index();
         let open = bar.open();
         let close = bar.close();
-        let high = bar.high();
-        let low = bar.low();
 
         if self.config.on_bar_close {
-            self.unfilled_trade_direction = direction;
+            self.unfilled_signal = signal;
         }
 
         self.events.on_trade_entry = None;
         self.events.on_trade_exit = None;
 
-        if let Some(unfilled_trade_direction) = self.unfilled_trade_direction {
-            let is_continous = self.config.continous;
-
+        if self.unfilled_signal != StrategySignal::Neutral {
             let mut close_trade = false;
-            let mut create_new_trade = false;
+            let mut new_trade_dir: Option<TradeDirection> = None;
 
             let orderbook_price = if self.config.on_bar_close {
                 close
@@ -146,23 +138,48 @@ impl Incremental<Option<TradeDirection>, ()> for Strategy {
             };
 
             if let Some(last_trade) = self.trades.last_mut() {
-                let is_same_direction = last_trade.direction == unfilled_trade_direction;
+                let dir = last_trade.direction;
 
-                close_trade = !is_same_direction && !last_trade.is_closed;
+                if self.unfilled_signal == StrategySignal::Long {
+                    close_trade = dir == TradeDirection::Short;
+                    new_trade_dir = Some(TradeDirection::Long);
+                }
 
-                if is_continous {
-                    create_new_trade = !is_same_direction && close_trade;
-                } else {
-                    create_new_trade = last_trade.is_closed
-                        && (is_same_direction || !is_same_direction && !close_trade);
+                if self.unfilled_signal == StrategySignal::Short {
+                    close_trade = dir == TradeDirection::Long;
+                    new_trade_dir = Some(TradeDirection::Short);
+                }
+
+                if self.unfilled_signal == StrategySignal::LongEntry {
+                    close_trade = dir == TradeDirection::Short;
+                    new_trade_dir = Some(TradeDirection::Long);
+                }
+
+                if self.unfilled_signal == StrategySignal::ShortEntry {
+                    close_trade = dir == TradeDirection::Long;
+                    new_trade_dir = Some(TradeDirection::Short);
+                }
+
+                if self.unfilled_signal == StrategySignal::LongExit && dir == TradeDirection::Long {
+                    close_trade = true;
+                }
+
+                if self.unfilled_signal == StrategySignal::ShortExit && dir == TradeDirection::Short
+                {
+                    close_trade = true;
+                }
+
+                if let Some(_new_trade_dir) = new_trade_dir {
+                    let is_same_direction = !last_trade.is_closed && dir == _new_trade_dir;
+                    close_trade = close_trade && !is_same_direction && !last_trade.is_closed;
+
+                    if is_same_direction {
+                        new_trade_dir = None;
+                    }
                 }
 
                 if close_trade {
-                    let exit_price = if self.config.use_ohlc4_as_entry_price {
-                        ohlc4(open, high, low, close)
-                    } else {
-                        orderbook_price
-                    };
+                    let exit_price = orderbook_price;
 
                     last_trade.exit_price = exit_price;
                     last_trade.exit_tick = Some(tick);
@@ -184,7 +201,7 @@ impl Incremental<Option<TradeDirection>, ()> for Strategy {
                         self.metrics.losing_trades += 1;
                     }
 
-                    if last_trade.direction == TradeDirection::Long {
+                    if dir == TradeDirection::Long {
                         self.metrics.long_net_profit += pnl;
                         self.metrics.position_size -= 1.0;
                     } else {
@@ -192,20 +209,17 @@ impl Incremental<Option<TradeDirection>, ()> for Strategy {
                         self.metrics.position_size += 1.0;
                     }
 
+                    self.current_dir = None;
                     self.metrics.closed_trades += 1;
                 }
-            } else {
-                create_new_trade = true;
+            } else if !self.unfilled_signal.is_explicit_exit() {
+                new_trade_dir = self.unfilled_signal.continous();
             }
 
-            if create_new_trade {
-                let entry_price = if self.config.use_ohlc4_as_entry_price {
-                    ohlc4(open, high, low, close)
-                } else {
-                    orderbook_price
-                };
+            if let Some(new_trade_dir) = new_trade_dir {
+                let entry_price = orderbook_price;
 
-                let mut trade = Trade::new(unfilled_trade_direction);
+                let mut trade = Trade::new(new_trade_dir);
 
                 trade.fill_size = 1.0;
 
@@ -225,16 +239,18 @@ impl Incremental<Option<TradeDirection>, ()> for Strategy {
 
                 if trade.direction == TradeDirection::Long {
                     self.metrics.position_size += 1.0;
+                    self.current_dir = Some(TradeDirection::Long);
                 } else {
                     self.metrics.position_size -= 1.0;
+                    self.current_dir = Some(TradeDirection::Short);
                 }
             }
 
-            self.unfilled_trade_direction = None;
+            self.unfilled_signal = StrategySignal::Neutral;
         }
 
         if !self.config.on_bar_close {
-            self.unfilled_trade_direction = direction;
+            self.unfilled_signal = signal;
         }
 
         if let Some(last_trade) = self.trades.last_mut() {
