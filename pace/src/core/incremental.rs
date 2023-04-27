@@ -48,3 +48,22 @@ pub struct Dummy {}
 impl Incremental<(), ()> for Dummy {
     fn next(&mut self, _: ()) -> () {}
 }
+
+pub type IncrementalFc<T, R> = Box<dyn Fn(Context) -> Box<dyn Incremental<T, R>>>;
+
+pub struct ForcedInput<R> {
+    pub ctx: Context,
+    pub inner: Box<dyn Incremental<(), R>>,
+}
+
+impl<R> ForcedInput<R> {
+    pub fn new(ctx: Context, inner: Box<dyn Incremental<(), R>>) -> Self {
+        return Self { ctx, inner };
+    }
+}
+
+impl<T, R> Incremental<T, R> for ForcedInput<R> {
+    fn next(&mut self, _: T) -> R {
+        return self.inner.next(());
+    }
+}

@@ -1,4 +1,3 @@
-pub mod asset;
 pub mod common;
 pub mod content;
 pub mod core;
@@ -9,3 +8,5 @@ pub mod strategy;
 pub mod ta;
 pub mod testing;
 pub mod utils;
+
+mod tests;

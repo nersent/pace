@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  
+</body>
+<script>
+  var config = [{
+  "initDataTypes": ["cenc"],
+  "audioCapabilities": [{
+    "contentType": "audio/mp4;codecs=\"mp4a.40.2\""
+  }],
+  "videoCapabilities": [{
+    "contentType": "video/mp4;codecs=\"avc1.42E01E\""
+  }]
+}];
+try {
+  navigator.
+  requestMediaKeySystemAccess("com.widevine.alpha", config).
+  then(function(mediaKeySystemAccess) {
+    console.log('widevine support ok');
+  }).catch(function(e) {
+    console.log('no widevine support');
+    console.log(e);
+  });
+} catch (e) {
+  console.log('no widevine support');
+  console.log(e);
+}
+try {
+  navigator.
+  requestMediaKeySystemAccess("com.microsoft.playready", config).
+  then(function(mediaKeySystemAccess) {
+    console.log('playready support ok');
+  }).catch(function(e) {
+    console.log('no playready support');
+    console.log(e);
+  });
+} catch (e) {
+    console.log('no playready support');
+  console.log(e);
+}
+try {
+  navigator.
+  requestMediaKeySystemAccess("org.w3.clearkey",config).
+  then(function(mediaKeySystemAccess) {
+    console.log('clearkey support ok');
+  }).catch(function(e) {
+    console.log('no clearkey support');
+    console.log(e);
+  });
+} catch (e) {
+  console.log('no clearkey support');
+  console.log(e);
+}
+</script>
+</html>

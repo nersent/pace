@@ -1,6 +1,6 @@
 [package]
 name = "nersent_pace"
-version = "0.5.2"
+version = "0.6.19"
 edition = "2021"
 homepage = "https://nersent.com"
 repository = "https://github.com/nersent/pace"

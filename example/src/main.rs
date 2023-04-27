@@ -7,16 +7,36 @@ use std::{
 };
 
 use nersent_pace::{
+    content::relative_strength_index::{
+        RelativeStrengthIndex, RelativeStrengthIndexConfig, RelativeStrengthIndexStrategy,
+        RelativeStrengthIndexStrategyConfig,
+    },
     core::{
-        context::Context, data_provider::DataProvider,
-        in_memory_data_provider::InMemoryDataProvider, incremental::Incremental,
+        asset::Asset,
+        context::Context,
+        data_provider::DataProvider,
+        in_memory_data_provider::InMemoryDataProvider,
+        incremental::{Chained, ForcedInput, Incremental, IncrementalDefault},
+        timeframe::Timeframe,
     },
     pinescript::pinescript_exporter::{PineScriptExportStrategyConfig, PineScriptExporter},
     polars::io::read_df,
+    statistics::normalization::{
+        FixedScaler, FixedScalerConfig, MinMaxScaler, MinMaxScalerConfig, StandardScaler,
+        StandardScalerConfig,
+    },
     strategy::{
+        metrics::tradingview_metrics::{
+            TradingViewMetrics, TradingViewMetricsConfig, TradingViewMetricsData,
+            TradingViewMetricsProvider,
+        },
         optimization::{force_curve_fit, ForceCurveFitConfig},
         strategy::{Strategy, StrategyConfig},
-        trade::SignalFixture,
+        strategy_runner::{
+            StrategyRunner, StrategyRunnerTarget, StrategyRunnerTargetMetricsProvider,
+            StrategyRunnerTargetOptions,
+        },
+        trade::{SignalFixture, StrategySignal},
     },
 };
 
@@ -84,11 +104,7 @@ use nersent_pace::{
 
 // impl IncrementalXd<(), f64> for AhaSrc {
 
-// }
-
-// struct Aha {
-//     xd: Xd,
-//     // aha: dyn IncrementalNew<(), f64>,
+// }capture.html
 // }
 
 // impl Aha {
@@ -103,35 +119,191 @@ use nersent_pace::{
 //     }
 // }
 
+pub struct Xd {}
+
+impl Incremental<&Strategy, StrategySignal> for Xd {
+    fn next(&mut self, input: &Strategy) -> StrategySignal {
+        return StrategySignal::Neutral;
+    }
+}
+
 fn main() {
     let data_path = Path::new("example/fixtures/btc_1d.csv");
     let df = read_df(&data_path);
 
     let ctx = Context::new(InMemoryDataProvider::from_df(&df).to_arc());
-    let mut strategy = Strategy::new(ctx.clone(), StrategyConfig::default());
 
-    let signals = force_curve_fit(
-        Arc::clone(&ctx.data),
-        ForceCurveFitConfig {
-            start_index: 0,
-            end_index: 365,
+    let mut strategy = Strategy::new(
+        ctx.clone(),
+        StrategyConfig {
+            on_bar_close: false,
+            ..Default::default()
         },
     );
 
-    for i in ctx.clone() {
-        ctx.bar.index.set(i);
+    ctx.bar.index.set(0);
+    strategy.next(StrategySignal::Neutral);
+    strategy.next(StrategySignal::Long);
+    println!(
+        "[0]: {:?} | {:?}",
+        strategy.current_dir, strategy.metrics.position_size
+    );
 
-        strategy.next(signals.get(i));
-        // metrics.next(&strategy);
+    ctx.bar.index.set(1);
+    strategy.next(StrategySignal::Neutral);
+    strategy.next(StrategySignal::Neutral);
+    println!(
+        "[1]: {:?} | {:?}",
+        strategy.current_dir, strategy.metrics.position_size
+    );
 
-        // let rsi = rsi_indicator.next(());
-        // let rsi_signal = rsi_strategy.next(rsi);
+    // let chained = /*ForcedInput::new(
+    //     ctx.clone(),*/
+    //     <StrippedInput<f64> as Incremental<&Strategy, f64>>::to_box(StrippedInput::new(
+    //         ctx.clone(),
+    //         RelativeStrengthIndex::new(
+    //             ctx.clone(),
+    //             RelativeStrengthIndexConfig::default(ctx.clone()),
+    //         )
+    //         .to_box(),
+    //         // Chained::new(
+    //                    //     ctx.clone(),
+    //                    //     RelativeStrengthIndex::new(
+    //                    //         ctx.clone(),
+    //                    //         RelativeStrengthIndexConfig::default(ctx.clone()),
+    //                    //     )
+    //                    //     .to_box(),
+    //                    //     RelativeStrengthIndexStrategy::new(
+    //                    //         ctx.clone(),
+    //                    //         RelativeStrengthIndexStrategyConfig::default(),
+    //                    //     )
+    //                    //     .to_box(),
+    //                    // ),
+    //     ));
+    // //);
 
-        // strategy.next(rsi_signal);
-        // metrics.next(&strategy);
-    }
+    // let target = StrategyRunnerTarget::<TradingViewMetricsData> {
+    //     assets: vec![Asset {
+    //         hash: "test".to_string(),
+    //         symbol: "test".to_string(),
+    //         timeframe: Timeframe::OneDay,
+    //     }],
+    //     id: "test".to_string(),
+    //     options: StrategyRunnerTargetOptions {
+    //         data_provider: Box::new(|asset| {
+    //             let data_path = Path::new("example/fixtures/btc_1d.csv");
+    //             let df = read_df(&data_path);
+    //             return InMemoryDataProvider::from_df(&df).to_arc();
+    //         }),
+    //         ctx: Box::new(|data_provider, asset| {
+    //             return Context::new(data_provider);
+    //         }),
+    //         strategy: Box::new(|ctx, data_provider, asset| {
+    //             return Strategy::new(ctx, StrategyConfig::default());
+    //         }),
+    //         target: Box::new(move |ctx, data_provider, strategy, asset| {
+    //             return <ForcedInput<StrategySignal> as Incremental<&Strategy, StrategySignal>>::to_box(
+    //             ForcedInput::new(
+    //                 ctx.clone(),
+    //                 Chained::new(
+    //                     ctx.clone(),
+    //                     RelativeStrengthIndex::new(
+    //                         ctx.clone(),
+    //                         RelativeStrengthIndexConfig::default(ctx.clone()),
+    //                     )
+    //                     .to_box(),
+    //                     RelativeStrengthIndexStrategy::new(
+    //                         ctx.clone(),
+    //                         RelativeStrengthIndexStrategyConfig::default(),
+    //                     )
+    //                     .to_box(),
+    //                 )
+    //                 .to_box(),
+    //             ),
+    //         );
+    //         }),
+    //         metrics_provider: Some(Box::new(|ctx, data_provider, strategy, asset| {
+    //             return TradingViewMetrics::new(
+    //                 ctx.clone(),
+    //                 strategy,
+    //                 TradingViewMetricsConfig::default(),
+    //             )
+    //             .to_box();
+    //         })),
+    //         periods: Box::new(|ctx, data_provider, asset| {
+    //             return vec![(data_provider.get_start_tick(), data_provider.get_end_tick())];
+    //         }),
+    //     },
+    // };
 
-    let ps_exporter = PineScriptExporter::new();
+    // let mut strategy_runner = StrategyRunner::new();
+
+    // let res = strategy_runner.run(vec![target]);
+
+    // println!(
+    //     "{:?}",
+    //     res[0]
+    //         .metrics
+    //         .as_ref()
+    //         .unwrap()
+    //         .get_metrics()
+    //         .net_equity_history
+    // );
+
+    // let data_path = Path::new("example/fixtures/btc_1d.csv");
+    // let df = read_df(&data_path);
+
+    // let ctx = Context::new(InMemoryDataProvider::from_df(&df).to_arc());
+    // let mut strategy = Strategy::new(ctx.clone(), StrategyConfig::default());
+
+    // // let signals = force_curve_fit(
+    // //     Arc::clone(&ctx.data),
+    // //     ForceCurveFitConfig {
+    // //         start_index: ctx.data.get_end_tick() - 30,
+    // //         end_index: ctx.data.get_end_tick(),
+    // //     },
+    // // );
+
+    // let mut min_max_scaler = MinMaxScaler::new(ctx.clone(), MinMaxScalerConfig::default());
+    // let mut fixed_scaler = FixedScaler::new(
+    //     ctx.clone(),
+    //     FixedScalerConfig {
+    //         data_min: -10.0,
+    //         data_max: 10.0,
+    //         min: -1.0,
+    //         max: 1.0,
+    //     },
+    // );
+    // let mut z_score = StandardScaler::new(ctx.clone(), StandardScalerConfig::default());
+
+    // for i in ctx.clone() {
+    //     ctx.bar.index.set(i);
+
+    //     let close = ctx.bar.close();
+
+    //     if i < 50 {
+    //         println!(
+    //             "[{}]: {} -> {}; {} | ({}; {})",
+    //             i,
+    //             close,
+    //             min_max_scaler.next(close),
+    //             z_score.next(close),
+    //             min_max_scaler.data_min,
+    //             min_max_scaler.data_max
+    //         );
+    //     }
+
+    //     // strategy.next(signals.get(i));
+    //     // metrics.next(&strategy);
+
+    //     // let rsi = rsi_indicator.next(());
+    //     // let rsi_signal = rsi_strategy.next(rsi);
+
+    //     // strategy.next(rsi_signal);
+    //     // metrics.next(&strategy);
+    // }
+
+    // let ps_exporter = PineScriptExporter::new();
     // let ps = ps_exporter.strategy(&strategy, PineScriptExportStrategyConfig::default());
 
     // println!("{}", ps);

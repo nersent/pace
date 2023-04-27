@@ -31,22 +31,41 @@ impl PineScriptExporter {
     }
 
     pub fn strategy(&self, strategy: &Strategy, config: PineScriptExportStrategyConfig) -> String {
+        let mut ps_options: Vec<String> = vec![];
+
+        ps_options.push(format!("title = \"{}\"", config.title));
+        ps_options.push(format!(
+            "initial_capital = {}",
+            strategy.config.initial_capital
+        ));
+        ps_options.push(format!("currency = \"{}\"", config.currency));
+        ps_options.push(format!("overlay = false"));
+        ps_options.push(format!("pyramiding = 0"));
+        ps_options.push(format!("risk_free_rate = {}", config.risk_free_rate));
+        ps_options.push(format!(
+            "process_orders_on_close = {}",
+            strategy.config.on_bar_close
+        ));
+
+        if strategy.config.buy_with_equity {
+            ps_options.push(format!("default_qty_type = strategy.percent_of_equity"));
+            ps_options.push(format!("default_qty_value = 100"));
+        }
+
+        let ps_options = ps_options.join(", ");
+
         let mut ps = format!(
             r#"
 //@version=5
-strategy(title="{}", initial_capital={}, currency="{}", overlay=false, pyramiding=0, risk_free_rate = {}, process_orders_on_close = {})
+strategy({})
 "#,
-            config.title,
-            strategy.config.initial_capital,
-            config.currency,
-            config.risk_free_rate,
-            strategy.config.on_bar_close
+            ps_options
         );
 
         if config.include_cobra_metrics {
             ps.push_str(
                 r#"
-import EliCobra/CobraMetrics/1 as table
+import EliCobra/CobraMetrics/2 as table
 disp_ind = input.string("Equity", title="Display",options=["Strategy", "Equity", "Open Profit", "Gross Profit", "Net Profit"])
 table.cobraTable()
 plot(table.curve(disp_ind))

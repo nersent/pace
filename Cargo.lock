@@ -1393,7 +1393,7 @@ dependencies = [
 
 [[package]]
 name = "nersent_pace"
-version = "0.5.2"
+version = "0.6.19"
 dependencies = [
  "chrono",
  "colored",

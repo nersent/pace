@@ -23,6 +23,11 @@ impl<T: std::fmt::Debug> ArraySnapshot<T> {
         };
     }
 
+    pub fn with_name(mut self, name: &str) -> Self {
+        self.name = Some(name.to_string());
+        return self;
+    }
+
     pub fn debug_mode(&mut self) {
         self.debug_mode = true;
     }

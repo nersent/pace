@@ -113,7 +113,7 @@ impl PaceBenchmarkRunner {
 
         benchmarks.push(Benchmark::run("sma_14", count, &mut || {
             let ctx = create_ctx(Arc::clone(&data_provider));
-            let mut target = Sma::new(ctx.clone(), 14);
+            let mut target = Sma::new(ctx.clone(), 14).to_box();
             let _ctx = target.ctx.clone();
             let start_time = Instant::now();
 
@@ -128,7 +128,7 @@ impl PaceBenchmarkRunner {
 
         benchmarks.push(Benchmark::run("ema_14", count, &mut || {
             let ctx = create_ctx(Arc::clone(&data_provider));
-            let mut target = Ema::new(ctx.clone(), 14);
+            let mut target = Ema::new(ctx.clone(), 14).to_box();
             let _ctx = target.ctx.clone();
             let start_time = Instant::now();
 
@@ -158,7 +158,7 @@ impl PaceBenchmarkRunner {
 
         benchmarks.push(Benchmark::run("rsi_14", count, &mut || {
             let ctx = create_ctx(Arc::clone(&data_provider));
-            let mut target = Rsi::new(ctx.clone(), 14);
+            let mut target = Rsi::new(ctx.clone(), 14).to_box();
             let _ctx = target.ctx.clone();
             let start_time = Instant::now();
 
@@ -173,7 +173,7 @@ impl PaceBenchmarkRunner {
 
         benchmarks.push(Benchmark::run("stoch_14", count, &mut || {
             let ctx = create_ctx(Arc::clone(&data_provider));
-            let mut target = Stoch::new(ctx.clone(), 14);
+            let mut target = Stoch::new(ctx.clone(), 14).to_box();
             let _ctx = target.ctx.clone();
             let start_time = Instant::now();
 
@@ -189,7 +189,7 @@ impl PaceBenchmarkRunner {
 
         benchmarks.push(Benchmark::run("atr_14", count, &mut || {
             let ctx = create_ctx(Arc::clone(&data_provider));
-            let mut target = Atr::new(ctx.clone(), 14);
+            let mut target = Atr::new(ctx.clone(), 14).to_box();
             let _ctx = target.ctx.clone();
             let start_time = Instant::now();
 
@@ -213,7 +213,8 @@ impl PaceBenchmarkRunner {
                     long_src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
                     signal_ma: Ma::new(ctx.clone(), MaKind::EMA, 9).to_box(),
                 },
-            );
+            )
+            .to_box();
 
             let _ctx = target.ctx.clone();
             let start_time = Instant::now();
@@ -238,8 +239,9 @@ impl PaceBenchmarkRunner {
                     long_src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
                     signal_ma: Ma::new(ctx.clone(), MaKind::EMA, 9).to_box(),
                 },
-            );
-            let mut target_rsi = Rsi::new(ctx.clone(), 14);
+            )
+            .to_box();
+            let mut target_rsi = Rsi::new(ctx.clone(), 14).to_box();
             let _ctx = target_macd.ctx.clone();
             let start_time = Instant::now();
 

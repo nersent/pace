@@ -15,6 +15,16 @@ impl FloatSeries {
         };
     }
 
+    pub fn with_initial_value(mut self, value: f64) -> Self {
+        self.values.push(value);
+        return self;
+    }
+
+    fn push(&mut self, value: f64) {
+        self.current_offset = self.values.len();
+        self.values.push(value);
+    }
+
     pub fn size(&self) -> usize {
         return self.values.len();
     }
@@ -24,7 +34,7 @@ impl FloatSeries {
     }
 
     /// Returns **`N - I`** previous value.
-    pub fn get(&mut self, index: usize) -> f64 {
+    pub fn get(&self, index: usize) -> f64 {
         if index >= self.values.len() {
             return f64::NAN;
         }
@@ -67,7 +77,6 @@ impl std::ops::Index<usize> for FloatSeries {
 
 impl Incremental<f64, ()> for FloatSeries {
     fn next(&mut self, value: f64) {
-        self.current_offset = self.values.len();
-        self.values.push(value);
+        self.push(value);
     }
 }

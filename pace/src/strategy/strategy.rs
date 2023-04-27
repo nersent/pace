@@ -93,7 +93,7 @@ pub struct Strategy {
     pub events: StrategyEvents,
     pub metrics: StrategyMetrics,
     unfilled_signal: StrategySignal,
-    current_dir: Option<TradeDirection>,
+    pub current_dir: Option<TradeDirection>,
 }
 
 impl Strategy {

@@ -4,6 +4,7 @@ pub trait Float64Utils {
     fn is_zero(self) -> bool;
     fn compare_with_precision(&self, target: f64, precision: f64) -> bool;
     fn compare(&self, target: f64) -> bool;
+    fn is_non_zero(self) -> bool;
 }
 
 impl Float64Utils for f64 {
@@ -23,6 +24,10 @@ impl Float64Utils for f64 {
 
     fn is_zero(self) -> bool {
         return !self.is_nan() && self.compare(0.0);
+    }
+
+    fn is_non_zero(self) -> bool {
+        return !self.is_nan() && !self.compare(0.0);
     }
 
     fn compare_with_precision(&self, target: f64, precision: f64) -> bool {

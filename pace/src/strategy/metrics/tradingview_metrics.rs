@@ -345,3 +345,20 @@ impl Incremental<&Strategy, ()> for TradingViewMetrics {
         self.data.equity_history.push(equity_metrics.equity);
     }
 }
+
+pub struct TradingViewMetricsProvider {
+    pub inner: TradingViewMetrics,
+}
+
+impl TradingViewMetricsProvider {
+    pub fn new(inner: TradingViewMetrics) -> Self {
+        Self { inner }
+    }
+}
+
+impl Incremental<&Strategy, TradingViewMetricsData> for TradingViewMetricsProvider {
+    fn next(&mut self, strategy: &Strategy) -> TradingViewMetricsData {
+        self.inner.next(strategy);
+        return self.inner.data.clone();
+    }
+}
