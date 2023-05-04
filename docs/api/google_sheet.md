@@ -4,6 +4,10 @@ https://pace.nersent.com/
 
 `connect@nersent-pace.iam.gserviceaccount.com`
 
+## Example
+
+- https://docs.google.com/spreadsheets/d/1FPMGmFUMX_yeMHHalOywVxPk3WrmWgHZ6H4lC6thQRg/edit?usp=sharing
+
 ## Annotations
 
 To use PACE with seamless Google Sheet integration, you need to add annotations to your Google Sheet to dedicated columns.

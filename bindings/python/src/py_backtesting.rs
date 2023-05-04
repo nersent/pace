@@ -88,7 +88,13 @@ impl PyBacktestRunner {
             let time = bar.time().unwrap();
             let time_s = time.as_secs() as f64;
 
+            let mut signal = signals[i].get();
+
             self.strategy.next_bar();
+
+            if self.strategy.config.on_bar_close {
+                self.strategy.next(signal);
+            }
 
             self.equity_metrics.next(&self.strategy);
             self.tradingview_metrics.next(&self.strategy);
@@ -125,9 +131,9 @@ impl PyBacktestRunner {
             };
             self.bars.push(bar_info);
 
-            let mut signal = signals[i].get();
-
-            self.strategy.next(signal);
+            if !self.strategy.config.on_bar_close {
+                self.strategy.next(signal);
+            }
         }
 
         let run_end_time = Instant::now();

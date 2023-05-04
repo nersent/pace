@@ -117,20 +117,17 @@ class ExcelBacktester():
                 raise Exception(
                     f"Could not find data column {column_id} in worksheet")
 
-        column_to_last_row_index_map: dict[str, int] = {}
         column_to_length_map: dict[str, int] = {}
 
         for column_id in self.data_columns:
             (column, row) = column_coordinate_map[column_id]
 
-            column_to_last_row_index_map[column_id] = -1
-
             for i in range(row, self.worksheet.max_row + 1):
                 cell = self.worksheet[column + str(i)]
                 if cell is None or cell.value is None:
+                    print(f"[{column_id}]: {i}")
                     break
-                column_to_last_row_index_map[column_id] = i
-                column_to_length_map[column_id] = i - row + 1
+                column_to_length_map[column_id] = i
 
         data_length: Optional[int] = None
 
@@ -155,10 +152,14 @@ class ExcelBacktester():
                     break
                 data[column_id].append(int(cell.value))
 
+        # print(column_coordinate_map)
+        # print(data_length)
+
         for column_id in data:
-            if len(data[column_id]) != data_length:
-                raise Exception(
-                    f"Data column {column_id} does not have the same length as other data columns: {len(data[column_id])} vs {data_length} | {data[column_id][0]} | {data[column_id][-1]}")
+            data[column_id] = data[column_id][:data_length]
+            # if len(data[column_id]) != data_length:
+            #     raise Exception(
+            #         f"Data column {column_id} does not have the same length as other data columns: {len(data[column_id])} vs {data_length} | {data[column_id][0]} | {data[column_id][-1]}")
 
         (signal_column, signal_row) = column_coordinate_map[format_input_column_id(
             "strategy_signal")]
@@ -243,6 +244,8 @@ class ExcelBacktester():
                 column_coordinate_map[risk_free_rate_column]))
             backtest_config["risk_free_rate"] = float(
                 self.worksheet[coordinate].value)
+
+        print(backtest_config)
 
         backtest_res = pace.run_backtest(
             data_provider, backtest_config, signals)
