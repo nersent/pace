@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, Tuple, Union
 from openpyxl import load_workbook
 from openpyxl.workbook import Workbook
@@ -148,9 +149,14 @@ class ExcelBacktester():
 
             for i in range(row + 1, data_length + 2):
                 cell = self.worksheet[column + str(i)]
+                
                 if cell is None or cell.value is None:
                     break
-                data[column_id].append(int(cell.value))
+
+                if isinstance(cell.value, datetime):
+                    data[column_id].append(cell.value.timestamp())
+                else:
+                    data[column_id].append(float(cell.value))
 
         # print(column_coordinate_map)
         # print(data_length)
