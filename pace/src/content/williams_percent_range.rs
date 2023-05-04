@@ -112,6 +112,6 @@ impl Incremental<f64, StrategySignal> for WilliamsPercentRankStrategy {
         if is_cross_under {
             return StrategySignal::Short;
         }
-        return StrategySignal::Neutral;
+        return StrategySignal::Hold;
     }
 }

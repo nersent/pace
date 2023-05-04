@@ -91,8 +91,8 @@ pub struct Context {
 /// Execution state across shared across all components.
 impl Context {
     pub fn new(data: AnyDataProvider) -> Self {
-        let first_bar_index = data.get_start_tick();
-        let last_bar_index = data.get_end_tick();
+        let first_bar_index = data.get_first_tick();
+        let last_bar_index = data.get_last_tick();
         let bars = last_bar_index - first_bar_index + 1;
 
         let bar = Bar {

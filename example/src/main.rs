@@ -1,4 +1,5 @@
 use std::{
+    any::Any,
     borrow::{Borrow, BorrowMut},
     cell::{Cell, RefCell, UnsafeCell},
     path::Path,
@@ -12,7 +13,7 @@ use nersent_pace::{
         RelativeStrengthIndexStrategyConfig,
     },
     core::{
-        asset::Asset,
+        asset::{Asset, AssetRegistry},
         context::Context,
         data_provider::DataProvider,
         in_memory_data_provider::InMemoryDataProvider,
@@ -30,11 +31,10 @@ use nersent_pace::{
             TradingViewMetrics, TradingViewMetricsConfig, TradingViewMetricsData,
             TradingViewMetricsProvider,
         },
-        optimization::{force_curve_fit, ForceCurveFitConfig},
         strategy::{Strategy, StrategyConfig},
         strategy_runner::{
-            StrategyRunner, StrategyRunnerTarget, StrategyRunnerTargetMetricsProvider,
-            StrategyRunnerTargetOptions,
+            StrategyRunner, StrategyRunnerItem, StrategyRunnerTarget,
+            StrategyRunnerTargetFactoryConfig,
         },
         trade::{SignalFixture, StrategySignal},
     },
@@ -119,11 +119,49 @@ use nersent_pace::{
 //     }
 // }
 
-pub struct Xd {}
+// pub struct Xd {}
 
-impl Incremental<&Strategy, StrategySignal> for Xd {
-    fn next(&mut self, input: &Strategy) -> StrategySignal {
-        return StrategySignal::Neutral;
+// impl Incremental<&Strategy, StrategySignal> for Xd {
+//     fn next(&mut self, input: &Strategy) -> StrategySignal {
+//         return StrategySignal::Hold;
+//     }
+// }
+
+struct ExampleRunnerTarget {
+    ctx: Context,
+    inner: Box<dyn Incremental<(), StrategySignal>>,
+    strategy: Strategy,
+    pub tradingview_metrics: TradingViewMetrics,
+}
+
+impl ExampleRunnerTarget {
+    fn new(ctx: Context, inner: Box<dyn Incremental<(), StrategySignal>>) -> Self {
+        let strategy = Strategy::new(ctx.clone(), StrategyConfig::default());
+        return Self {
+            ctx: ctx.clone(),
+            inner,
+            tradingview_metrics: TradingViewMetrics::new(
+                ctx.clone(),
+                TradingViewMetricsConfig::default(),
+                &strategy,
+            ),
+            strategy,
+        };
+    }
+}
+
+impl StrategyRunnerTarget for ExampleRunnerTarget {
+    fn next(&mut self, bar_index: usize) {
+        self.ctx.bar.index.set(bar_index);
+
+        self.strategy.next_bar();
+        let signal = self.inner.next(());
+        self.strategy.next(signal);
+        self.tradingview_metrics.next(&self.strategy);
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        return self;
     }
 }
 
@@ -131,31 +169,87 @@ fn main() {
     let data_path = Path::new("example/fixtures/btc_1d.csv");
     let df = read_df(&data_path);
 
-    let ctx = Context::new(InMemoryDataProvider::from_df(&df).to_arc());
+    // let ctx = Context::new(InMemoryDataProvider::from_df(&df).to_arc());
 
-    let mut strategy = Strategy::new(
-        ctx.clone(),
-        StrategyConfig {
-            on_bar_close: false,
-            ..Default::default()
-        },
+    let mut asset_registry = AssetRegistry::new();
+    asset_registry.add(Asset {
+        id: "btc_1d".to_string(),
+        data_provider: Some(InMemoryDataProvider::from_df(&df).to_arc()),
+        symbol: "btc_usd".to_string(),
+        timeframe: Timeframe::Days(1),
+    });
+
+    let mut strategy_runner = StrategyRunner::new();
+
+    let res = strategy_runner.run(
+        &asset_registry,
+        vec![StrategyRunnerItem {
+            assets: vec!["btc_1d".to_string()],
+            periods: None,
+            target_fc: Box::new(|config: StrategyRunnerTargetFactoryConfig| {
+                let ctx = Context::new(config.data_provider.clone());
+                let rsi =
+                    <ForcedInput<StrategySignal> as Incremental<&Strategy, StrategySignal>>::to_box(
+                        ForcedInput::new(
+                            ctx.clone(),
+                            Chained::new(
+                                ctx.clone(),
+                                RelativeStrengthIndex::new(
+                                    ctx.clone(),
+                                    RelativeStrengthIndexConfig::default(ctx.clone()),
+                                )
+                                .to_box(),
+                                RelativeStrengthIndexStrategy::new(
+                                    ctx.clone(),
+                                    RelativeStrengthIndexStrategyConfig::default(),
+                                )
+                                .to_box(),
+                            )
+                            .to_box(),
+                        ),
+                    );
+
+                return Box::new(ExampleRunnerTarget::new(ctx.clone(), rsi));
+            }),
+        }],
     );
 
-    ctx.bar.index.set(0);
-    strategy.next(StrategySignal::Neutral);
-    strategy.next(StrategySignal::Long);
-    println!(
-        "[0]: {:?} | {:?}",
-        strategy.current_dir, strategy.metrics.position_size
-    );
+    for item in res {
+        let target = item
+            .target
+            .as_ref()
+            .as_any()
+            .downcast_ref::<ExampleRunnerTarget>()
+            .unwrap();
+        println!(
+            "{}: {}",
+            item.asset_id, target.strategy.metrics.closed_trades
+        )
+    }
 
-    ctx.bar.index.set(1);
-    strategy.next(StrategySignal::Neutral);
-    strategy.next(StrategySignal::Neutral);
-    println!(
-        "[1]: {:?} | {:?}",
-        strategy.current_dir, strategy.metrics.position_size
-    );
+    // let mut strategy = Strategy::new(
+    //     ctx.clone(),
+    //     StrategyConfig {
+    //         on_bar_close: false,
+    //         ..Default::default()
+    //     },
+    // );
+
+    // ctx.bar.index.set(0);
+    // strategy.next(StrategySignal::Hold);
+    // strategy.next(StrategySignal::Long);
+    // println!(
+    //     "[0]: {:?} | {:?}",
+    //     strategy.current_dir, strategy.metrics.position_size
+    // );
+
+    // ctx.bar.index.set(1);
+    // strategy.next(StrategySignal::Hold);
+    // strategy.next(StrategySignal::Hold);
+    // println!(
+    //     "[1]: {:?} | {:?}",
+    //     strategy.current_dir, strategy.metrics.position_size
+    // );
 
     // let chained = /*ForcedInput::new(
     //     ctx.clone(),*/

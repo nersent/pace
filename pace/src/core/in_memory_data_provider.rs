@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use polars::prelude::DataFrame;
 
-use super::data_provider::DataProvider;
+use super::{data_provider::DataProvider, timeframe::Timeframe};
 
 /// Implements `DataProvider`. Stores all data in memory.
 pub struct InMemoryDataProvider {
@@ -14,14 +14,22 @@ pub struct InMemoryDataProvider {
     pub time: Vec<Option<Duration>>,
     pub start_tick: usize,
     pub end_tick: usize,
+    pub timeframe: Timeframe,
+}
+
+impl InMemoryDataProvider {
+    pub fn with_timeframe(mut self, timeframe: Timeframe) -> Self {
+        self.timeframe = timeframe;
+        return self;
+    }
 }
 
 impl DataProvider for InMemoryDataProvider {
-    fn get_start_tick(&self) -> usize {
+    fn get_first_tick(&self) -> usize {
         return self.start_tick;
     }
 
-    fn get_end_tick(&self) -> usize {
+    fn get_last_tick(&self) -> usize {
         return self.end_tick;
     }
 
@@ -68,6 +76,23 @@ impl DataProvider for InMemoryDataProvider {
     fn get_volume_for_range(&self, start_index: usize, end_index: usize) -> &[f64] {
         return &self.volume[start_index..end_index + 1];
     }
+
+    fn find_tick(&self, seconds: u64) -> Option<usize> {
+        for i in self.get_first_tick()..self.get_last_tick() {
+            let time = self.get_time(i);
+            let next_time = self.get_time(i + 1);
+
+            if time.unwrap().as_secs() <= seconds && next_time.unwrap().as_secs() > seconds {
+                return Some(i);
+            }
+        }
+
+        return None;
+    }
+
+    fn get_timeframe(&self) -> Timeframe {
+        return self.timeframe;
+    }
 }
 
 impl InMemoryDataProvider {
@@ -91,6 +116,7 @@ impl InMemoryDataProvider {
             start_tick,
             end_tick,
             time,
+            timeframe: Timeframe::Unknown,
         };
     }
 
@@ -104,6 +130,7 @@ impl InMemoryDataProvider {
             start_tick: 0,
             end_tick: values.len() - 1,
             time: vec![None; values.len()],
+            timeframe: Timeframe::Unknown,
         };
     }
 }

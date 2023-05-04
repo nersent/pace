@@ -10,6 +10,7 @@ pub struct EquityMetricsData {
     pub equity: f64,
     pub equity_min: f64,
     pub equity_max: f64,
+    pub prev_equity: f64,
     /// Net current equity (initial capital + net profit)
     pub net_equity: f64,
     /// Lowest net equity value updated when trade is closed.
@@ -27,6 +28,7 @@ pub struct EquityMetricsData {
 impl EquityMetricsData {
     pub fn default(initial_capital: f64) -> Self {
         return Self {
+            prev_equity: initial_capital,
             equity: initial_capital,
             equity_min: initial_capital,
             equity_max: initial_capital,

@@ -133,6 +133,6 @@ impl Incremental<&AroonData, StrategySignal> for AroonStrategy {
             return StrategySignal::Short;
         }
 
-        return StrategySignal::Neutral;
+        return StrategySignal::Hold;
     }
 }

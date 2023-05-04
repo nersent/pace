@@ -13,6 +13,9 @@ pub trait Incremental<T, R> {
     {
         return Box::new(self);
     }
+
+    // /// Should be called before calling `next`
+    // fn next_bar(&mut self) {}
 }
 
 /// A substitute for `Default` trait from Rust `std`, but with a context as an argument.
@@ -67,3 +70,5 @@ impl<T, R> Incremental<T, R> for ForcedInput<R> {
         return self.inner.next(());
     }
 }
+
+pub type RunPeriod = (usize, usize);

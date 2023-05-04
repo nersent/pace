@@ -1,9 +1,11 @@
 use std::{sync::Arc, time::Duration};
 
+use super::timeframe::Timeframe;
+
 /// OHLCV data provider.
 pub trait DataProvider: 'static {
-    fn get_start_tick(&self) -> usize;
-    fn get_end_tick(&self) -> usize;
+    fn get_first_tick(&self) -> usize;
+    fn get_last_tick(&self) -> usize;
     fn get_open(&self, index: usize) -> f64;
     fn get_high(&self, index: usize) -> f64;
     fn get_low(&self, index: usize) -> f64;
@@ -15,6 +17,8 @@ pub trait DataProvider: 'static {
     fn get_low_for_range(&self, start_index: usize, end_index: usize) -> &[f64];
     fn get_close_for_range(&self, start_index: usize, end_index: usize) -> &[f64];
     fn get_volume_for_range(&self, start_index: usize, end_index: usize) -> &[f64];
+    fn find_tick(&self, seconds: u64) -> Option<usize>;
+    fn get_timeframe(&self) -> Timeframe;
     fn to_arc(self) -> AnyDataProvider
     where
         Self: Sized + Send + Sync,

@@ -109,6 +109,6 @@ impl Incremental<&VortexData, StrategySignal> for VortexStrategy {
             }
         }
 
-        return StrategySignal::Neutral;
+        return StrategySignal::Hold;
     }
 }

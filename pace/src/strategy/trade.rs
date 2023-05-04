@@ -1,6 +1,6 @@
 use colored::{ColoredString, Colorize};
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, FromPrimitive)]
 pub enum TradeDirection {
     Long = 0,
     Short = 1,
@@ -109,7 +109,7 @@ pub fn fill_size(equity: f64, current_price: f64) -> f64 {
 
 #[derive(PartialEq, Copy, Debug, Clone)]
 pub enum StrategySignal {
-    Neutral,
+    Hold,
     Long,
     Short,
     LongEntry,
@@ -189,7 +189,7 @@ impl StrategySignal {
 impl Into<i32> for StrategySignal {
     fn into(self) -> i32 {
         return match self {
-            StrategySignal::Neutral => 0,
+            StrategySignal::Hold => 0,
             StrategySignal::Long => 1,
             StrategySignal::Short => -1,
             StrategySignal::LongEntry => 2,
@@ -210,14 +210,14 @@ impl Into<f64> for StrategySignal {
 impl From<i32> for StrategySignal {
     fn from(value: i32) -> Self {
         return match value {
-            0 => StrategySignal::Neutral,
+            0 => StrategySignal::Hold,
             1 => StrategySignal::Long,
             -1 => StrategySignal::Short,
             2 => StrategySignal::LongEntry,
             -2 => StrategySignal::ShortEntry,
             3 => StrategySignal::LongExit,
             -3 => StrategySignal::ShortExit,
-            _ => StrategySignal::Neutral,
+            _ => StrategySignal::Hold,
         };
     }
 }
@@ -251,6 +251,6 @@ impl SignalFixture {
         if self.short_exits.contains(&tick) {
             return StrategySignal::ShortExit;
         }
-        return StrategySignal::Neutral;
+        return StrategySignal::Hold;
     }
 }

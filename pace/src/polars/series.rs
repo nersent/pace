@@ -9,6 +9,7 @@ use polars::{
 };
 
 use crate::{
+    core::trend::Trend,
     strategy::trade::{trade_direction_from_f64, StrategySignal, TradeDirection},
     utils::float::OptionFloatUtils,
 };
@@ -20,6 +21,7 @@ pub trait SeriesCastUtils {
     fn to_usize(&self) -> Vec<Option<usize>>;
     fn to_duration(&self) -> Vec<Option<Duration>>;
     fn to_signal(&self) -> Vec<StrategySignal>;
+    fn to_trend(&self) -> Vec<Trend>;
 }
 
 impl SeriesCastUtils for Series {
@@ -110,7 +112,7 @@ impl SeriesCastUtils for Series {
 
     fn to_signal(&self) -> Vec<StrategySignal> {
         return self
-            .cast(&DataType::Int32)
+            .cast(&DataType::Float64)
             .unwrap()
             .f64()
             .unwrap()
@@ -118,9 +120,23 @@ impl SeriesCastUtils for Series {
             .map(|val| {
                 let val = val.unwrap_nan();
                 if val.is_nan() {
-                    return StrategySignal::Neutral;
+                    return StrategySignal::Hold;
                 }
                 return StrategySignal::from(val);
+            })
+            .collect::<Vec<_>>();
+    }
+
+    fn to_trend(&self) -> Vec<Trend> {
+        return self
+            .cast(&DataType::Float64)
+            .unwrap()
+            .f64()
+            .unwrap()
+            .into_iter()
+            .map(|val| {
+                let val = val.unwrap_nan();
+                return Trend::from(val);
             })
             .collect::<Vec<_>>();
     }

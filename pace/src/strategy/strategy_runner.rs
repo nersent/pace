@@ -1,9 +1,12 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{any::Any, collections::HashMap, sync::Arc};
 
 use kdam::{tqdm, BarExt};
 
 use crate::core::{
-    asset::Asset, context::Context, data_provider::AnyDataProvider, incremental::Incremental,
+    asset::{Asset, AssetRegistry},
+    context::Context,
+    data_provider::{self, AnyDataProvider},
+    incremental::{Incremental, RunPeriod},
 };
 
 use super::{
@@ -12,58 +15,29 @@ use super::{
     trade::StrategySignal,
 };
 
-pub type StrategyRunPeriod = (usize, usize);
-
-pub struct StrategyRunnerTarget<M> {
-    pub id: String,
-    pub assets: Vec<Asset>,
-    pub options: StrategyRunnerTargetOptions<M>,
+pub trait StrategyRunnerTarget {
+    fn next(&mut self, bar_index: usize);
+    fn on_start(&mut self) {}
+    fn on_finish(&mut self) {}
+    fn as_any(&self) -> &dyn Any;
 }
 
-pub trait StrategyRunnerTargetMetricsProvider<M>: for<'a> Incremental<&'a Strategy, ()> {
-    fn get_metrics(&self) -> M;
+pub struct StrategyRunnerResultItem {
+    pub target: Box<dyn StrategyRunnerTarget>,
+    pub asset_id: String,
+    pub run_period: RunPeriod,
 }
 
-impl StrategyRunnerTargetMetricsProvider<TradingViewMetricsData> for TradingViewMetrics {
-    fn get_metrics(&self) -> TradingViewMetricsData {
-        return self.data.clone();
-    }
+pub struct StrategyRunnerTargetFactoryConfig<'a> {
+    pub asset: &'a Asset,
+    pub data_provider: AnyDataProvider,
+    pub run_period: &'a RunPeriod,
 }
 
-pub type StrategyRunnerTargetFactory = Box<
-    dyn Fn(
-        Context,
-        AnyDataProvider,
-        &Strategy,
-        &Asset,
-    ) -> Box<dyn for<'a> Incremental<(bool, &'a Strategy), StrategySignal>>,
->;
-
-pub type StrategyRunnerTargetMetricsProviderFactory<M> = Box<
-    dyn Fn(
-        Context,
-        AnyDataProvider,
-        &Strategy,
-        &Asset,
-    ) -> Box<dyn for<'a> StrategyRunnerTargetMetricsProvider<M>>,
->;
-
-pub struct StrategyRunnerTargetOptions<M> {
-    pub data_provider: Box<dyn Fn(&Asset) -> AnyDataProvider>,
-    pub ctx: Box<dyn Fn(AnyDataProvider, &Asset) -> Context>,
-    pub strategy: Box<dyn Fn(Context, AnyDataProvider, &Asset) -> Strategy>,
-    pub target: StrategyRunnerTargetFactory,
-    pub metrics_provider: Option<StrategyRunnerTargetMetricsProviderFactory<M>>,
-    pub periods: Box<dyn Fn(Context, AnyDataProvider, &Asset) -> Vec<StrategyRunPeriod>>,
-}
-
-pub struct StrategyRunnerItem<M> {
-    pub id: String,
-    pub asset: Asset,
-    pub strategy: Strategy,
-    pub period: StrategyRunPeriod,
-    pub target: Box<dyn for<'a> Incremental<(bool, &'a Strategy), StrategySignal>>,
-    pub metrics: Option<Box<dyn for<'a> StrategyRunnerTargetMetricsProvider<M>>>,
+pub struct StrategyRunnerItem {
+    pub assets: Vec<String>,
+    pub periods: Option<Vec<RunPeriod>>,
+    pub target_fc: Box<dyn Fn(StrategyRunnerTargetFactoryConfig) -> Box<dyn StrategyRunnerTarget>>,
 }
 
 pub struct StrategyRunner {}
@@ -73,82 +47,74 @@ impl StrategyRunner {
         return Self {};
     }
 
-    pub fn run<M>(&self, targets: Vec<StrategyRunnerTarget<M>>) -> Vec<StrategyRunnerItem<M>> {
-        let mut data_provider_cache: HashMap<String, AnyDataProvider> = HashMap::new();
+    pub fn run(
+        &self,
+        asset_registry: &AssetRegistry,
+        items: Vec<StrategyRunnerItem>,
+    ) -> Vec<StrategyRunnerResultItem> {
         let mut total: usize = 0;
 
-        for target in &targets {
-            for asset in target.assets.iter() {
-                let data_provider: AnyDataProvider = (target.options.data_provider)(asset);
-                data_provider_cache.insert(asset.hash.clone(), data_provider);
-
-                total += 1;
-            }
+        for item in &items {
+            total += item.assets.len() + item.periods.as_ref().map(|r| r.len()).unwrap_or(1);
         }
 
         let mut pb = tqdm!(total = total);
 
-        let mut finished_items: Vec<StrategyRunnerItem<M>> = Vec::new();
+        let mut res: Vec<StrategyRunnerResultItem> = vec![];
 
-        for target in &targets {
-            for asset in target.assets.iter() {
-                let data_provider = data_provider_cache.get(&asset.hash).unwrap();
-                let ctx = (target.options.ctx)(data_provider.clone(), asset);
+        let mut _run =
+            |item: &StrategyRunnerItem, asset_id: &str, run_period: Option<RunPeriod>| {
+                let asset = asset_registry.map.get(asset_id).unwrap();
+                let data_provider = Arc::clone(asset.data_provider.as_ref().unwrap());
 
-                let periods =
-                    (target.options.periods)(ctx.clone(), Arc::clone(&data_provider), asset);
+                let first_tick = data_provider.get_first_tick();
+                let last_tick = data_provider.get_last_tick();
 
-                for period in &periods {
-                    let target_id = target.id.clone();
+                let run_period = if run_period.is_some() {
+                    run_period.unwrap()
+                } else {
+                    (first_tick, last_tick)
+                };
 
-                    let mut strategy =
-                        (target.options.strategy)(ctx.clone(), Arc::clone(&data_provider), asset);
+                let fc_config = StrategyRunnerTargetFactoryConfig {
+                    asset: &asset.asset,
+                    data_provider,
+                    run_period: &run_period,
+                };
 
-                    let mut metrics = (target.options.metrics_provider).as_ref().map(|f| {
-                        let mut metrics_provider =
-                            f(ctx.clone(), Arc::clone(&data_provider), &strategy, &asset);
-                        return metrics_provider;
-                    });
-                    let mut target = (target.options.target)(
-                        ctx.clone(),
-                        Arc::clone(&data_provider),
-                        &strategy,
-                        asset,
-                    );
+                let mut target = (item.target_fc)(fc_config);
 
-                    for i in ctx.first_bar_index..=ctx.last_bar_index {
-                        ctx.bar.index.set(i);
+                target.on_start();
 
-                        let mut signal: StrategySignal = StrategySignal::Neutral;
-                        let in_range = i >= period.0 && i <= period.1;
+                for i in first_tick..=last_tick {
+                    target.next(i);
+                }
 
-                        signal = target.next((in_range, &strategy));
+                target.on_finish();
 
-                        if in_range {
-                            strategy.next(signal);
+                res.push(StrategyRunnerResultItem {
+                    target,
+                    asset_id: asset_id.to_string(),
+                    run_period: run_period.clone(),
+                });
 
-                            if let Some(metrics) = metrics.as_mut() {
-                                metrics.next(&strategy);
-                            }
-                        }
+                pb.update(1);
+            };
+
+        for item in &items {
+            for asset_id in &item.assets {
+                if let Some(periods) = &item.periods {
+                    for run_period in periods {
+                        _run(item, asset_id, Some(*run_period));
                     }
-
-                    finished_items.push(StrategyRunnerItem {
-                        id: target_id,
-                        asset: asset.clone(),
-                        strategy,
-                        period: period.clone(),
-                        target,
-                        metrics,
-                    });
-
-                    pb.update(1);
+                } else {
+                    _run(item, asset_id, None);
                 }
             }
         }
 
         pb.clear();
 
-        return finished_items;
+        return res;
     }
 }

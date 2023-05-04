@@ -114,6 +114,6 @@ impl Incremental<f64, StrategySignal> for AwesomeOscillatorStrategy {
         if is_cross_under {
             return StrategySignal::Short;
         }
-        return StrategySignal::Neutral;
+        return StrategySignal::Hold;
     }
 }

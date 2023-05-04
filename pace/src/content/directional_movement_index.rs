@@ -177,6 +177,6 @@ impl Incremental<&DirectionalMovementIndexData, StrategySignal>
             }
         }
 
-        return StrategySignal::Neutral;
+        return StrategySignal::Hold;
     }
 }

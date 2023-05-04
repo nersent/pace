@@ -94,6 +94,7 @@ pub struct Strategy {
     pub metrics: StrategyMetrics,
     unfilled_signal: StrategySignal,
     pub current_dir: Option<TradeDirection>,
+    pub prev_equity: f64,
 }
 
 impl Strategy {
@@ -101,33 +102,28 @@ impl Strategy {
         return Self {
             ctx: ctx.clone(),
             trades: Vec::new(),
-            unfilled_signal: StrategySignal::Neutral,
+            unfilled_signal: StrategySignal::Hold,
             current_dir: None,
             events: StrategyEvents {
                 on_trade_entry: None,
                 on_trade_exit: None,
             },
             metrics: StrategyMetrics::default(config.initial_capital),
+            prev_equity: config.initial_capital,
             config,
         };
     }
-}
 
-impl Incremental<StrategySignal, ()> for Strategy {
-    fn next(&mut self, signal: StrategySignal) {
+    fn process_orderbook(&mut self) {
         let bar = &self.ctx.bar;
         let tick = bar.index();
         let open = bar.open();
         let close = bar.close();
 
-        if self.config.on_bar_close {
-            self.unfilled_signal = signal;
-        }
-
         self.events.on_trade_entry = None;
         self.events.on_trade_exit = None;
 
-        if self.unfilled_signal != StrategySignal::Neutral {
+        if self.unfilled_signal != StrategySignal::Hold {
             let mut close_trade = false;
             let mut new_trade_dir: Option<TradeDirection> = None;
 
@@ -161,12 +157,12 @@ impl Incremental<StrategySignal, ()> for Strategy {
                 }
 
                 if self.unfilled_signal == StrategySignal::LongExit && dir == TradeDirection::Long {
-                    close_trade = true;
+                    close_trade = !last_trade.is_closed;
                 }
 
                 if self.unfilled_signal == StrategySignal::ShortExit && dir == TradeDirection::Short
                 {
-                    close_trade = true;
+                    close_trade = !last_trade.is_closed;
                 }
 
                 if let Some(_new_trade_dir) = new_trade_dir {
@@ -179,6 +175,10 @@ impl Incremental<StrategySignal, ()> for Strategy {
                 }
 
                 if close_trade {
+                    if last_trade.is_closed {
+                        panic!("Trying to close already closed trade");
+                    }
+
                     let exit_price = orderbook_price;
 
                     last_trade.exit_price = exit_price;
@@ -246,11 +246,7 @@ impl Incremental<StrategySignal, ()> for Strategy {
                 }
             }
 
-            self.unfilled_signal = StrategySignal::Neutral;
-        }
-
-        if !self.config.on_bar_close {
-            self.unfilled_signal = signal;
+            self.unfilled_signal = StrategySignal::Hold;
         }
 
         if let Some(last_trade) = self.trades.last_mut() {
@@ -259,7 +255,26 @@ impl Incremental<StrategySignal, ()> for Strategy {
             }
         }
 
+        self.prev_equity = self.metrics.equity;
+
         self.metrics.equity =
             self.config.initial_capital + self.metrics.net_profit + self.metrics.open_profit;
+    }
+
+    pub fn next_bar(&mut self) {
+        if !self.config.on_bar_close {
+            self.process_orderbook();
+        }
+    }
+}
+
+impl Incremental<StrategySignal, ()> for Strategy {
+    fn next(&mut self, signal: StrategySignal) {
+        if self.config.on_bar_close {
+            self.unfilled_signal = signal;
+            self.process_orderbook();
+        } else {
+            self.unfilled_signal = signal;
+        }
     }
 }

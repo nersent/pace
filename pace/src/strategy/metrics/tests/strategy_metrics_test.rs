@@ -247,18 +247,18 @@ mod tests {
                 equity_metrics: EquityMetrics::new(ctx.clone(), &strategy),
                 tradingview_metrics: TradingViewMetrics::new(
                     ctx.clone(),
-                    &strategy,
                     TradingViewMetricsConfig {
                         risk_free_rate: 0.0,
                     },
+                    &strategy,
                 ),
                 cobra_metrics: CobraMetrics::new(
                     ctx.clone(),
-                    &strategy,
                     CobraMetricsConfig {
                         estimated: false,
                         returns_start_year: Some(2018), // returns_start_year: Some(2018),
                     },
+                    &strategy,
                 ),
                 strategy,
                 long_entries,
@@ -270,7 +270,7 @@ mod tests {
         pub fn next(&mut self) -> TestMetricsPayload {
             let tick = self.ctx.bar.index();
 
-            let mut signal = StrategySignal::Neutral;
+            let mut signal = StrategySignal::Hold;
 
             if self.long_entries.contains(&tick) {
                 signal = StrategySignal::Long;
@@ -280,7 +280,7 @@ mod tests {
 
             let initial_capital = self.strategy.config.initial_capital;
 
-            self.strategy.next(signal);
+            self.strategy.next_bar();
 
             let prev_max_run_up = self.tradingview_metrics.data.max_run_up;
 
@@ -300,7 +300,7 @@ mod tests {
                 )
             }
 
-            return TestMetricsPayload {
+            let res = TestMetricsPayload {
                 base: TestBaseMetrics {
                     equity: equity_metrics.equity,
                     net_profit: tradingview_metrics.net_profit,
@@ -363,6 +363,10 @@ mod tests {
                     max_run_up_percent: self.max_run_up_percent,
                 },
             };
+
+            self.strategy.next(signal);
+
+            return res;
         }
     }
 

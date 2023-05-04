@@ -254,7 +254,7 @@ pub struct TradingViewMetrics {
 }
 
 impl TradingViewMetrics {
-    pub fn new(ctx: Context, strategy: &Strategy, config: TradingViewMetricsConfig) -> Self {
+    pub fn new(ctx: Context, config: TradingViewMetricsConfig, strategy: &Strategy) -> Self {
         let initial_capital = strategy.config.initial_capital;
         return Self {
             ctx: ctx.clone(),

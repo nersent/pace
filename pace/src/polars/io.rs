@@ -27,7 +27,7 @@ pub fn read_df(path: &Path) -> DataFrame {
         Some("parquet") => read_df_parquet(path),
         Some("csv") => read_df_csv(path),
         Some(&_) => panic!("Unsupported file type"),
-        None => panic!("Unsupported file type"),
+        None => panic!("Unsupported file type for path {:?}", path.display()),
     }
 }
 
@@ -38,7 +38,7 @@ pub fn save_df(df: &mut DataFrame, path: &Path) {
         Some("parquet") => save_df_parquet(df, path),
         Some("csv") => save_df_csv(df, path),
         Some(&_) => panic!("Unsupported file type"),
-        None => panic!("Unsupported file type"),
+        None => panic!("Unsupported file type for path {:?}", path.display()),
     };
 }
 

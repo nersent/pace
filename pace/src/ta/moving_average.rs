@@ -16,6 +16,17 @@ pub enum MaKind {
     SWMA,
 }
 
+impl Into<&'static str> for MaKind {
+    fn into(self) -> &'static str {
+        return match self {
+            MaKind::SMA => "sma",
+            MaKind::EMA => "ema",
+            MaKind::RMA => "rma",
+            MaKind::SWMA => "swma",
+        };
+    }
+}
+
 /// A simplified way of creating a moving average component.
 pub struct Ma {
     pub length: usize,

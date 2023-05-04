@@ -202,7 +202,7 @@ pub struct CobraMetrics {
 }
 
 impl CobraMetrics {
-    pub fn new(ctx: Context, strategy: &Strategy, config: CobraMetricsConfig) -> Self {
+    pub fn new(ctx: Context, config: CobraMetricsConfig, strategy: &Strategy) -> Self {
         let initial_capital = strategy.config.initial_capital;
         return Self {
             ctx: ctx.clone(),

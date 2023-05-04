@@ -113,9 +113,9 @@ mod tests {
             let signal: StrategySignal = match trade_direction {
                 Some(TradeDirection::Long) => StrategySignal::Long,
                 Some(TradeDirection::Short) => StrategySignal::Short,
-                None => StrategySignal::Neutral,
+                None => StrategySignal::Hold,
             };
-
+            target.next_bar();
             target.next(signal);
             let trades = target
                 .trades
@@ -136,8 +136,9 @@ mod tests {
         let mut snapshot = ArraySnapshot::<Option<Vec<TestTradePayload>>>::new();
         for _ in target.ctx.clone() {
             let tick = target.ctx.bar.index();
-            let signal = trades[tick].unwrap_or(StrategySignal::Neutral);
+            let signal = trades[tick].unwrap_or(StrategySignal::Hold);
 
+            target.next_bar();
             let output = target.next(signal);
             let trades = target
                 .trades
@@ -162,8 +163,8 @@ mod tests {
         let mut snapshot = ArraySnapshot::<Option<(f64, f64)>>::new();
         for _ in target.ctx.clone() {
             let tick = target.ctx.bar.index();
-            let signal = trades[tick].unwrap_or(StrategySignal::Neutral);
-
+            let signal = trades[tick].unwrap_or(StrategySignal::Hold);
+            target.next_bar();
             target.next(signal);
             snapshot.push(Some((target.metrics.equity, target.metrics.open_profit)));
         }
@@ -9677,6 +9678,85 @@ mod tests {
     }
 
     #[test]
+    fn trades_history_next_bar_open_edge_cases() {
+        let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
+            1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0,
+        ]))));
+
+        _test_trades_history(
+            &mut Strategy::new(
+                ctx.clone(),
+                StrategyConfig {
+                    on_bar_close: false,
+                    initial_capital: 1000.0,
+                    buy_with_equity: true,
+                    ..StrategyConfig::default()
+                },
+            ),
+            &[
+                // 0
+                None,
+                // 1
+                None,
+                // 2
+                Some(StrategySignal::Long),
+                // 3; Duplicated
+                Some(StrategySignal::Long),
+                // 4; Duplicated
+                Some(StrategySignal::Long),
+                // 5
+                None,
+                // 6
+                None,
+            ],
+            &[
+                // 0
+                Some(vec![]),
+                // 1
+                Some(vec![]),
+                // 2
+                Some(vec![]),
+                // 3
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Long,
+                    is_closed: false,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: None,
+                    exit_tick: None,
+                }]),
+                // 4
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Long,
+                    is_closed: false,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: None,
+                    exit_tick: None,
+                }]),
+                // 5
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Long,
+                    is_closed: false,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: None,
+                    exit_tick: None,
+                }]),
+                // 6
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Long,
+                    is_closed: false,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: None,
+                    exit_tick: None,
+                }]),
+            ],
+        );
+    }
+
+    #[test]
     fn equity_empty_on_bar_close_continous() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
             1.0, 2.0, 3.0, 4.0, 5.0,
@@ -10700,18 +10780,20 @@ mod tests {
             let signal: StrategySignal = match trade_direction {
                 Some(TradeDirection::Long) => StrategySignal::Long,
                 Some(TradeDirection::Short) => StrategySignal::Short,
-                None => StrategySignal::Neutral,
+                None => StrategySignal::Hold,
             };
 
             let initial_capital = self.strategy.config.initial_capital;
+            self.strategy.next_bar();
 
-            self.strategy.next(signal);
-
-            return TestExecutionPayload {
+            let res = TestExecutionPayload {
                 open_profit: self.strategy.metrics.open_profit,
                 net_profit: self.strategy.metrics.net_profit,
                 position_size: self.strategy.metrics.position_size,
             };
+            self.strategy.next(signal);
+
+            return res;
         }
     }
 

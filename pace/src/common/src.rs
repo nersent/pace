@@ -21,6 +21,21 @@ pub enum SrcKind {
     HL2,
 }
 
+impl Into<&'static str> for SrcKind {
+    fn into(self) -> &'static str {
+        return match self {
+            SrcKind::Open => "open",
+            SrcKind::High => "high",
+            SrcKind::Low => "low",
+            SrcKind::Close => "close",
+            SrcKind::Volume => "volume",
+            SrcKind::OHLC4 => "ohlc4",
+            SrcKind::HLC3 => "hlc3",
+            SrcKind::HL2 => "hl2",
+        };
+    }
+}
+
 pub fn ohlc4(open: f64, high: f64, low: f64, close: f64) -> f64 {
     return (open + high + low + close) / 4.0;
 }

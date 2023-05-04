@@ -112,6 +112,6 @@ impl Incremental<&RelativeVigorIndexData, StrategySignal> for RelativeVigorIndex
             }
         }
 
-        return StrategySignal::Neutral;
+        return StrategySignal::Hold;
     }
 }
