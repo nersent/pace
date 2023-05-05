@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union
 from openpyxl import load_workbook
 from openpyxl.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 import os
 from pycel import ExcelCompiler
-from api.src.worksheet_utils import format_coordinate, get_cell_coordinate_below, parse_coordinate
+from api.src.worksheet_utils import CellPostion, format_coordinate, get_positioned_cell, parse_coordinate
 from nersent_pace_py import nersent_pace_py as pace
 
 
@@ -23,6 +23,35 @@ def format_input_column_id(column_id: str) -> str:
 
 def format_output_column_id(column_id: str) -> str:
     return f"<nersent_pace::output::{column_id}>"
+
+
+def format_stats_column_id(column_id: str) -> str:
+    return f"<nersent_pace::metrics::{column_id}>"
+
+
+def format_target_annotation(target: str) -> str:
+    return f"<nersent_pace::target::{target}>"
+
+
+def get_cell_position(value: str) -> CellPostion:
+    if value is None:
+        return CellPostion.Bottom
+
+    value = value.lower()
+
+    if format_target_annotation("right") in value:
+        return CellPostion.Right
+
+    if format_target_annotation("left") in value:
+        return CellPostion.Left
+
+    if format_target_annotation("top") in value:
+        return CellPostion.Top
+
+    if format_target_annotation("bottom") in value:
+        return CellPostion.Bottom
+
+    return CellPostion.Bottom
 
 
 class ExcelBacktester():
@@ -64,8 +93,31 @@ class ExcelBacktester():
             "returns",
             "direction",
             "logs",
-            "pinescript"
+            "pinescript",
+            "omega_ratio",
+            "sharpe_ratio",
+            "sortino_ratio",
+            "profitable",
+            "max_drawdown",
+            "max_drawdown_pct",
+            "max_run_up",
+            "max_run_up_pct",
+            "net_profit",
+            "net_profit_pct",
+            "gross_profit",
+            "gross_profit_pct",
+            "gross_loss",
+            "gross_loss_pct",
+            "closed_trades",
+            "winning_trades",
+            "losing_trades",
+            "profit_factor",
+            "equity_curve_max_drawdown_pct",
+            "intra_trade_max_drawdown_pct",
+            "net_profit_l_s_ratio"
         ]
+
+        stats_columns = [*output_columns]
 
         self.config_columns = list(
             map(format_config_column_id, config_columns))
@@ -74,12 +126,15 @@ class ExcelBacktester():
             map(format_input_column_id, input_columns))
         self.output_columns = list(
             map(format_output_column_id, output_columns))
+        self.stats_columns = list(
+            map(format_stats_column_id, stats_columns))
 
         self.columns = [
             *self.config_columns,
             *self.data_columns,
             *self.input_columns,
-            *self.output_columns
+            *self.output_columns,
+            *self.stats_columns
         ]
 
     def load(self, path: str, worksheet_name: str):
@@ -118,6 +173,9 @@ class ExcelBacktester():
                 raise Exception(
                     f"Could not find data column {column_id} in worksheet")
 
+        print("Column coordinates:")
+        print(column_coordinate_map)
+
         column_to_length_map: dict[str, int] = {}
 
         for column_id in self.data_columns:
@@ -129,6 +187,9 @@ class ExcelBacktester():
                     print(f"[{column_id}]: {i}")
                     break
                 column_to_length_map[column_id] = i
+
+        print("Column lengths:")
+        print(column_to_length_map)
 
         data_length: Optional[int] = None
 
@@ -149,7 +210,7 @@ class ExcelBacktester():
 
             for i in range(row + 1, data_length + 2):
                 cell = self.worksheet[column + str(i)]
-                
+
                 if cell is None or cell.value is None:
                     break
 
@@ -158,7 +219,6 @@ class ExcelBacktester():
                 else:
                     data[column_id].append(float(cell.value))
 
-        # print(column_coordinate_map)
         # print(data_length)
 
         for column_id in data:
@@ -228,28 +288,49 @@ class ExcelBacktester():
         }
 
         if on_bar_close_column in column_coordinate_map:
-            coordinate = format_coordinate(get_cell_coordinate_below(
-                column_coordinate_map[on_bar_close_column]))
-            backtest_config["on_bar_close"] = int(
-                self.worksheet[coordinate].value) == 1
+            coordinate = column_coordinate_map[on_bar_close_column]
+            value = self.worksheet[format_coordinate(coordinate)]
+            target_position = get_cell_position(value.value)
+            target_cell = get_positioned_cell(coordinate, target_position)
+            target_cell_coordinate = format_coordinate(target_cell)
+            target_cell_value = self.worksheet[target_cell_coordinate].value
+
+            if target_cell_value is not None:
+                backtest_config["on_bar_close"] = int(target_cell_value) == 1
 
         if initial_capital_column in column_coordinate_map:
-            coordinate = format_coordinate(get_cell_coordinate_below(
-                column_coordinate_map[initial_capital_column]))
-            backtest_config["initial_capital"] = float(
-                self.worksheet[coordinate].value)
+            coordinate = column_coordinate_map[initial_capital_column]
+            value = self.worksheet[format_coordinate(coordinate)]
+            target_position = get_cell_position(value.value)
+            target_cell = get_positioned_cell(coordinate, target_position)
+            target_cell_coordinate = format_coordinate(target_cell)
+            target_cell_value = self.worksheet[target_cell_coordinate].value
+
+            if target_cell_value is not None:
+                backtest_config["initial_capital"] = float(target_cell_value)
 
         if buy_with_equity_column in column_coordinate_map:
-            coordinate = format_coordinate(get_cell_coordinate_below(
-                column_coordinate_map[buy_with_equity_column]))
-            backtest_config["buy_with_equity"] = int(
-                self.worksheet[coordinate].value) == 1
+            coordinate = column_coordinate_map[buy_with_equity_column]
+            value = self.worksheet[format_coordinate(coordinate)]
+            target_position = get_cell_position(value.value)
+            target_cell = get_positioned_cell(coordinate, target_position)
+            target_cell_coordinate = format_coordinate(target_cell)
+            target_cell_value = self.worksheet[target_cell_coordinate].value
+
+            if target_cell_value is not None:
+                backtest_config["buy_with_equity"] = int(
+                    target_cell_value) == 1
 
         if risk_free_rate_column in column_coordinate_map:
-            coordinate = format_coordinate(get_cell_coordinate_below(
-                column_coordinate_map[risk_free_rate_column]))
-            backtest_config["risk_free_rate"] = float(
-                self.worksheet[coordinate].value)
+            coordinate = column_coordinate_map[risk_free_rate_column]
+            value = self.worksheet[format_coordinate(coordinate)]
+            target_position = get_cell_position(value.value)
+            target_cell = get_positioned_cell(coordinate, target_position)
+            target_cell_coordinate = format_coordinate(target_cell)
+            target_cell_value = self.worksheet[target_cell_coordinate].value
+
+            if target_cell_value is not None:
+                backtest_config["risk_free_rate"] = float(target_cell_value)
 
         print(backtest_config)
 
@@ -257,6 +338,49 @@ class ExcelBacktester():
             data_provider, backtest_config, signals)
 
         column_update_map: dict[str, Union[str, int, float]] = {}
+
+        def unwrap_bar_value(id: str, bar) -> Optional[Any]:
+            if id is None:
+                raise Exception("id is None")
+            if bar is None:
+                return None
+
+            target_ids = {
+                "tick": bar.tick,
+                "time": bar.time,
+                "equity": bar.equity,
+                "net_equity": bar.net_equity,
+                "open_profit": bar.open_profit,
+                "position_size": bar.position_size,
+                "returns": bar.returns,
+                "direction": bar.direction,
+                "logs": bar.logs,
+                "omega_ratio": bar.omega_ratio,
+                "sharpe_ratio": bar.sharpe_ratio,
+                "sortino_ratio": bar.sortino_ratio,
+                "profitable": bar.profitable,
+                "max_drawdown": bar.max_drawdown,
+                "max_drawdown_pct": bar.max_drawdown_percent,
+                "max_run_up": bar.max_run_up,
+                "max_run_up_pct": bar.max_run_up_percent,
+                "net_profit": bar.net_profit,
+                "net_profit_pct": bar.net_profit_percent,
+                "gross_profit": bar.gross_profit,
+                "gross_profit_pct": bar.gross_profit_percent,
+                "gross_loss": bar.gross_loss,
+                "gross_loss_pct": bar.gross_loss_percent,
+                "closed_trades": bar.closed_trades,
+                "winning_trades": bar.winning_trades,
+                "losing_trades": bar.losing_trades,
+                "profit_factor": bar.profit_factor,
+                "equity_curve_max_drawdown_pct": bar.equity_curve_max_drawdown,
+                "intra_trade_max_drawdown_pct": bar.intra_trade_max_drawdown,
+                "net_profit_l_s_ratio": bar.net_profit_l_s_ratio
+            }
+
+            for (target_id, value) in target_ids.items():
+                if format_output_column_id(target_id) == id or format_stats_column_id(target_id) == id:
+                    return value
 
         for (i, bar) in enumerate(backtest_res.bars):
             for id in self.output_columns:
@@ -266,31 +390,43 @@ class ExcelBacktester():
                 (column, start_row) = column_coordinate_map[id]
                 target_coordinate = f"{column}{start_row + i + 1}"
 
-                if id == format_output_column_id("tick"):
-                    column_update_map[target_coordinate] = bar.tick
-                elif id == format_output_column_id("time"):
-                    column_update_map[target_coordinate] = bar.time
-                elif id == format_output_column_id("equity"):
-                    column_update_map[target_coordinate] = bar.equity
-                elif id == format_output_column_id("net_equity"):
-                    column_update_map[target_coordinate] = bar.net_equity
-                elif id == format_output_column_id("open_profit"):
-                    column_update_map[target_coordinate] = bar.open_profit
-                elif id == format_output_column_id("position_size"):
-                    column_update_map[target_coordinate] = bar.position_size
-                elif id == format_output_column_id("returns"):
-                    column_update_map[target_coordinate] = bar.returns
-                elif id == format_output_column_id("direction"):
-                    column_update_map[target_coordinate] = bar.direction
-                elif id == format_output_column_id("logs"):
-                    column_update_map[target_coordinate] = bar.logs
+                value = unwrap_bar_value(id, bar)
+                column_update_map[target_coordinate] = value
+
+        print("Computed data columns")
+
+        # iterate over stats_columns
+        for stat_column_id in self.stats_columns:
+            if stat_column_id not in column_coordinate_map:
+                continue
+
+            coordinate = column_coordinate_map[stat_column_id]
+            value = self.worksheet[format_coordinate(coordinate)]
+            target_position = get_cell_position(value.value)
+            target_cell = get_positioned_cell(coordinate, target_position)
+            target_coordinate = format_coordinate(target_cell)
+
+            last_bar = backtest_res.bars[-1]
+
+            value = unwrap_bar_value(stat_column_id, last_bar)
+            if value is None:
+                value = ""
+
+            column_update_map[target_coordinate] = value
+
+        print("Computed stast columns")
 
         pinescript_column = format_output_column_id("pinescript")
 
         if pinescript_column in column_coordinate_map:
-            target_coordinate = get_cell_coordinate_below(
-                column_coordinate_map[pinescript_column])
-            target_coordinate = format_coordinate(target_coordinate)
+            coordinate = column_coordinate_map[pinescript_column]
+            value = self.worksheet[format_coordinate(coordinate)]
+            target_position = get_cell_position(value.value)
+            target_cell = get_positioned_cell(coordinate, target_position)
+            target_coordinate = format_coordinate(target_cell)
+
             column_update_map[target_coordinate] = backtest_res.pinescript
+
+        print("Computed PineScript column")
 
         return column_update_map

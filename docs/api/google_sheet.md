@@ -12,9 +12,16 @@ https://pace.nersent.com/
 
 To use PACE with seamless Google Sheet integration, you need to add annotations to your Google Sheet to dedicated columns.
 
-### Config
+By default, for an annotated cell, the cell below will be modified or be used as a value.You can change this behavior by adding `<nersent_pace::target::POSITION>`
 
-Takes value from cell below the one annotated.
+where `POSITION` is:
+
+- top
+- bottom
+- left
+- right
+
+### Config
 
 - `<nersent_pace::config::on_bar_close>`
 
@@ -55,7 +62,7 @@ Same as with data annotations.
 
 ### Output
 
-Modifies cells below the one annotated with values.
+Modifies only one cell.
 
 - `<nersent_pace::output::time>`
 
@@ -80,6 +87,54 @@ Modifies cells below the one annotated with values.
 - `<nersent_pace::output::logs>` - used for debugging. Includes entry/exit events.
 
 - `<nersent_pace::output::pinescript>` - pinescript code for debugging to be copy-pasted in TradingView
+
+- `<nersent_pace::output::omega_ratio>`
+
+- `<nersent_pace::output::sharpe_ratio>`
+
+- `<nersent_pace::output::sortino_ratio>`
+
+- `<nersent_pace::output::profitable>`
+
+- `<nersent_pace::output::max_drawdown>`
+
+- `<nersent_pace::output::max_drawdown_pct>`
+
+- `<nersent_pace::output::max_run_up>`
+
+- `<nersent_pace::output::max_run_up_pct>`
+
+- `<nersent_pace::output::net_profit>`
+
+- `<nersent_pace::output::net_profit_pct>`
+
+- `<nersent_pace::output::gross_profit>`
+
+- `<nersent_pace::output::gross_profit_pct>`
+
+- `<nersent_pace::output::gross_loss>`
+
+- `<nersent_pace::output::gross_loss_pct>`
+
+- `<nersent_pace::output::closed_trades>`
+
+- `<nersent_pace::output::winning_trades>`
+
+- `<nersent_pace::output::losing_trades>`
+
+- `<nersent_pace::output::profit_factor>`
+
+- `<nersent_pace::output::equity_curve_max_drawdown_pct>`
+
+- `<nersent_pace::output::intra_trade_max_drawdown_pct>`
+
+- `<nersent_pace::output::net_profit_l_s_ratio>`
+
+### Metrics
+
+Same as with output annotations.
+
+- `<nersent_pace::metrics::profitable>`
 
 ## Setup
 

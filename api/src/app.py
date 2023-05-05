@@ -1,4 +1,5 @@
 import os
+import traceback
 from typing import Optional
 from flask import Flask, request, jsonify
 import gspread
@@ -63,10 +64,12 @@ def google_sheets():
 
         _clean()
 
-        return jsonify({"message": "Success"}), 200
+        return jsonify({"success": True, "message": "Success"}), 200
     except Exception as e:
         _clean()
-        return jsonify({"message": str(e)}), 500
+        # raise e
+        print(e)
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
 @app.route('/api/version', methods=['GET'])

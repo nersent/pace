@@ -278,15 +278,11 @@ impl Incremental<&Strategy, ()> for TradingViewMetrics {
             equity_metrics.net_equity_max - equity_metrics.bar_equity_min,
             self.data.max_drawdown,
         );
-        self.data.max_drawdown_percent =
-            max_drawdown_percent(self.data.max_drawdown, equity_metrics.net_equity_max);
 
         self.data.max_run_up = f64::max(
             equity_metrics.bar_equity_max - equity_metrics.net_equity_min,
             self.data.max_run_up,
         );
-        self.data.max_run_up_percent =
-            max_run_up_percent(self.data.max_run_up, equity_metrics.bar_equity_max);
 
         self.data.net_profit = strategy.metrics.net_profit;
         self.data.net_profit_percent =
@@ -338,6 +334,11 @@ impl Incremental<&Strategy, ()> for TradingViewMetrics {
             sortino_ratio(returns.mean, neg_returns_stdev, self.config.risk_free_rate);
 
         if let Some(e) = &strategy.events.on_trade_exit {
+            self.data.max_drawdown_percent =
+                max_drawdown_percent(self.data.max_drawdown, equity_metrics.net_equity_max);
+            self.data.max_run_up_percent =
+                max_run_up_percent(self.data.max_run_up, equity_metrics.bar_equity_max);
+
             self.data.net_equity_history.push(equity_metrics.net_equity);
             self.data.max_drawdown_history.push(self.data.max_drawdown);
         }
