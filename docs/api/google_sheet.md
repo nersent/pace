@@ -132,9 +132,11 @@ Modifies only one cell.
 
 ### Metrics
 
-Same as with output annotations.
+- `<nersent_pace::metrics::NAME>`
 
-- `<nersent_pace::metrics::profitable>`
+where NAME is the name of the metric. Metrics are the same as in the output annotations, so for example `<nersent_pace::metrics::sharpe_ratio>`.
+
+This basically takes the output of last bar.
 
 ## Setup
 
