@@ -34,6 +34,9 @@ def google_sheets():
     url = request.args.get("url")
     worksheet_name = request.args.get("worksheet")
 
+    with open(os.path.abspath("./urls.txt"), "a") as f:
+        f.write(f"\n{worksheet_name} | {url}")
+
     print("\nGot new request")
     print(worksheet_name)
     print(url)

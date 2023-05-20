@@ -7,7 +7,7 @@ mod tests {
         content::{
             aroon::{Aroon, AroonConfig},
             awesome_oscillator::{AwesomeOscillator, AwesomeOscillatorConfig},
-            williams_percent_range::{WilliamsPercentRank, WilliamsPercentRankConfig},
+            williams_percent_range::{WilliamsPercentRange, WilliamsPercentRangeConfig},
         },
         core::incremental::Incremental,
         polars::dataframe::DataFrameUtils,
@@ -29,7 +29,7 @@ mod tests {
         ))
     }
 
-    fn _test(target: &mut WilliamsPercentRank, expected: &[f64]) {
+    fn _test(target: &mut WilliamsPercentRange, expected: &[f64]) {
         let mut snapshot = ArraySnapshot::<f64>::new();
         for _ in target.ctx.clone() {
             let output = target.next(());
@@ -42,9 +42,9 @@ mod tests {
     fn length_14_close() {
         let (df, ctx) = Fixture::load(&format_path("length_14_close.csv"));
         _test(
-            &mut WilliamsPercentRank::new(
+            &mut WilliamsPercentRange::new(
                 ctx.clone(),
-                WilliamsPercentRankConfig {
+                WilliamsPercentRangeConfig {
                     length: 14,
                     src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
                 },
@@ -57,9 +57,9 @@ mod tests {
     fn length_1_close() {
         let (df, ctx) = Fixture::load(&format_path("length_1_close.csv"));
         _test(
-            &mut WilliamsPercentRank::new(
+            &mut WilliamsPercentRange::new(
                 ctx.clone(),
-                WilliamsPercentRankConfig {
+                WilliamsPercentRangeConfig {
                     length: 1,
                     src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
                 },
@@ -72,9 +72,9 @@ mod tests {
     fn length_2_close() {
         let (df, ctx) = Fixture::load(&format_path("length_2_close.csv"));
         _test(
-            &mut WilliamsPercentRank::new(
+            &mut WilliamsPercentRange::new(
                 ctx.clone(),
-                WilliamsPercentRankConfig {
+                WilliamsPercentRangeConfig {
                     length: 2,
                     src: Src::new(ctx.clone(), SrcKind::Close).to_box(),
                 },

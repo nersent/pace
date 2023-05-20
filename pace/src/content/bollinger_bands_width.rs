@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use crate::{
     common::src::{AnySrc, Src, SrcKind},
     core::{
         context::Context,
+        features::{FeatureValue, Features, IncrementalFeatureBuilder},
         incremental::{Incremental, IncrementalDefault},
     },
     strategy::trade::TradeDirection,
@@ -66,5 +69,64 @@ impl Incremental<(), f64> for BollingerBandsWidth {
         let bbw = (upper - lower) / basis;
 
         return bbw;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BollingerBandsWidthFeatures {
+    pub value: f64,
+}
+
+impl Default for BollingerBandsWidthFeatures {
+    fn default() -> Self {
+        return Self { value: f64::NAN };
+    }
+}
+
+impl Features for BollingerBandsWidthFeatures {
+    fn flatten(&self) -> HashMap<String, FeatureValue> {
+        let mut map: HashMap<String, FeatureValue> = HashMap::new();
+
+        map.insert("value".to_string(), self.value.into());
+
+        return map;
+    }
+}
+
+pub struct BollingerBandsWidthFeatureBuilder {
+    pub ctx: Context,
+    pub inner: BollingerBandsWidth,
+    features: BollingerBandsWidthFeatures,
+}
+
+impl BollingerBandsWidthFeatureBuilder {
+    pub fn new(ctx: Context, inner: BollingerBandsWidth) -> Self {
+        return Self {
+            inner,
+            ctx,
+            features: BollingerBandsWidthFeatures::default(),
+        };
+    }
+}
+
+impl IncrementalFeatureBuilder<BollingerBandsWidthFeatures> for BollingerBandsWidthFeatureBuilder {
+    const NAMESPACE: &'static str = "ta::third_party::tradingview:::bollinger_bands_width";
+}
+
+impl Incremental<(), BollingerBandsWidthFeatures> for BollingerBandsWidthFeatureBuilder {
+    fn next(&mut self, _: ()) -> BollingerBandsWidthFeatures {
+        let value = self.inner.next(());
+
+        self.features.value = value;
+        return self.features.clone();
+    }
+}
+
+impl Incremental<(), Box<dyn Features>> for BollingerBandsWidthFeatureBuilder {
+    fn next(&mut self, _: ()) -> Box<dyn Features> {
+        return Box::new(Incremental::<(), BollingerBandsWidthFeatures>::next(
+            self,
+            (),
+        ));
     }
 }

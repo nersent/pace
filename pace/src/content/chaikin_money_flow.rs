@@ -1,8 +1,12 @@
+use std::collections::HashMap;
+
 use crate::{
     common::src::{AnySrc, Src, SrcKind},
     core::{
         context::Context,
+        features::{FeatureValue, Features, IncrementalFeatureBuilder},
         incremental::{Incremental, IncrementalDefault},
+        trend::Trend,
     },
     pinescript::common::PineScriptFloat64,
     strategy::trade::{StrategySignal, TradeDirection},
@@ -13,6 +17,9 @@ use crate::{
     },
     utils::float::Float64Utils,
 };
+
+pub static CHAIKIN_MONEY_FLOW_MIN_VALUE: f64 = -1.0;
+pub static CHAIKIN_MONEY_FLOW_MAX_VALUE: f64 = 1.0;
 
 pub struct ChaikinMoneyFlowConfig {
     pub length: usize,
@@ -112,5 +119,87 @@ impl Incremental<f64, StrategySignal> for ChaikinMoneyFlowStrategy {
             return StrategySignal::Short;
         }
         return StrategySignal::Hold;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ChaikinMoneyFlowFeatures {
+    pub value: f64,
+    pub trend: Option<Trend>,
+    pub signal: StrategySignal,
+}
+
+impl Default for ChaikinMoneyFlowFeatures {
+    fn default() -> Self {
+        return Self {
+            value: f64::NAN,
+            trend: None,
+            signal: StrategySignal::Hold,
+        };
+    }
+}
+
+impl Features for ChaikinMoneyFlowFeatures {
+    fn flatten(&self) -> HashMap<String, FeatureValue> {
+        let mut map: HashMap<String, FeatureValue> = HashMap::new();
+
+        map.insert("value".to_string(), self.value.into());
+        map.insert(
+            "trend".to_string(),
+            self.trend.map(|x| x.into()).unwrap_or(FeatureValue::Empty),
+        );
+        map.insert("signal".to_string(), self.signal.into());
+
+        return map;
+    }
+}
+
+pub struct ChaikinMoneyFlowFeatureBuilder {
+    pub ctx: Context,
+    pub inner: ChaikinMoneyFlow,
+    pub inner_strategy: ChaikinMoneyFlowStrategy,
+    features: ChaikinMoneyFlowFeatures,
+}
+
+impl ChaikinMoneyFlowFeatureBuilder {
+    pub fn new(
+        ctx: Context,
+        inner: ChaikinMoneyFlow,
+        inner_strategy: ChaikinMoneyFlowStrategy,
+    ) -> Self {
+        return Self {
+            inner,
+            inner_strategy,
+            ctx,
+            features: ChaikinMoneyFlowFeatures::default(),
+        };
+    }
+}
+
+impl IncrementalFeatureBuilder<ChaikinMoneyFlowFeatures> for ChaikinMoneyFlowFeatureBuilder {
+    const NAMESPACE: &'static str = "ta::third_party::tradingview:::chaikin_money_flow";
+}
+
+impl Incremental<(), ChaikinMoneyFlowFeatures> for ChaikinMoneyFlowFeatureBuilder {
+    fn next(&mut self, _: ()) -> ChaikinMoneyFlowFeatures {
+        let value = self.inner.next(());
+        let signal = self.inner_strategy.next(value);
+
+        self.features.value = value;
+        self.features.signal = signal;
+
+        if signal == StrategySignal::Long {
+            self.features.trend = Some(Trend::Bullish);
+        } else if signal == StrategySignal::Short {
+            self.features.trend = Some(Trend::Bearish);
+        }
+
+        return self.features.clone();
+    }
+}
+
+impl Incremental<(), Box<dyn Features>> for ChaikinMoneyFlowFeatureBuilder {
+    fn next(&mut self, _: ()) -> Box<dyn Features> {
+        return Box::new(Incremental::<(), ChaikinMoneyFlowFeatures>::next(self, ()));
     }
 }

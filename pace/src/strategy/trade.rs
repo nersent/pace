@@ -109,13 +109,14 @@ pub fn fill_size(equity: f64, current_price: f64) -> f64 {
 
 #[derive(PartialEq, Copy, Debug, Clone)]
 pub enum StrategySignal {
-    Hold,
-    Long,
-    Short,
-    LongEntry,
-    ShortEntry,
-    LongExit,
-    ShortExit,
+    Hold = 0,
+    Long = 1,
+    Short = -1,
+    LongEntry = 3,
+    ShortEntry = -3,
+    LongExit = -2,
+    ShortExit = 2,
+    Exit = -4,
 }
 
 impl StrategySignal {
@@ -196,6 +197,7 @@ impl Into<i32> for StrategySignal {
             StrategySignal::ShortEntry => -2,
             StrategySignal::LongExit => 3,
             StrategySignal::ShortExit => -3,
+            StrategySignal::Exit => -4,
         };
     }
 }
@@ -217,6 +219,7 @@ impl From<i32> for StrategySignal {
             -2 => StrategySignal::ShortEntry,
             3 => StrategySignal::LongExit,
             -3 => StrategySignal::ShortExit,
+            -4 => StrategySignal::Exit,
             _ => StrategySignal::Hold,
         };
     }

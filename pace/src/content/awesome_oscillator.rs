@@ -1,9 +1,14 @@
+use std::collections::HashMap;
+
 use crate::{
     common::src::{AnyProcessor, AnySrc, Src, SrcKind},
     core::{
         context::Context,
+        features::{FeatureValue, Features, IncrementalFeatureBuilder},
         incremental::{Incremental, IncrementalDefault},
+        trend::Trend,
     },
+    statistics::normalization::rescale,
     strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::Cross,
@@ -115,5 +120,87 @@ impl Incremental<f64, StrategySignal> for AwesomeOscillatorStrategy {
             return StrategySignal::Short;
         }
         return StrategySignal::Hold;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AwesomeOscillatorFeatures {
+    pub value: f64,
+    pub trend: Option<Trend>,
+    pub signal: StrategySignal,
+}
+
+impl Default for AwesomeOscillatorFeatures {
+    fn default() -> Self {
+        return Self {
+            value: f64::NAN,
+            trend: None,
+            signal: StrategySignal::Hold,
+        };
+    }
+}
+
+impl Features for AwesomeOscillatorFeatures {
+    fn flatten(&self) -> HashMap<String, FeatureValue> {
+        let mut map: HashMap<String, FeatureValue> = HashMap::new();
+
+        map.insert("value".to_string(), self.value.into());
+        map.insert(
+            "trend".to_string(),
+            self.trend.map(|x| x.into()).unwrap_or(FeatureValue::Empty),
+        );
+        map.insert("signal".to_string(), self.signal.into());
+
+        return map;
+    }
+}
+
+pub struct AwesomeOscillatorFeatureBuilder {
+    pub ctx: Context,
+    pub inner: AwesomeOscillator,
+    pub inner_strategy: AwesomeOscillatorStrategy,
+    features: AwesomeOscillatorFeatures,
+}
+
+impl AwesomeOscillatorFeatureBuilder {
+    pub fn new(
+        ctx: Context,
+        inner: AwesomeOscillator,
+        inner_strategy: AwesomeOscillatorStrategy,
+    ) -> Self {
+        return Self {
+            inner,
+            inner_strategy,
+            ctx,
+            features: AwesomeOscillatorFeatures::default(),
+        };
+    }
+}
+
+impl IncrementalFeatureBuilder<AwesomeOscillatorFeatures> for AwesomeOscillatorFeatureBuilder {
+    const NAMESPACE: &'static str = "ta::third_party::tradingview:::awesome_oscillator";
+}
+
+impl Incremental<(), AwesomeOscillatorFeatures> for AwesomeOscillatorFeatureBuilder {
+    fn next(&mut self, _: ()) -> AwesomeOscillatorFeatures {
+        let value = self.inner.next(());
+        let signal = self.inner_strategy.next(value);
+
+        self.features.value = value;
+        self.features.signal = signal;
+
+        if signal == StrategySignal::Long {
+            self.features.trend = Some(Trend::Bullish);
+        } else if signal == StrategySignal::Short {
+            self.features.trend = Some(Trend::Bearish);
+        }
+
+        return self.features.clone();
+    }
+}
+
+impl Incremental<(), Box<dyn Features>> for AwesomeOscillatorFeatureBuilder {
+    fn next(&mut self, _: ()) -> Box<dyn Features> {
+        return Box::new(Incremental::<(), AwesomeOscillatorFeatures>::next(self, ()));
     }
 }

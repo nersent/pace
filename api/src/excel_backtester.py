@@ -283,7 +283,7 @@ class ExcelBacktester():
         backtest_config = {
             "on_bar_close": False,
             "initial_capital": 1000.0,
-            "buy_with_equity": True,
+            "buy_with_equity": False,
             "risk_free_rate": 0.0,
         }
 
@@ -416,7 +416,7 @@ class ExcelBacktester():
 
         print("Computed stast columns")
 
-        pinescript_column = format_output_column_id("pinescript")
+        pinescript_column = format_stats_column_id("pinescript")
 
         if pinescript_column in column_coordinate_map:
             coordinate = column_coordinate_map[pinescript_column]

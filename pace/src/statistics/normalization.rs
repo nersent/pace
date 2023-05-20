@@ -1,4 +1,7 @@
-use crate::core::{context::Context, incremental::Incremental};
+use crate::{
+    core::{context::Context, incremental::Incremental},
+    utils::float::Float64Utils,
+};
 
 use super::{mean::Mean, stdev::Stdev};
 
@@ -56,6 +59,12 @@ pub fn scale_value_min_max(value: f64, min: f64, max: f64) -> f64 {
 }
 
 pub fn rescale(src: f64, old_min: f64, old_max: f64, new_min: f64, new_max: f64) -> f64 {
+    if old_min.compare(old_max) || new_min.compare(new_max) {
+        panic!(
+            "Invalid range: {} - {} -> {} - {}",
+            old_min, old_max, new_min, new_max
+        );
+    }
     return new_min
         + (new_max - new_min) * (src - old_min) / f64::max(old_max - old_min, f64::EPSILON);
 }

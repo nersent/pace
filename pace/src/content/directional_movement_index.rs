@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     common::{
         fixnan::FixNan,
@@ -5,8 +7,11 @@ use crate::{
     },
     core::{
         context::Context,
+        features::{FeatureValue, Features, IncrementalFeatureBuilder},
         incremental::{Incremental, IncrementalDefault},
+        trend::Trend,
     },
+    statistics::normalization::rescale,
     strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::{Cross, CrossMode},
@@ -161,22 +166,143 @@ impl Incremental<&DirectionalMovementIndexData, StrategySignal>
     for DirectionalMovementIndexStrategy
 {
     fn next(&mut self, dmi: &DirectionalMovementIndexData) -> StrategySignal {
-        let is_strong_trend = dmi.adx > self.config.threshold_strong_trend;
+        // let is_strong_trend = dmi.adx > self.config.threshold_strong_trend;
 
-        let is_weak_trend = !dmi.adx.is_nan() && dmi.adx < self.config.threshold_weak_trend;
+        // let is_weak_trend = !dmi.adx.is_nan() && dmi.adx < self.config.threshold_weak_trend;
 
         let plus_minus_cross = self.cross.next((dmi.plus, dmi.minus));
 
-        if is_strong_trend {
-            if let Some(plus_minus_cross) = plus_minus_cross {
-                if plus_minus_cross == CrossMode::Over {
-                    return StrategySignal::Long;
-                } else if plus_minus_cross == CrossMode::Under {
-                    return StrategySignal::Short;
-                }
+        if let Some(plus_minus_cross) = plus_minus_cross {
+            if plus_minus_cross == CrossMode::Over {
+                return StrategySignal::Long;
+            } else if plus_minus_cross == CrossMode::Under {
+                return StrategySignal::Short;
             }
         }
 
+        // if is_strong_trend {
+        //     if let Some(plus_minus_cross) = plus_minus_cross {
+        //         if plus_minus_cross == CrossMode::Over {
+        //             return StrategySignal::Long;
+        //         } else if plus_minus_cross == CrossMode::Under {
+        //             return StrategySignal::Short;
+        //         }
+        //     }
+        // }
+
         return StrategySignal::Hold;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DirectionalMovementIndexFeatures {
+    pub adx: f64,
+    pub adx_plus: f64,
+    pub adx_minus: f64,
+    pub trend: Option<Trend>,
+    pub signal: StrategySignal,
+}
+
+impl Default for DirectionalMovementIndexFeatures {
+    fn default() -> Self {
+        return Self {
+            adx: f64::NAN,
+            adx_plus: f64::NAN,
+            adx_minus: f64::NAN,
+            trend: None,
+            signal: StrategySignal::Hold,
+        };
+    }
+}
+
+impl Features for DirectionalMovementIndexFeatures {
+    fn flatten(&self) -> HashMap<String, FeatureValue> {
+        let mut map: HashMap<String, FeatureValue> = HashMap::new();
+
+        map.insert("adx".to_string(), self.adx.into());
+        map.insert("adx_plus".to_string(), self.adx_plus.into());
+        map.insert("adx_minus".to_string(), self.adx_minus.into());
+        map.insert(
+            "trend".to_string(),
+            self.trend.map(|x| x.into()).unwrap_or(FeatureValue::Empty),
+        );
+        map.insert("signal".to_string(), self.signal.into());
+
+        return map;
+    }
+}
+
+pub struct DirectionalMovementIndexFeatureBuilder {
+    pub ctx: Context,
+    pub inner: DirectionalMovementIndex,
+    pub inner_strategy: DirectionalMovementIndexStrategy,
+    features: DirectionalMovementIndexFeatures,
+}
+
+impl DirectionalMovementIndexFeatureBuilder {
+    pub fn new(
+        ctx: Context,
+        inner: DirectionalMovementIndex,
+        inner_strategy: DirectionalMovementIndexStrategy,
+    ) -> Self {
+        return Self {
+            inner,
+            inner_strategy,
+            ctx,
+            features: DirectionalMovementIndexFeatures::default(),
+        };
+    }
+}
+
+impl IncrementalFeatureBuilder<DirectionalMovementIndexFeatures>
+    for DirectionalMovementIndexFeatureBuilder
+{
+    const NAMESPACE: &'static str = "ta::third_party::tradingview:::directional_movement_index";
+}
+
+impl Incremental<(), DirectionalMovementIndexFeatures> for DirectionalMovementIndexFeatureBuilder {
+    fn next(&mut self, _: ()) -> DirectionalMovementIndexFeatures {
+        let value = self.inner.next(());
+        let signal = self.inner_strategy.next(&value);
+
+        self.features.adx = rescale(
+            value.adx,
+            DIRECTIONAL_MOVEMENT_INDEX_MIN_VALUE,
+            DIRECTIONAL_MOVEMENT_INDEX_MAX_VALUE,
+            -1.0,
+            1.0,
+        );
+        self.features.adx_plus = rescale(
+            value.plus,
+            DIRECTIONAL_MOVEMENT_INDEX_MIN_VALUE,
+            DIRECTIONAL_MOVEMENT_INDEX_MAX_VALUE,
+            -1.0,
+            1.0,
+        );
+        self.features.adx_minus = rescale(
+            value.minus,
+            DIRECTIONAL_MOVEMENT_INDEX_MIN_VALUE,
+            DIRECTIONAL_MOVEMENT_INDEX_MAX_VALUE,
+            -1.0,
+            1.0,
+        );
+        self.features.signal = signal;
+
+        if signal == StrategySignal::Long {
+            self.features.trend = Some(Trend::Bullish);
+        } else if signal == StrategySignal::Short {
+            self.features.trend = Some(Trend::Bearish);
+        }
+
+        return self.features.clone();
+    }
+}
+
+impl Incremental<(), Box<dyn Features>> for DirectionalMovementIndexFeatureBuilder {
+    fn next(&mut self, _: ()) -> Box<dyn Features> {
+        return Box::new(Incremental::<(), DirectionalMovementIndexFeatures>::next(
+            self,
+            (),
+        ));
     }
 }

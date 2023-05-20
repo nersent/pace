@@ -1,11 +1,16 @@
+use std::collections::HashMap;
+
 use crate::{
     common::src::{AnySrc, Src, SrcKind},
     core::{
         context::Context,
+        features::{FeatureValue, Features, IncrementalFeatureBuilder},
         incremental::{Incremental, IncrementalDefault},
+        trend::Trend,
     },
     pinescript::common::PineScriptFloat64,
-    strategy::trade::TradeDirection,
+    statistics::normalization::rescale,
+    strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::Cross,
         cross_over_threshold::CrossOverThreshold,
@@ -92,5 +97,147 @@ impl Incremental<(), f64> for UltimateOscillator {
         let uo = 100.0 * (4.0 * fast + 2.0 * mid + slow) / 7.0;
 
         return uo;
+    }
+}
+
+pub static ULTIMATE_OSCILLATOR_THRESHOLD_OVERSOLD: f64 = 50.0;
+pub static ULTIMATE_OSCILLATOR_THRESHOLD_OVERBOUGHT: f64 = 50.0;
+
+pub struct UltimateOscillatorStrategyConfig {
+    pub threshold_oversold: f64,
+    pub threshold_overbought: f64,
+}
+
+impl Default for UltimateOscillatorStrategyConfig {
+    fn default() -> Self {
+        return Self {
+            threshold_oversold: ULTIMATE_OSCILLATOR_THRESHOLD_OVERSOLD,
+            threshold_overbought: ULTIMATE_OSCILLATOR_THRESHOLD_OVERBOUGHT,
+        };
+    }
+}
+
+/// Custom Ultimate Oscillator Strategy. May be incorrect.
+pub struct UltimateOscillatorStrategy {
+    pub config: UltimateOscillatorStrategyConfig,
+    pub ctx: Context,
+    cross_over: CrossOverThreshold,
+    cross_under: CrossUnderThreshold,
+}
+
+impl UltimateOscillatorStrategy {
+    pub fn new(ctx: Context, config: UltimateOscillatorStrategyConfig) -> Self {
+        return Self {
+            ctx: ctx.clone(),
+            cross_over: CrossOverThreshold::new(ctx.clone(), config.threshold_oversold),
+            cross_under: CrossUnderThreshold::new(ctx.clone(), config.threshold_overbought),
+            config,
+        };
+    }
+}
+
+impl Incremental<f64, StrategySignal> for UltimateOscillatorStrategy {
+    fn next(&mut self, po: f64) -> StrategySignal {
+        let is_cross_over = self.cross_over.next(po);
+        let is_cross_under = self.cross_under.next(po);
+
+        if is_cross_over {
+            return StrategySignal::Long;
+        }
+        if is_cross_under {
+            return StrategySignal::Short;
+        }
+        return StrategySignal::Hold;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct UltimateOscillatorFeatures {
+    pub value: f64,
+    pub trend: Option<Trend>,
+    pub signal: StrategySignal,
+}
+
+impl Default for UltimateOscillatorFeatures {
+    fn default() -> Self {
+        return Self {
+            value: f64::NAN,
+            trend: None,
+            signal: StrategySignal::Hold,
+        };
+    }
+}
+
+impl Features for UltimateOscillatorFeatures {
+    fn flatten(&self) -> HashMap<String, FeatureValue> {
+        let mut map: HashMap<String, FeatureValue> = HashMap::new();
+
+        map.insert("value".to_string(), self.value.into());
+        map.insert(
+            "trend".to_string(),
+            self.trend.map(|x| x.into()).unwrap_or(FeatureValue::Empty),
+        );
+        map.insert("signal".to_string(), self.signal.into());
+
+        return map;
+    }
+}
+
+pub struct UltimateOscillatorFeatureBuilder {
+    pub ctx: Context,
+    pub inner: UltimateOscillator,
+    pub inner_strategy: UltimateOscillatorStrategy,
+    features: UltimateOscillatorFeatures,
+}
+
+impl UltimateOscillatorFeatureBuilder {
+    pub fn new(
+        ctx: Context,
+        inner: UltimateOscillator,
+        inner_strategy: UltimateOscillatorStrategy,
+    ) -> Self {
+        return Self {
+            inner,
+            inner_strategy,
+            ctx,
+            features: UltimateOscillatorFeatures::default(),
+        };
+    }
+}
+
+impl IncrementalFeatureBuilder<UltimateOscillatorFeatures> for UltimateOscillatorFeatureBuilder {
+    const NAMESPACE: &'static str = "ta::third_party::tradingview:::ultimate_oscillator";
+}
+
+impl Incremental<(), UltimateOscillatorFeatures> for UltimateOscillatorFeatureBuilder {
+    fn next(&mut self, _: ()) -> UltimateOscillatorFeatures {
+        let value = self.inner.next(());
+        let signal = self.inner_strategy.next(value);
+
+        self.features.value = rescale(
+            value,
+            ULTIMATE_OSCILLATOR_MIN_VALUE,
+            ULTIMATE_OSCILLATOR_MAX_VALUE,
+            -1.0,
+            1.0,
+        );
+        self.features.signal = signal;
+
+        if signal == StrategySignal::Long {
+            self.features.trend = Some(Trend::Bullish);
+        } else if signal == StrategySignal::Short {
+            self.features.trend = Some(Trend::Bearish);
+        }
+
+        return self.features.clone();
+    }
+}
+
+impl Incremental<(), Box<dyn Features>> for UltimateOscillatorFeatureBuilder {
+    fn next(&mut self, _: ()) -> Box<dyn Features> {
+        return Box::new(Incremental::<(), UltimateOscillatorFeatures>::next(
+            self,
+            (),
+        ));
     }
 }

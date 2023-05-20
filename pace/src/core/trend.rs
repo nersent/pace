@@ -5,6 +5,7 @@ pub enum Trend {
     Bearish = -1,
     Consolidation = 0,
     Bullish = 1,
+    Strong = 2,
 }
 
 impl From<f64> for Trend {
@@ -25,6 +26,7 @@ impl Into<i32> for Trend {
             Trend::Bullish => 1,
             Trend::Consolidation => 0,
             Trend::Bearish => -1,
+            Trend::Strong => 2,
         }
     }
 }

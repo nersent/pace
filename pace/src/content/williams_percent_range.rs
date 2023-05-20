@@ -1,9 +1,14 @@
+use std::collections::HashMap;
+
 use crate::{
     common::src::{AnySrc, Src, SrcKind},
     core::{
         context::Context,
+        features::{FeatureValue, Features, IncrementalFeatureBuilder},
         incremental::{Incremental, IncrementalDefault},
+        trend::Trend,
     },
+    statistics::normalization::rescale,
     strategy::trade::{StrategySignal, TradeDirection},
     ta::{
         cross::Cross,
@@ -17,15 +22,15 @@ use crate::{
     },
 };
 
-pub static WILLIAMS_PERCENT_RANK_MIN_VALUE: f64 = -100.0;
-pub static WILLIAMS_PERCENT_RANK_MAX_VALUE: f64 = 0.0;
+pub static WILLIAMS_PERCENT_RANGE_MIN_VALUE: f64 = -100.0;
+pub static WILLIAMS_PERCENT_RANGE_MAX_VALUE: f64 = 0.0;
 
-pub struct WilliamsPercentRankConfig {
+pub struct WilliamsPercentRangeConfig {
     pub length: usize,
     pub src: AnySrc,
 }
 
-impl IncrementalDefault for WilliamsPercentRankConfig {
+impl IncrementalDefault for WilliamsPercentRangeConfig {
     fn default(ctx: Context) -> Self {
         Self {
             length: 14,
@@ -35,15 +40,15 @@ impl IncrementalDefault for WilliamsPercentRankConfig {
 }
 
 /// Ported from https://www.tradingview.com/chart/?solution=43000501985
-pub struct WilliamsPercentRank {
-    pub config: WilliamsPercentRankConfig,
+pub struct WilliamsPercentRange {
+    pub config: WilliamsPercentRangeConfig,
     pub ctx: Context,
     highest: Highest,
     lowest: Lowest,
 }
 
-impl WilliamsPercentRank {
-    pub fn new(ctx: Context, config: WilliamsPercentRankConfig) -> Self {
+impl WilliamsPercentRange {
+    pub fn new(ctx: Context, config: WilliamsPercentRangeConfig) -> Self {
         return Self {
             ctx: ctx.clone(),
             highest: Highest::new(ctx.clone(), config.length),
@@ -53,7 +58,7 @@ impl WilliamsPercentRank {
     }
 }
 
-impl Incremental<(), f64> for WilliamsPercentRank {
+impl Incremental<(), f64> for WilliamsPercentRange {
     fn next(&mut self, _: ()) -> f64 {
         let src = self.config.src.next(());
         let max = self.highest.next(self.ctx.bar.high());
@@ -65,33 +70,33 @@ impl Incremental<(), f64> for WilliamsPercentRank {
     }
 }
 
-pub static WILLIAMS_PERCENT_RANK_THRESHOLD_OVERSOLD: f64 = -80.0;
-pub static WILLIAMS_PERCENT_RANK_THRESHOLD_OVERBOUGHT: f64 = -20.0;
+pub static WILLIAMS_PERCENT_RANGE_THRESHOLD_OVERSOLD: f64 = -80.0;
+pub static WILLIAMS_PERCENT_RANGE_THRESHOLD_OVERBOUGHT: f64 = -20.0;
 
-pub struct WilliamsPercentRankStrategyConfig {
+pub struct WilliamsPercentRangeStrategyConfig {
     pub threshold_oversold: f64,
     pub threshold_overbought: f64,
 }
 
-impl Default for WilliamsPercentRankStrategyConfig {
+impl Default for WilliamsPercentRangeStrategyConfig {
     fn default() -> Self {
         return Self {
-            threshold_oversold: WILLIAMS_PERCENT_RANK_THRESHOLD_OVERSOLD,
-            threshold_overbought: WILLIAMS_PERCENT_RANK_THRESHOLD_OVERBOUGHT,
+            threshold_oversold: WILLIAMS_PERCENT_RANGE_THRESHOLD_OVERSOLD,
+            threshold_overbought: WILLIAMS_PERCENT_RANGE_THRESHOLD_OVERBOUGHT,
         };
     }
 }
 
 /// Custom Williams %r Strategy. May be incorrect.
-pub struct WilliamsPercentRankStrategy {
-    pub config: WilliamsPercentRankStrategyConfig,
+pub struct WilliamsPercentRangeStrategy {
+    pub config: WilliamsPercentRangeStrategyConfig,
     pub ctx: Context,
     cross_overbought: CrossOverThreshold,
     cross_oversold: CrossUnderThreshold,
 }
 
-impl WilliamsPercentRankStrategy {
-    pub fn new(ctx: Context, config: WilliamsPercentRankStrategyConfig) -> Self {
+impl WilliamsPercentRangeStrategy {
+    pub fn new(ctx: Context, config: WilliamsPercentRangeStrategyConfig) -> Self {
         return Self {
             ctx: ctx.clone(),
             cross_overbought: CrossOverThreshold::new(ctx.clone(), config.threshold_overbought),
@@ -101,7 +106,7 @@ impl WilliamsPercentRankStrategy {
     }
 }
 
-impl Incremental<f64, StrategySignal> for WilliamsPercentRankStrategy {
+impl Incremental<f64, StrategySignal> for WilliamsPercentRangeStrategy {
     fn next(&mut self, wpr: f64) -> StrategySignal {
         let is_cross_over = self.cross_overbought.next(wpr);
         let is_cross_under = self.cross_oversold.next(wpr);
@@ -113,5 +118,98 @@ impl Incremental<f64, StrategySignal> for WilliamsPercentRankStrategy {
             return StrategySignal::Short;
         }
         return StrategySignal::Hold;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct WilliamsPercentRangeFeatures {
+    pub value: f64,
+    pub trend: Option<Trend>,
+    pub signal: StrategySignal,
+}
+
+impl Default for WilliamsPercentRangeFeatures {
+    fn default() -> Self {
+        return Self {
+            value: f64::NAN,
+            trend: None,
+            signal: StrategySignal::Hold,
+        };
+    }
+}
+
+impl Features for WilliamsPercentRangeFeatures {
+    fn flatten(&self) -> HashMap<String, FeatureValue> {
+        let mut map: HashMap<String, FeatureValue> = HashMap::new();
+
+        map.insert("value".to_string(), self.value.into());
+        map.insert(
+            "trend".to_string(),
+            self.trend.map(|x| x.into()).unwrap_or(FeatureValue::Empty),
+        );
+        map.insert("signal".to_string(), self.signal.into());
+
+        return map;
+    }
+}
+
+pub struct WilliamsPercentRangeFeatureBuilder {
+    pub ctx: Context,
+    pub inner: WilliamsPercentRange,
+    pub inner_strategy: WilliamsPercentRangeStrategy,
+    features: WilliamsPercentRangeFeatures,
+}
+
+impl WilliamsPercentRangeFeatureBuilder {
+    pub fn new(
+        ctx: Context,
+        inner: WilliamsPercentRange,
+        inner_strategy: WilliamsPercentRangeStrategy,
+    ) -> Self {
+        return Self {
+            inner,
+            inner_strategy,
+            ctx,
+            features: WilliamsPercentRangeFeatures::default(),
+        };
+    }
+}
+
+impl IncrementalFeatureBuilder<WilliamsPercentRangeFeatures>
+    for WilliamsPercentRangeFeatureBuilder
+{
+    const NAMESPACE: &'static str = "ta::third_party::tradingview:::williams_percent_range";
+}
+
+impl Incremental<(), WilliamsPercentRangeFeatures> for WilliamsPercentRangeFeatureBuilder {
+    fn next(&mut self, _: ()) -> WilliamsPercentRangeFeatures {
+        let value = self.inner.next(());
+        let signal = self.inner_strategy.next(value);
+
+        self.features.value = rescale(
+            value,
+            WILLIAMS_PERCENT_RANGE_MIN_VALUE,
+            WILLIAMS_PERCENT_RANGE_MAX_VALUE,
+            -1.0,
+            1.0,
+        );
+        self.features.signal = signal;
+
+        if signal == StrategySignal::Long {
+            self.features.trend = Some(Trend::Bullish);
+        } else if signal == StrategySignal::Short {
+            self.features.trend = Some(Trend::Bearish);
+        }
+
+        return self.features.clone();
+    }
+}
+
+impl Incremental<(), Box<dyn Features>> for WilliamsPercentRangeFeatureBuilder {
+    fn next(&mut self, _: ()) -> Box<dyn Features> {
+        return Box::new(Incremental::<(), WilliamsPercentRangeFeatures>::next(
+            self,
+            (),
+        ));
     }
 }

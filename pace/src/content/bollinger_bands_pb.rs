@@ -1,8 +1,12 @@
+use std::collections::HashMap;
+
 use crate::{
     common::src::{AnySrc, Src, SrcKind},
     core::{
         context::Context,
+        features::{FeatureValue, Features, IncrementalFeatureBuilder},
         incremental::{Incremental, IncrementalDefault},
+        trend::Trend,
     },
     strategy::trade::{StrategySignal, TradeDirection},
     ta::{
@@ -121,5 +125,92 @@ impl Incremental<f64, StrategySignal> for BollingerBandsPercentBStrategy {
             return StrategySignal::Short;
         }
         return StrategySignal::Hold;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BollingerBandsPercentBFeatures {
+    pub value: f64,
+    pub trend: Option<Trend>,
+    pub signal: StrategySignal,
+}
+
+impl Default for BollingerBandsPercentBFeatures {
+    fn default() -> Self {
+        return Self {
+            value: f64::NAN,
+            trend: None,
+            signal: StrategySignal::Hold,
+        };
+    }
+}
+
+impl Features for BollingerBandsPercentBFeatures {
+    fn flatten(&self) -> HashMap<String, FeatureValue> {
+        let mut map: HashMap<String, FeatureValue> = HashMap::new();
+
+        map.insert("value".to_string(), self.value.into());
+        map.insert(
+            "trend".to_string(),
+            self.trend.map(|x| x.into()).unwrap_or(FeatureValue::Empty),
+        );
+        map.insert("signal".to_string(), self.signal.into());
+
+        return map;
+    }
+}
+
+pub struct BollingerBandsPercentBFeatureBuilder {
+    pub ctx: Context,
+    pub inner: BollingerBandsPercentB,
+    pub inner_strategy: BollingerBandsPercentBStrategy,
+    features: BollingerBandsPercentBFeatures,
+}
+
+impl BollingerBandsPercentBFeatureBuilder {
+    pub fn new(
+        ctx: Context,
+        inner: BollingerBandsPercentB,
+        inner_strategy: BollingerBandsPercentBStrategy,
+    ) -> Self {
+        return Self {
+            inner,
+            inner_strategy,
+            ctx,
+            features: BollingerBandsPercentBFeatures::default(),
+        };
+    }
+}
+
+impl IncrementalFeatureBuilder<BollingerBandsPercentBFeatures>
+    for BollingerBandsPercentBFeatureBuilder
+{
+    const NAMESPACE: &'static str = "ta::third_party::tradingview:::bollinger_bands_pb";
+}
+
+impl Incremental<(), BollingerBandsPercentBFeatures> for BollingerBandsPercentBFeatureBuilder {
+    fn next(&mut self, _: ()) -> BollingerBandsPercentBFeatures {
+        let value = self.inner.next(());
+        let signal = self.inner_strategy.next(value);
+
+        self.features.value = value;
+        self.features.signal = signal;
+
+        if signal == StrategySignal::Long {
+            self.features.trend = Some(Trend::Bullish);
+        } else if signal == StrategySignal::Short {
+            self.features.trend = Some(Trend::Bearish);
+        }
+
+        return self.features.clone();
+    }
+}
+
+impl Incremental<(), Box<dyn Features>> for BollingerBandsPercentBFeatureBuilder {
+    fn next(&mut self, _: ()) -> Box<dyn Features> {
+        return Box::new(Incremental::<(), BollingerBandsPercentBFeatures>::next(
+            self,
+            (),
+        ));
     }
 }

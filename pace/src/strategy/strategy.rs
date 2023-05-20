@@ -156,11 +156,14 @@ impl Strategy {
                     new_trade_dir = Some(TradeDirection::Short);
                 }
 
-                if self.unfilled_signal == StrategySignal::LongExit && dir == TradeDirection::Long {
+                if self.unfilled_signal == StrategySignal::LongExit && dir == TradeDirection::Long
+                    || self.unfilled_signal == StrategySignal::Exit
+                {
                     close_trade = !last_trade.is_closed;
                 }
 
                 if self.unfilled_signal == StrategySignal::ShortExit && dir == TradeDirection::Short
+                    || self.unfilled_signal == StrategySignal::Exit
                 {
                     close_trade = !last_trade.is_closed;
                 }
@@ -265,6 +268,12 @@ impl Strategy {
         if !self.config.on_bar_close {
             self.process_orderbook();
         }
+    }
+
+    pub fn cancel_orders(&mut self) {
+        self.events.on_trade_entry = None;
+        self.events.on_trade_exit = None;
+        self.unfilled_signal = StrategySignal::Hold;
     }
 }
 

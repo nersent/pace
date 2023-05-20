@@ -1,5 +1,5 @@
-#[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+// #[global_allocator]
+// static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 extern crate num;
 #[macro_use]
@@ -9,12 +9,13 @@ use py_backtesting::{PyBacktestBarInfo, PyBacktestResult};
 use py_strategy::PyStrategySignal;
 use pyo3::{prelude::*, types::PyDict};
 
-mod py_asset_provider;
-mod py_backtesting;
-mod py_strategy;
-mod pyo3_utils;
-use crate::py_asset_provider::PyDataProvider;
+pub mod py_backtesting;
+pub mod py_data_provider;
+pub mod py_strategy;
+pub mod pyo3_utils;
+
 use crate::py_backtesting::run_backtest;
+use crate::py_data_provider::PyDataProvider;
 
 #[pymodule]
 #[pyo3(name = "nersent_pace_py")]

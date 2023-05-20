@@ -9,13 +9,15 @@ use std::{
 
 use nersent_pace::{
     content::relative_strength_index::{
-        RelativeStrengthIndex, RelativeStrengthIndexConfig, RelativeStrengthIndexStrategy,
-        RelativeStrengthIndexStrategyConfig,
+        RelativeStrengthIndex, RelativeStrengthIndexConfig, RelativeStrengthIndexFeatureBuilder,
+        RelativeStrengthIndexMAStrategy, RelativeStrengthIndexMAStrategyConfig,
+        RelativeStrengthIndexStrategy, RelativeStrengthIndexStrategyConfig,
     },
     core::{
         asset::{Asset, AssetRegistry},
         context::Context,
         data_provider::DataProvider,
+        features::IncrementalFeatureBuilder,
         in_memory_data_provider::InMemoryDataProvider,
         incremental::{Chained, ForcedInput, Incremental, IncrementalDefault},
         timeframe::Timeframe,
@@ -168,64 +170,80 @@ impl StrategyRunnerTarget for ExampleRunnerTarget {
 fn main() {
     let data_path = Path::new("example/fixtures/btc_1d.csv");
     let df = read_df(&data_path);
+    let ctx = Context::new(InMemoryDataProvider::from_df(&df).to_arc());
 
-    // let ctx = Context::new(InMemoryDataProvider::from_df(&df).to_arc());
+    let xd = RelativeStrengthIndexFeatureBuilder::new(
+        ctx.clone(),
+        RelativeStrengthIndex::new(
+            ctx.clone(),
+            RelativeStrengthIndexConfig::default(ctx.clone()),
+        ),
+        RelativeStrengthIndexStrategy::new(
+            ctx.clone(),
+            RelativeStrengthIndexStrategyConfig::default(),
+        ),
+        RelativeStrengthIndexMAStrategy::new(
+            ctx.clone(),
+            RelativeStrengthIndexMAStrategyConfig::default(ctx.clone()),
+        ),
+    )
+    .to_ft_box();
 
-    let mut asset_registry = AssetRegistry::new();
-    asset_registry.add(Asset {
-        id: "btc_1d".to_string(),
-        data_provider: Some(InMemoryDataProvider::from_df(&df).to_arc()),
-        symbol: "btc_usd".to_string(),
-        timeframe: Timeframe::Days(1),
-    });
+    // let mut asset_registry = AssetRegistry::new();
+    // asset_registry.add(Asset {
+    //     id: "btc_1d".to_string(),
+    //     data_provider: Some(InMemoryDataProvider::from_df(&df).to_arc()),
+    //     symbol: "btc_usd".to_string(),
+    //     timeframe: Timeframe::Days(1),
+    // });
 
-    let mut strategy_runner = StrategyRunner::new();
+    // let mut strategy_runner = StrategyRunner::new();
 
-    let res = strategy_runner.run(
-        &asset_registry,
-        vec![StrategyRunnerItem {
-            assets: vec!["btc_1d".to_string()],
-            periods: None,
-            target_fc: Box::new(|config: StrategyRunnerTargetFactoryConfig| {
-                let ctx = Context::new(config.data_provider.clone());
-                let rsi =
-                    <ForcedInput<StrategySignal> as Incremental<&Strategy, StrategySignal>>::to_box(
-                        ForcedInput::new(
-                            ctx.clone(),
-                            Chained::new(
-                                ctx.clone(),
-                                RelativeStrengthIndex::new(
-                                    ctx.clone(),
-                                    RelativeStrengthIndexConfig::default(ctx.clone()),
-                                )
-                                .to_box(),
-                                RelativeStrengthIndexStrategy::new(
-                                    ctx.clone(),
-                                    RelativeStrengthIndexStrategyConfig::default(),
-                                )
-                                .to_box(),
-                            )
-                            .to_box(),
-                        ),
-                    );
+    // let res = strategy_runner.run(
+    //     &asset_registry,
+    //     vec![StrategyRunnerItem {
+    //         assets: vec!["btc_1d".to_string()],
+    //         periods: None,
+    //         target_fc: Box::new(|config: StrategyRunnerTargetFactoryConfig| {
+    //             let ctx = Context::new(config.data_provider.clone());
+    //             let rsi =
+    //                 <ForcedInput<StrategySignal> as Incremental<&Strategy, StrategySignal>>::to_box(
+    //                     ForcedInput::new(
+    //                         ctx.clone(),
+    //                         Chained::new(
+    //                             ctx.clone(),
+    //                             RelativeStrengthIndex::new(
+    //                                 ctx.clone(),
+    //                                 RelativeStrengthIndexConfig::default(ctx.clone()),
+    //                             )
+    //                             .to_box(),
+    //                             RelativeStrengthIndexStrategy::new(
+    //                                 ctx.clone(),
+    //                                 RelativeStrengthIndexStrategyConfig::default(),
+    //                             )
+    //                             .to_box(),
+    //                         )
+    //                         .to_box(),
+    //                     ),
+    //                 );
 
-                return Box::new(ExampleRunnerTarget::new(ctx.clone(), rsi));
-            }),
-        }],
-    );
+    //             return Box::new(ExampleRunnerTarget::new(ctx.clone(), rsi));
+    //         }),
+    //     }],
+    // );
 
-    for item in res {
-        let target = item
-            .target
-            .as_ref()
-            .as_any()
-            .downcast_ref::<ExampleRunnerTarget>()
-            .unwrap();
-        println!(
-            "{}: {}",
-            item.asset_id, target.strategy.metrics.closed_trades
-        )
-    }
+    // for item in res {
+    //     let target = item
+    //         .target
+    //         .as_ref()
+    //         .as_any()
+    //         .downcast_ref::<ExampleRunnerTarget>()
+    //         .unwrap();
+    //     println!(
+    //         "{}: {}",
+    //         item.asset_id, target.strategy.metrics.closed_trades
+    //     )
+    // }
 
     // let mut strategy = Strategy::new(
     //     ctx.clone(),

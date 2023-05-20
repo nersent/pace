@@ -5,7 +5,11 @@ use polars::{
     series::Series,
 };
 
-use crate::{core::trend::Trend, polars::io::save_df, strategy::trade::StrategySignal};
+use crate::{
+    core::{context::Context, incremental::Incremental, trend::Trend},
+    polars::io::save_df,
+    strategy::trade::StrategySignal,
+};
 
 #[derive(Debug, Clone)]
 pub enum FeatureValue {
@@ -14,6 +18,43 @@ pub enum FeatureValue {
     Raw(String),
     Trend(Trend),
     Signal(StrategySignal),
+    Empty,
+}
+
+impl Into<FeatureValue> for f64 {
+    fn into(self) -> FeatureValue {
+        return FeatureValue::Continous(self);
+    }
+}
+
+impl Into<FeatureValue> for bool {
+    fn into(self) -> FeatureValue {
+        return FeatureValue::Discrete(self);
+    }
+}
+
+impl Into<FeatureValue> for String {
+    fn into(self) -> FeatureValue {
+        return FeatureValue::Raw(self);
+    }
+}
+
+impl Into<FeatureValue> for Trend {
+    fn into(self) -> FeatureValue {
+        return FeatureValue::Trend(self);
+    }
+}
+
+impl Into<FeatureValue> for StrategySignal {
+    fn into(self) -> FeatureValue {
+        return FeatureValue::Signal(self);
+    }
+}
+
+impl Into<FeatureValue> for i64 {
+    fn into(self) -> FeatureValue {
+        return FeatureValue::Continous(self as f64);
+    }
 }
 
 impl Into<String> for FeatureValue {
@@ -24,13 +65,37 @@ impl Into<String> for FeatureValue {
             FeatureValue::Raw(value) => value,
             FeatureValue::Trend(value) => Into::<f64>::into(value).to_string(),
             FeatureValue::Signal(value) => Into::<f64>::into(value).to_string(),
+            _ => panic!("Cannot convert feature to String"),
+        }
+    }
+}
+
+impl Into<f64> for FeatureValue {
+    fn into(self) -> f64 {
+        match self {
+            FeatureValue::Continous(value) => value,
+            FeatureValue::Discrete(value) => value as i32 as f64,
+            FeatureValue::Trend(value) => Into::<f64>::into(value),
+            FeatureValue::Signal(value) => Into::<f64>::into(value),
+            FeatureValue::Empty => f64::NAN,
             _ => panic!("Cannot convert feature to f64"),
         }
     }
 }
 
-pub trait FeatureBuilder {
+pub trait Features {
     fn flatten(&self) -> HashMap<String, FeatureValue>;
+}
+
+pub trait IncrementalFeatureBuilder<T: Features>: Incremental<(), Box<dyn Features>> {
+    const NAMESPACE: &'static str;
+
+    fn to_ft_box(self) -> Box<dyn Incremental<(), Box<dyn Features>>>
+    where
+        Self: Sized + 'static,
+    {
+        return Box::new(self);
+    }
 }
 
 pub struct FeatureRegistry {

@@ -1,7 +1,15 @@
+use std::collections::HashMap;
+
 use crate::{
-    core::{context::Context, incremental::Incremental},
+    core::features::{FeatureValue, Features, IncrementalFeatureBuilder},
+    core::{context::Context, incremental::Incremental, trend::Trend},
+    statistics::normalization::rescale,
     strategy::trade::{StrategySignal, TradeDirection},
-    ta::{cross::Cross, highest_bars::HighestBars, lowest_bars::LowestBars},
+    ta::{
+        cross::{Cross, CrossMode},
+        highest_bars::HighestBars,
+        lowest_bars::LowestBars,
+    },
     utils::float::OptionFloatUtils,
 };
 
@@ -106,33 +114,144 @@ impl Incremental<&AroonData, StrategySignal> for AroonStrategy {
             }
         };
 
-        let cross = self.cross.next((aroon.down, aroon.up));
+        let cross = self.cross.next((aroon.up, aroon.down));
 
-        if cross.is_some() {
-            self.data.cross_mode = true;
-        }
-
-        let mut up_trend_confirmation = false;
-        let mut down_trend_confirmation = false;
-
-        if self.data.cross_mode {
-            if self.data.up_trend_strength >= 1.0 {
-                up_trend_confirmation = true;
-                self.data.cross_mode = false;
-            } else if self.data.down_trend_strength >= 1.0 {
-                down_trend_confirmation = true;
-                self.data.cross_mode = false;
+        if let Some(cross) = cross {
+            if cross == CrossMode::Over {
+                return StrategySignal::Long;
+            } else if cross == CrossMode::Under {
+                return StrategySignal::Short;
             }
         }
 
-        if up_trend_confirmation {
-            return StrategySignal::Long;
-        }
+        // if cross == Some(CrossMOde::Long) {
+        //     self.data.cross_mode = true;
+        // } else if cross == Some(TradeDirection::Short) {
+        //     self.data.cross_mode = true;
+        // }
 
-        if down_trend_confirmation {
-            return StrategySignal::Short;
-        }
+        // if cross.is_some() {
+        //     self.data.cross_mode = true;
+        // }
+
+        // let mut up_trend_confirmation = false;
+        // let mut down_trend_confirmation = false;
+
+        // if self.data.cross_mode {
+        //     if self.data.up_trend_strength >= 1.0 {
+        //         up_trend_confirmation = true;
+        //         self.data.cross_mode = false;
+        //     } else if self.data.down_trend_strength >= 1.0 {
+        //         down_trend_confirmation = true;
+        //         self.data.cross_mode = false;
+        //     }
+        // }
+
+        // if up_trend_confirmation {
+        //     return StrategySignal::Long;
+        // }
+
+        // if down_trend_confirmation {
+        //     return StrategySignal::Short;
+        // }
 
         return StrategySignal::Hold;
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AroonFeatures {
+    pub up: f64,
+    pub down: f64,
+    pub up_trend_strength: f64,
+    pub down_trend_strength: f64,
+    pub trend: Option<Trend>,
+    pub signal: StrategySignal,
+}
+
+impl Default for AroonFeatures {
+    fn default() -> Self {
+        return Self {
+            up: f64::NAN,
+            down: f64::NAN,
+            up_trend_strength: f64::NAN,
+            down_trend_strength: f64::NAN,
+            trend: None,
+            signal: StrategySignal::Hold,
+        };
+    }
+}
+
+impl Features for AroonFeatures {
+    fn flatten(&self) -> HashMap<String, FeatureValue> {
+        let mut map: HashMap<String, FeatureValue> = HashMap::new();
+
+        map.insert("up".to_string(), self.up.into());
+        map.insert("down".to_string(), self.down.into());
+        map.insert(
+            "up_trend_strength".to_string(),
+            self.up_trend_strength.into(),
+        );
+        map.insert(
+            "down_trend_strength".to_string(),
+            self.down_trend_strength.into(),
+        );
+        map.insert(
+            "trend".to_string(),
+            self.trend.map(|x| x.into()).unwrap_or(FeatureValue::Empty),
+        );
+        map.insert("signal".to_string(), self.signal.into());
+
+        return map;
+    }
+}
+
+pub struct AroonFeatureBuilder {
+    pub ctx: Context,
+    pub inner: Aroon,
+    pub inner_strategy: AroonStrategy,
+    features: AroonFeatures,
+}
+
+impl AroonFeatureBuilder {
+    pub fn new(ctx: Context, inner: Aroon, inner_strategy: AroonStrategy) -> Self {
+        return Self {
+            inner,
+            inner_strategy,
+            ctx,
+            features: AroonFeatures::default(),
+        };
+    }
+}
+
+impl IncrementalFeatureBuilder<AroonFeatures> for AroonFeatureBuilder {
+    const NAMESPACE: &'static str = "ta::third_party::tradingview:::aroon";
+}
+
+impl Incremental<(), AroonFeatures> for AroonFeatureBuilder {
+    fn next(&mut self, _: ()) -> AroonFeatures {
+        let data = self.inner.next(());
+        let signal = self.inner_strategy.next(&data);
+
+        self.features.up_trend_strength = self.inner_strategy.data.up_trend_strength;
+        self.features.down_trend_strength = self.inner_strategy.data.down_trend_strength;
+
+        self.features.up = rescale(data.up, AROON_MIN_VALUE, AROON_MAX_VALUE, -1.0, 1.0);
+        self.features.down = rescale(data.down, AROON_MIN_VALUE, AROON_MAX_VALUE, -1.0, 1.0);
+        self.features.signal = signal;
+
+        if signal == StrategySignal::Long {
+            self.features.trend = Some(Trend::Bullish);
+        } else if signal == StrategySignal::Short {
+            self.features.trend = Some(Trend::Bearish);
+        }
+
+        return self.features.clone();
+    }
+}
+
+impl Incremental<(), Box<dyn Features>> for AroonFeatureBuilder {
+    fn next(&mut self, _: ()) -> Box<dyn Features> {
+        return Box::new(Incremental::<(), AroonFeatures>::next(self, ()));
     }
 }

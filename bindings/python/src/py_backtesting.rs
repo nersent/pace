@@ -20,7 +20,7 @@ use nersent_pace::{
 use pyo3::{prelude::*, types::PyDict};
 
 use crate::{
-    py_asset_provider::PyDataProvider, py_strategy::PyStrategySignal, pyo3_utils::PyAnyCast,
+    py_data_provider::PyDataProvider, py_strategy::PyStrategySignal, pyo3_utils::PyAnyCast,
 };
 
 struct PyBacktestRunnerConfig {
