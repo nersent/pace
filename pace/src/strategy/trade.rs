@@ -57,6 +57,7 @@ pub struct Trade {
     pub exit_price: f64,
     pub fill_size: f64,
     pub pnl: f64,
+    pub size: f64,
 }
 
 impl Trade {
@@ -70,6 +71,7 @@ impl Trade {
             exit_tick: None,
             fill_size: f64::NAN,
             pnl: 0.0,
+            size: f64::NAN,
         };
     }
 
@@ -109,14 +111,15 @@ pub fn fill_size(equity: f64, current_price: f64) -> f64 {
 
 #[derive(PartialEq, Copy, Debug, Clone)]
 pub enum StrategySignal {
-    Hold = 0,
-    Long = 1,
-    Short = -1,
-    LongEntry = 3,
-    ShortEntry = -3,
-    LongExit = -2,
-    ShortExit = 2,
-    Exit = -4,
+    Hold,
+    Long,
+    Short,
+    LongEntry,
+    ShortEntry,
+    LongExit,
+    ShortExit,
+    Exit,
+    Sized(f64),
 }
 
 impl StrategySignal {
@@ -198,6 +201,7 @@ impl Into<i32> for StrategySignal {
             StrategySignal::LongExit => 3,
             StrategySignal::ShortExit => -3,
             StrategySignal::Exit => -4,
+            _ => 0,
         };
     }
 }

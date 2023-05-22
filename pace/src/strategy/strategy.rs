@@ -6,6 +6,7 @@ use std::{
 use crate::{
     common::src::ohlc4,
     core::{context::Context, incremental::Incremental},
+    utils::float::Float64Utils,
 };
 
 use super::trade::{fill_size, StrategySignal, Trade, TradeDirection};
@@ -126,6 +127,7 @@ impl Strategy {
         if self.unfilled_signal != StrategySignal::Hold {
             let mut close_trade = false;
             let mut new_trade_dir: Option<TradeDirection> = None;
+            let mut new_trade_qty = f64::NAN;
 
             let orderbook_price = if self.config.on_bar_close {
                 close
@@ -168,12 +170,54 @@ impl Strategy {
                     close_trade = !last_trade.is_closed;
                 }
 
+                if let StrategySignal::Sized(qty) = self.unfilled_signal {
+                    // if new_dir == TradeDirection::Long {
+                    //     close_trade = dir == TradeDirection::Short;
+                    //     new_trade_dir = Some(TradeDirection::Long);
+                    //     new_trade_qty = qty;
+                    // }
+                    // if new_dir == TradeDirection::Short {
+                    //     close_trade = dir == TradeDirection::Long;
+                    //     new_trade_dir = Some(TradeDirection::Short);
+                    //     new_trade_qty = qty;
+                    // }
+                    if qty.is_zero() {
+                        close_trade = !last_trade.is_closed;
+                    } else {
+                        let dir = if qty > 0.0 {
+                            TradeDirection::Long
+                        } else {
+                            TradeDirection::Short
+                        };
+                        close_trade = dir != last_trade.direction;
+                        new_trade_dir = Some(dir);
+                        new_trade_qty = qty.abs();
+                    }
+                    // println!("{:?}", self.unfilled_signal);
+                }
+
                 if let Some(_new_trade_dir) = new_trade_dir {
                     let is_same_direction = !last_trade.is_closed && dir == _new_trade_dir;
                     close_trade = close_trade && !is_same_direction && !last_trade.is_closed;
 
                     if is_same_direction {
-                        new_trade_dir = None;
+                        if let StrategySignal::Sized(qty) = self.unfilled_signal {
+                            if !last_trade.is_closed {
+                                if last_trade.size.abs().compare(new_trade_qty) {
+                                    new_trade_dir = None;
+                                    new_trade_qty = f64::NAN;
+                                } else {
+                                    close_trade = true;
+                                }
+                            }
+                        } else {
+                            new_trade_dir = None;
+                            new_trade_qty = f64::NAN;
+                        }
+                    } else {
+                        if new_trade_qty.is_nan() {
+                            new_trade_qty = 1.0;
+                        }
                     }
                 }
 
@@ -215,8 +259,33 @@ impl Strategy {
                     self.current_dir = None;
                     self.metrics.closed_trades += 1;
                 }
-            } else if !self.unfilled_signal.is_explicit_exit() {
-                new_trade_dir = self.unfilled_signal.continous();
+            } else {
+                if self.unfilled_signal == StrategySignal::Long
+                    || self.unfilled_signal == StrategySignal::LongEntry
+                {
+                    new_trade_dir = Some(TradeDirection::Long);
+                    new_trade_qty = 1.0;
+                }
+                if self.unfilled_signal == StrategySignal::Short
+                    || self.unfilled_signal == StrategySignal::ShortEntry
+                {
+                    new_trade_dir = Some(TradeDirection::Short);
+                    new_trade_qty = 1.0;
+                }
+                if let StrategySignal::Sized(qty) = self.unfilled_signal {
+                    if !qty.is_zero() {
+                        new_trade_dir = Some(if qty > 0.0 {
+                            TradeDirection::Long
+                        } else {
+                            TradeDirection::Short
+                        });
+                        new_trade_qty = qty.abs();
+                    }
+                    // println!("{:?}", self.unfilled_signal);
+                }
+                // if !self.unfilled_signal.is_explicit_exit() {
+                //     new_trade_dir = self.unfilled_signal.continous();
+                // }
             }
 
             if let Some(new_trade_dir) = new_trade_dir {
@@ -224,18 +293,28 @@ impl Strategy {
 
                 let mut trade = Trade::new(new_trade_dir);
 
-                trade.fill_size = 1.0;
+                if new_trade_qty.is_nan() {
+                    panic!("Trade qty is NaN");
+                }
+
+                if new_trade_qty.is_zero() {
+                    panic!("Trade qty is zero");
+                }
+
+                trade.fill_size = new_trade_qty;
 
                 if self.config.buy_with_equity {
-                    let equity = self.config.initial_capital
-                        + self.metrics.net_profit
-                        + self.metrics.open_profit;
+                    let equity = self.config.initial_capital + self.metrics.net_profit;
+                    //  + self.metrics.open_profit;
+
+                    let equity = equity * new_trade_qty;
 
                     trade.fill_size = fill_size(equity, entry_price);
                 }
 
                 trade.entry_price = entry_price;
                 trade.entry_tick = Some(tick);
+                trade.size = new_trade_qty;
 
                 self.trades.push(trade);
                 self.events.on_trade_entry = Some(StrategyOnTradeEntryEvent { trade: trade });

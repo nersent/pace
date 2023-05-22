@@ -9757,6 +9757,158 @@ mod tests {
     }
 
     #[test]
+    fn sized_trades_history_next_bar_open_edge_cases() {
+        let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
+            1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0,
+        ]))));
+
+        _test_trades_history(
+            &mut Strategy::new(
+                ctx.clone(),
+                StrategyConfig {
+                    on_bar_close: false,
+                    initial_capital: 1000.0,
+                    buy_with_equity: true,
+                    ..StrategyConfig::default()
+                },
+            ),
+            &[
+                // 0
+                None,
+                // 1
+                None,
+                // 2
+                Some(StrategySignal::Sized(1.0)),
+                // 3; Duplicated
+                Some(StrategySignal::Sized(1.0)),
+                // 4
+                None,
+                // 5; Flip
+                Some(StrategySignal::Sized(-1.0)),
+                // 6
+                None,
+                // 7
+                Some(StrategySignal::Sized(0.0)),
+                // 8
+                None,
+                // 9
+                None,
+            ],
+            &[
+                // 0
+                Some(vec![]),
+                // 1
+                Some(vec![]),
+                // 2
+                Some(vec![]),
+                // 3
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Long,
+                    is_closed: false,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: None,
+                    exit_tick: None,
+                }]),
+                // 4
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Long,
+                    is_closed: false,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: None,
+                    exit_tick: None,
+                }]),
+                // 5
+                Some(vec![TestTradePayload {
+                    direction: TradeDirection::Long,
+                    is_closed: false,
+                    entry_price: Some(4.0),
+                    entry_tick: Some(3),
+                    exit_price: None,
+                    exit_tick: None,
+                }]),
+                // 6
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(7.0),
+                        exit_tick: Some(6),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(7.0),
+                        entry_tick: Some(6),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 7
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(7.0),
+                        exit_tick: Some(6),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: false,
+                        entry_price: Some(7.0),
+                        entry_tick: Some(6),
+                        exit_price: None,
+                        exit_tick: None,
+                    },
+                ]),
+                // 8
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(7.0),
+                        exit_tick: Some(6),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(7.0),
+                        entry_tick: Some(6),
+                        exit_price: Some(9.0),
+                        exit_tick: Some(8),
+                    },
+                ]),
+                // 9
+                Some(vec![
+                    TestTradePayload {
+                        direction: TradeDirection::Long,
+                        is_closed: true,
+                        entry_price: Some(4.0),
+                        entry_tick: Some(3),
+                        exit_price: Some(7.0),
+                        exit_tick: Some(6),
+                    },
+                    TestTradePayload {
+                        direction: TradeDirection::Short,
+                        is_closed: true,
+                        entry_price: Some(7.0),
+                        entry_tick: Some(6),
+                        exit_price: Some(9.0),
+                        exit_tick: Some(8),
+                    },
+                ]),
+            ],
+        );
+    }
+
+    #[test]
     fn equity_empty_on_bar_close_continous() {
         let ctx = Context::new(Arc::from(InMemoryDataProvider::from_values(Vec::from([
             1.0, 2.0, 3.0, 4.0, 5.0,
