@@ -3,7 +3,7 @@ use crate::utils::float::Float64Utils;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Trend {
     Bearish = -1,
-    Consolidation = 0,
+    Neutral = 0,
     Bullish = 1,
     Strong = 2,
 }
@@ -16,7 +16,7 @@ impl From<f64> for Trend {
         if value.compare(1.0) {
             return Trend::Bullish;
         }
-        return Trend::Consolidation;
+        return Trend::Neutral;
     }
 }
 
@@ -24,7 +24,7 @@ impl Into<i32> for Trend {
     fn into(self) -> i32 {
         match self {
             Trend::Bullish => 1,
-            Trend::Consolidation => 0,
+            Trend::Neutral => 0,
             Trend::Bearish => -1,
             Trend::Strong => 2,
         }

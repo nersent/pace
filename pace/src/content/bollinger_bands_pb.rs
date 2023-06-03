@@ -182,11 +182,11 @@ impl BollingerBandsPercentBFeatureBuilder {
     }
 }
 
-impl IncrementalFeatureBuilder<BollingerBandsPercentBFeatures>
-    for BollingerBandsPercentBFeatureBuilder
-{
-    const NAMESPACE: &'static str = "ta::third_party::tradingview:::bollinger_bands_pb";
-}
+// impl IncrementalFeatureBuilder<BollingerBandsPercentBFeatures>
+//     for BollingerBandsPercentBFeatureBuilder
+// {
+//     const NAMESPACE: &'static str = "ta::third_party::tradingview:::bollinger_bands_pb";
+// }
 
 impl Incremental<(), BollingerBandsPercentBFeatures> for BollingerBandsPercentBFeatureBuilder {
     fn next(&mut self, _: ()) -> BollingerBandsPercentBFeatures {

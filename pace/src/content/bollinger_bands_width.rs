@@ -109,9 +109,9 @@ impl BollingerBandsWidthFeatureBuilder {
     }
 }
 
-impl IncrementalFeatureBuilder<BollingerBandsWidthFeatures> for BollingerBandsWidthFeatureBuilder {
-    const NAMESPACE: &'static str = "ta::third_party::tradingview:::bollinger_bands_width";
-}
+// impl IncrementalFeatureBuilder<BollingerBandsWidthFeatures> for BollingerBandsWidthFeatureBuilder {
+//     const NAMESPACE: &'static str = "ta::third_party::tradingview:::bollinger_bands_width";
+// }
 
 impl Incremental<(), BollingerBandsWidthFeatures> for BollingerBandsWidthFeatureBuilder {
     fn next(&mut self, _: ()) -> BollingerBandsWidthFeatures {

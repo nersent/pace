@@ -88,8 +88,6 @@ pub trait Features {
 }
 
 pub trait IncrementalFeatureBuilder<T: Features>: Incremental<(), Box<dyn Features>> {
-    const NAMESPACE: &'static str;
-
     fn to_ft_box(self) -> Box<dyn Incremental<(), Box<dyn Features>>>
     where
         Self: Sized + 'static,
