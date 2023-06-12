@@ -1,0 +1,55 @@
+//@version=5
+strategy("Position Size Adjuster", shorttitle="PSA", overlay=true, initial_capital = 10000000, process_orders_on_close = false, default_qty_type = strategy.percent_of_equity, default_qty_value = 100)
+
+// Input for the signals
+signal1 = input(0.8, title="Signal 1 (Long)")
+signal2 = input(0.5, title="Signal 2 (Long)")
+signal3 = input(0.1, title="Signal 2 (Long)")
+// signal4 = input(80, title="Signal 2 (Long)")
+
+// Simulate the signals
+longSignal1 = bar_index == 2500
+longSignal2 = bar_index == 2600
+longSignal3 = bar_index == 2700
+longSignal4 = bar_index == 2800
+
+// Calculate position sizes
+equity = strategy.equity // Assume an initial equity of 10,000 USD
+positionSize1 = signal1
+positionSize2 = equity * signal2
+positionSize3 = equity * signal3
+// positionSize4 = equity * signal4
+
+// Plot the signals and position sizes
+plot(longSignal1 ? close : na, color=color.green, style=plot.style_circles, linewidth=2)
+plot(longSignal2 ? close : na, color=color.blue, style=plot.style_circles, linewidth=2)
+
+// Custom function to handle position size adjustments
+adjustPositionSize(signal, size, l) =>
+    if signal
+        currentContracts = strategy.position_size
+        targetContracts = size
+        
+         
+        if not l
+            contractsToAdjust = currentContracts - targetContracts
+            // strategy.close("Long 1", qty = size)
+            strategy.order("Lxd", strategy.short, qty = size)
+            // strategy.close("Close Long", "Long 1")
+        if l
+            strategy.order("Cxd", strategy.long, qty = size)
+            // strategy.entry("Long 2", strategy.long, qty = 100)
+            // strategy.order("Close Long", strategy.long, contractsToAdjust, when=barstate.isconfirmed)
+            // strategy.entry("Long 2", strategy.long, qty = size)
+
+// Execute trades based on signals
+if longSignal1
+    strategy.entry("Long 1", strategy.long, qty = 10)
+// strategy.order("Long 1", strategy.long, na, when=longSignal1 and barstate.isconfirmed)
+// adjustPositionSize(longSignal2, 4, false)
+// adjustPositionSize(longSignal3, 16, true)
+// adjustPositionSize(longSignal4, 26, false)
+// adjustPositionSize(longSignal3, positionSize3, false)
+plot(bar_index, title='bar_index')
+plot(strategy.position_size, title='position_size')
+plot(strategy.opentrades, title='open_trades')

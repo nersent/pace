@@ -9,7 +9,7 @@ use crate::{
     utils::float::Float64Utils,
 };
 
-use super::trade::{fill_size, StrategySignal, Trade, TradeDirection};
+use super::trade::{fill_size, trade_pnl, StrategySignal, Trade, TradeDirection};
 
 pub struct StrategyOnTradeEntryEvent {
     pub trade: Trade,
@@ -171,16 +171,6 @@ impl Strategy {
                 }
 
                 if let StrategySignal::Sized(qty) = self.unfilled_signal {
-                    // if new_dir == TradeDirection::Long {
-                    //     close_trade = dir == TradeDirection::Short;
-                    //     new_trade_dir = Some(TradeDirection::Long);
-                    //     new_trade_qty = qty;
-                    // }
-                    // if new_dir == TradeDirection::Short {
-                    //     close_trade = dir == TradeDirection::Long;
-                    //     new_trade_dir = Some(TradeDirection::Short);
-                    //     new_trade_qty = qty;
-                    // }
                     if qty.is_zero() {
                         close_trade = !last_trade.is_closed;
                     } else {
@@ -193,7 +183,106 @@ impl Strategy {
                         new_trade_dir = Some(dir);
                         new_trade_qty = qty.abs();
                     }
-                    // println!("{:?}", self.unfilled_signal);
+                }
+
+                if let StrategySignal::Dynamic(qty) = self.unfilled_signal {
+                    let dir = if qty > 0.0 {
+                        TradeDirection::Long
+                    } else {
+                        TradeDirection::Short
+                    };
+
+                    close_trade =
+                        (dir != last_trade.direction || qty.is_zero()) && !last_trade.is_closed;
+
+                    if !close_trade {}
+
+                    // if qty.is_zero() {
+                    //     close_trade = !last_trade.is_closed;
+                    // } else {
+                    //     let dir = if qty > 0.0 {
+                    //         TradeDirection::Long
+                    //     } else {
+                    //         TradeDirection::Short
+                    //     };
+
+                    //     if dir != last_trade.direction {
+                    //         close_trade = dir != last_trade.direction;
+                    //         new_trade_dir = Some(dir);
+                    //         new_trade_qty = qty.abs();
+                    //     } else {
+                    //         // Decrease or increase equity exposure by filling contracts differece, not by closing trade
+                    //         let size_diff = last_trade.size.abs() - qty.abs();
+
+                    //         if size_diff.is_zero() {
+                    //         } else {
+                    //             let total_equity = self.config.initial_capital
+                    //                 + self.metrics.net_profit
+                    //                 + last_trade.pnl(orderbook_price);
+
+                    //             let frozen_equity = self.config.initial_capital
+                    //                 + self.metrics.net_profit
+                    //                 - last_trade.fill_size * last_trade.entry_price;
+
+                    //             let equity_in_trade = total_equity - frozen_equity;
+
+                    //             let adjusted_total_equity = total_equity * qty.abs();
+
+                    //             let capital_to_adjust = equity_in_trade - adjusted_total_equity;
+
+                    //             let adjust_contract_size =
+                    //                 fill_size(capital_to_adjust, orderbook_price);
+
+                    //             self.metrics.net_profit += capital_to_adjust;
+
+                    //             last_trade.fill_size = last_trade.fill_size - adjust_contract_size;
+
+                    //             // let equity_in_trade = last_trade.fill_size * last_trade.entry_price;
+                    //             // let equity_in_trade_percentage = last_trade.size;
+
+                    //             // let trade_contracts = last_trade.fill_size;
+
+                    //             // if dir == TradeDirection::Long {
+                    //             //     if size_diff > 0.0 {
+                    //             //         let equity_to_sell = equity_in_trade
+                    //             //             * (equity_in_trade_percentage - qty.abs());
+
+                    //             //         let sell_contract_size =
+                    //             //             fill_size(equity_to_sell, orderbook_price);
+
+                    //             //         last_trade.fill_size =
+                    //             //             last_trade.fill_size - sell_contract_size;
+                    //             //     }
+                    //             // }
+
+                    //             // let equity_in_trade = last_trade.fill_size * last_trade.entry_price;
+                    //             // let equity_in_trade = last_trade.fill_size * last_trade.entry_price;
+
+                    //             // let equity_not_in_trade = self.config.initial_capital
+                    //             //     + self.metrics.net_profit
+                    //             //     - equity_in_trade;
+                    //             // // let equity_not_in_trade_percentage =
+                    //             // //     1.0 - equity_in_trade_percentage;
+
+                    //             // let pnl = last_trade.pnl(orderbook_price);
+
+                    //             // if dir == TradeDirection::Long {
+                    //             //     if size_diff < 0.0 {
+                    //             //         let equity_to_sell = equity_in_trade
+                    //             //             * (equity_in_trade_percentage - qty.abs());
+
+                    //             //         let equity_to_sell_fill_size =
+                    //             //             fill_size(equity_to_sell, orderbook_price);
+
+                    //             //         last_trade.fill_size =
+                    //             //             last_trade.fill_size - equity_to_sell_fill_size;
+
+                    //             //         self.metrics.net_profit += . - pnl;
+                    //             //     }
+                    //             // }
+                    //         }
+                    //     }
+                    // }
                 }
 
                 if let Some(_new_trade_dir) = new_trade_dir {
@@ -273,6 +362,17 @@ impl Strategy {
                     new_trade_qty = 1.0;
                 }
                 if let StrategySignal::Sized(qty) = self.unfilled_signal {
+                    if !qty.is_zero() {
+                        new_trade_dir = Some(if qty > 0.0 {
+                            TradeDirection::Long
+                        } else {
+                            TradeDirection::Short
+                        });
+                        new_trade_qty = qty.abs();
+                    }
+                    // println!("{:?}", self.unfilled_signal);
+                }
+                if let StrategySignal::Dynamic(qty) = self.unfilled_signal {
                     if !qty.is_zero() {
                         new_trade_dir = Some(if qty > 0.0 {
                             TradeDirection::Long

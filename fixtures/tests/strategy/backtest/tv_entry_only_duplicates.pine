@@ -1,0 +1,56 @@
+// @version=5
+strategy("a", overlay=true,  initial_capital = 1000.0, process_orders_on_close = false, default_qty_type = strategy.percent_of_equity, default_qty_value = 100)
+
+if bar_index == 2100
+    strategy.entry("Long 1", strategy.long)
+if bar_index == 2101
+    strategy.entry("Long 1_duplicated", strategy.long)
+if bar_index == 2102
+    strategy.entry("Long 1_duplicated", strategy.long)
+if bar_index == 2170
+    strategy.entry("Long 1", strategy.short)
+if bar_index == 2190
+    strategy.entry("Long 1", strategy.long)
+if bar_index == 2250
+    strategy.entry("Long 1", strategy.short)
+if bar_index == 2260
+    strategy.entry("Long 1", strategy.long)
+if bar_index == 2360
+    strategy.entry("Long 1", strategy.short)
+if bar_index == 2361
+    strategy.entry("Long 1_duplicated", strategy.short)
+if bar_index == 2362
+    strategy.entry("Long 1_duplicated", strategy.short)
+if bar_index == 2450
+    strategy.entry("Long 1", strategy.long)
+if bar_index == 2460
+    strategy.entry("Long 1", strategy.short)
+if bar_index == 2700
+    strategy.entry("Long 1", strategy.long)
+if bar_index == 2800
+    strategy.entry("Long 1", strategy.short)
+if bar_index == 2899
+    strategy.entry("Long 1_duplicated", strategy.short)
+if bar_index == 2900
+    strategy.entry("Long 1", strategy.long)
+if bar_index == 2910
+    strategy.entry("Long 1", strategy.short)
+if bar_index == 3100
+    strategy.entry("Long 1", strategy.long)
+if bar_index == 3200
+    strategy.entry("Long 1", strategy.short)
+if bar_index == 3250
+    strategy.entry("Long 1", strategy.long)
+
+plot(volume, title='volume', display = display.none)
+plot(bar_index, title='bar_index', display = display.none)
+plot(strategy.position_size, title='position_size', display = display.none)
+plot(strategy.equity, title='equity', display = display.none)
+plot(strategy.netprofit, title='net_profit', display = display.none)
+plot(strategy.openprofit, title='open_profit', display = display.none)
+plot(strategy.opentrades, title='open_trades', display = display.none)
+plot(strategy.closedtrades, title='closed_trades', display = display.none)
+plot(strategy.grossloss, title='gross_loss', display = display.none)
+plot(strategy.grossprofit, title='gross_profit', display = display.none)
+plot(strategy.wintrades, title='winning_trades', display = display.none)
+plot(strategy.losstrades, title='losing_trades', display = display.none)

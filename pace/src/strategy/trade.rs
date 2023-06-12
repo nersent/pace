@@ -120,6 +120,7 @@ pub enum StrategySignal {
     ShortExit,
     Exit,
     Sized(f64),
+    Dynamic(f64),
 }
 
 impl StrategySignal {

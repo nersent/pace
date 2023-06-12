@@ -1,4 +1,5 @@
 pub trait Float64Utils {
+    const PRICE_PRECISION: f64;
     fn to_option(self) -> Option<f64>;
     fn normalize(self) -> f64;
     fn is_zero(self) -> bool;
@@ -8,6 +9,8 @@ pub trait Float64Utils {
 }
 
 impl Float64Utils for f64 {
+    const PRICE_PRECISION: f64 = 0.01;
+
     fn to_option(self) -> Option<f64> {
         if self.is_nan() {
             return None;
@@ -38,10 +41,6 @@ impl Float64Utils for f64 {
     }
 
     fn compare(&self, target: f64) -> bool {
-        if self.is_nan() {
-            return target.is_nan();
-        }
-        // return self.compare_with_precision(target, 0.01);
         return self.compare_with_precision(target, 0.00001);
     }
 }

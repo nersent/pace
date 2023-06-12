@@ -1405,6 +1405,8 @@ dependencies = [
  "polars",
  "prettytable-rs",
  "rand",
+ "serde",
+ "serde_json",
  "similar",
  "similar-asserts",
  "textplots",

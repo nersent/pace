@@ -1,0 +1,316 @@
+{
+  "name": "Simple",
+  "config": {
+    "initial_capital": 1000.0,
+    "process_orders_on_close": false,
+    "fixture": "tv_entry_only_duplicates.csv"
+  },
+  "signals": [
+    {
+      "bar_index": 2100,
+      "kind": "entry",
+      "id": "1_long_entry",
+      "direction": "long"
+    },
+    {
+      "bar_index": 2101,
+      "kind": "entry",
+      "id": "1_long_entry_duplicated",
+      "direction": "long",
+      "comment": "duplicated"
+    },
+    {
+      "bar_index": 2102,
+      "kind": "entry",
+      "id": "1_long_entry_duplicated",
+      "direction": "long",
+      "comment": "duplicated"
+    },
+    {
+      "bar_index": 2170,
+      "kind": "entry",
+      "id": "2_short_entry",
+      "direction": "short"
+    },
+    {
+      "bar_index": 2190,
+      "kind": "entry",
+      "id": "3_long_entry",
+      "direction": "long"
+    },
+    {
+      "bar_index": 2250,
+      "kind": "entry",
+      "id": "4_short_entry",
+      "direction": "short"
+    },
+    {
+      "bar_index": 2260,
+      "kind": "entry",
+      "id": "5_long_entry",
+      "direction": "long"
+    },
+    {
+      "bar_index": 2360,
+      "kind": "entry",
+      "id": "6_short_entry",
+      "direction": "short"
+    },
+    {
+      "bar_index": 2361,
+      "kind": "entry",
+      "id": "6_short_entry_duplicated",
+      "direction": "short",
+      "comment": "duplicated"
+    },
+    {
+      "bar_index": 2362,
+      "kind": "entry",
+      "id": "6_short_entry",
+      "direction": "short",
+      "comment": "duplicated"
+    },
+    {
+      "bar_index": 2450,
+      "kind": "entry",
+      "id": "7_long_entry",
+      "direction": "long"
+    },
+    {
+      "bar_index": 2460,
+      "kind": "entry",
+      "id": "8_short_entry",
+      "direction": "short"
+    },
+    {
+      "bar_index": 2700,
+      "kind": "entry",
+      "id": "9_long_entry",
+      "direction": "long"
+    },
+    {
+      "bar_index": 2800,
+      "kind": "entry",
+      "id": "10_short_entry",
+      "direction": "short"
+    },
+    {
+      "bar_index": 2899,
+      "kind": "entry",
+      "id": "10_short_entry_duplicated",
+      "direction": "short",
+      "comment": "duplicated"
+    },
+    {
+      "bar_index": 2900,
+      "kind": "entry",
+      "id": "11_long_entry",
+      "direction": "long"
+    },
+    {
+      "bar_index": 2910,
+      "kind": "entry",
+      "id": "12_short_entry",
+      "direction": "short"
+    },
+    {
+      "bar_index": 3100,
+      "kind": "entry",
+      "id": "13_long_entry",
+      "direction": "long"
+    },
+    {
+      "bar_index": 3200,
+      "kind": "entry",
+      "id": "14_short_entry",
+      "direction": "short"
+    },
+    {
+      "bar_index": 3250,
+      "kind": "entry",
+      "id": "15_long_entry",
+      "direction": "long"
+    }
+  ],
+  "trades": [
+    {
+      "entry_id": "1_long_entry",
+      "entry_bar_index": 2101,
+      "entry_price": 2734,
+      "exit_bar_index": 2171,
+      "exit_price": 4579,
+      "exit_id": "2_short_entry",
+      "size": 0.364963,
+      "direction": "long",
+      "closed": true,
+      "profit": 673.36
+    },
+    {
+      "entry_id": "2_short_entry",
+      "entry_bar_index": 2171,
+      "entry_price": 4579,
+      "exit_bar_index": 2191,
+      "exit_price": 4102,
+      "exit_id": "3_long_entry",
+      "size": 0.365441,
+      "direction": "short",
+      "closed": true,
+      "profit": 174.32
+    },
+    {
+      "entry_id": "3_long_entry",
+      "entry_bar_index": 2191,
+      "entry_price": 4102,
+      "exit_bar_index": 2251,
+      "exit_price": 7675,
+      "exit_id": "4_short_entry",
+      "size": 0.450432,
+      "direction": "long",
+      "closed": true,
+      "profit": 1609.39
+    },
+    {
+      "entry_id": "4_short_entry",
+      "entry_bar_index": 2251,
+      "entry_price": 7675,
+      "exit_bar_index": 2261,
+      "exit_price": 9708,
+      "exit_id": "5_long_entry",
+      "size": 0.450432,
+      "direction": "short",
+      "closed": true,
+      "profit": -915.73
+    },
+    {
+      "entry_id": "5_long_entry",
+      "entry_bar_index": 2261,
+      "entry_price": 9708,
+      "exit_bar_index": 2361,
+      "exit_price": 9905,
+      "exit_id": "6_short_entry",
+      "size": 0.261777,
+      "direction": "long",
+      "closed": true,
+      "profit": 51.57
+    },
+    {
+      "entry_id": "6_short_entry",
+      "entry_bar_index": 2361,
+      "entry_price": 9905,
+      "exit_bar_index": 2451,
+      "exit_price": 7618,
+      "exit_id": "7_long_entry",
+      "size": 0.261777,
+      "direction": "short",
+      "closed": true,
+      "profit": 598.68
+    },
+    {
+      "entry_id": "7_long_entry",
+      "entry_bar_index": 2451,
+      "entry_price": 7618,
+      "exit_bar_index": 2461,
+      "exit_price": 6391,
+      "exit_id": "8_short_entry",
+      "size": 0.418953,
+      "direction": "long",
+      "closed": true,
+      "profit": -514.06
+    },
+    {
+      "entry_id": "8_short_entry",
+      "entry_bar_index": 2461,
+      "entry_price": 6391,
+      "exit_bar_index": 2701,
+      "exit_price": 3651,
+      "exit_id": "9_long_entry",
+      "size": 0.418954,
+      "direction": "short",
+      "closed": true,
+      "profit": 1147.93
+    },
+    {
+      "entry_id": "9_long_entry",
+      "entry_bar_index": 2701,
+      "entry_price": 3651,
+      "exit_bar_index": 2801,
+      "exit_price": 7949,
+      "exit_id": "10_short_entry",
+      "size": 1.048188,
+      "direction": "long",
+      "closed": true,
+      "profit": 4505.11
+    },
+    {
+      "entry_id": "10_short_entry",
+      "entry_bar_index": 2801,
+      "entry_price": 7949,
+      "exit_bar_index": 2901,
+      "exit_price": 9491,
+      "exit_id": "11_long_entry",
+      "size": 1.048003,
+      "direction": "short",
+      "closed": true,
+      "profit": -1616.02
+    },
+    {
+      "entry_id": "11_long_entry",
+      "entry_bar_index": 2901,
+      "entry_price": 9491,
+      "exit_bar_index": 2911,
+      "exit_price": 10387,
+      "exit_id": "12_short_entry",
+      "size": 0.707651,
+      "direction": "long",
+      "closed": true,
+      "profit": 634.06
+    },
+    {
+      "entry_id": "12_short_entry",
+      "entry_bar_index": 2911,
+      "entry_price": 10387,
+      "exit_bar_index": 3101,
+      "exit_price": 5051,
+      "exit_id": "13_long_entry",
+      "size": 0.707482,
+      "direction": "short",
+      "closed": true,
+      "profit": 3775.12
+    },
+    {
+      "entry_id": "13_long_entry",
+      "entry_bar_index": 3101,
+      "entry_price": 5051,
+      "exit_bar_index": 3201,
+      "exit_price": 9286,
+      "exit_id": "14_short_entry",
+      "size": 2.212691,
+      "direction": "long",
+      "closed": true,
+      "profit": 9370.75
+    },
+    {
+      "entry_id": "14_short_entry",
+      "entry_bar_index": 3201,
+      "entry_price": 9286,
+      "exit_bar_index": 3251,
+      "exit_price": 11798,
+      "exit_id": "15_long_entry",
+      "size": 2.20703,
+      "direction": "short",
+      "closed": true,
+      "profit": -5544.06
+    },
+    {
+      "entry_id": "15_long_entry",
+      "entry_bar_index": 3251,
+      "entry_price": 11798,
+      "exit_bar_index": null,
+      "exit_price": null,
+      "exit_id": null,
+      "size": 1.268673,
+      "direction": "long",
+      "closed": false
+    }
+  ]
+}

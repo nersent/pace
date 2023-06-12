@@ -1,0 +1,47 @@
+{
+  "name": "Simple",
+  "config": {
+    "initial_capital": 1000.0,
+    "process_orders_on_close": false,
+    "price": [1, 2, 3, 4, 5, 6, 7, 8]
+  },
+  "signals": [
+    {
+      "bar_index": 1,
+      "kind": "entry",
+      "id": "1_long_entry",
+      "direction": "long"
+    },
+    {
+      "bar_index": 5,
+      "kind": "entry",
+      "id": "2_short_entry",
+      "direction": "short"
+    }
+  ],
+  "trades": [
+    {
+      "entry_bar_index": 2,
+      "entry_price": 3,
+      "entry_id": "1_long_entry",
+      "exit_bar_index": 6,
+      "exit_price": 7,
+      "exit_id": "2_short_entry",
+      "size": 500,
+      "direction": "long",
+      "closed": true,
+      "profit": 2000
+    },
+    {
+      "entry_id": "2_short_entry",
+      "entry_bar_index": 6,
+      "entry_price": 7,
+      "exit_bar_index": null,
+      "exit_price": null,
+      "direction": "short",
+      "closed": false,
+      "size": 416.66666666,
+      "profit": -416.6666666
+    }
+  ]
+}

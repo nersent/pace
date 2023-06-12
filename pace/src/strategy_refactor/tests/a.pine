@@ -1,0 +1,7 @@
+// @version=5
+strategy("a", overlay=true, initial_capital = 1000.0, process_orders_on_close = false, default_qty_type = strategy.percent_of_equity, default_qty_value = 100)
+
+if bar_index == 2000
+    strategy.entry("Long 1", strategy.long)
+// if bar_index == 2500
+//     strategy.entry("Long 1", strategy.short)
