@@ -1,5 +1,4 @@
 {
-  "name": "Simple",
   "config": {
     "initial_capital": 1000.0,
     "process_orders_on_close": false,

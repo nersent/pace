@@ -1,0 +1,112 @@
+{
+  "config": {
+    "initial_capital": 1000.0,
+    "process_orders_on_close": false,
+    "fixture": "tv_equity_pct.csv",
+    "sym_info": {
+      "min_tick": 1.0,
+      "min_qty": 0.000001
+    }
+  },
+  "signals": [
+    {
+      "bar_index": 3907,
+      "kind": "order",
+      "id": "1_long_entry",
+      "direction": "long",
+      "qty": 0.00335716923490113
+    },
+    {
+      "bar_index": 3908,
+      "kind": "order",
+      "id": "1_long_exit",
+      "direction": "short",
+      "qty": 0.00335716923490113
+    },
+    {
+      "bar_index": 3913,
+      "kind": "order",
+      "id": "2_long_entry",
+      "direction": "long",
+      "qty": 0.00644150033423319
+    },
+    {
+      "bar_index": 3915,
+      "kind": "order",
+      "id": "2_long_exit",
+      "direction": "short",
+      "qty": 0.006441
+    },
+    {
+      "bar_index": 3916,
+      "kind": "order",
+      "id": "3_long_entry",
+      "direction": "long",
+      "qty": 0.010274648279777
+    },
+    {
+      "bar_index": 3917,
+      "kind": "order",
+      "id": "3_long_exit_1",
+      "direction": "short",
+      "qty": 0.00679211675178753
+    },
+    {
+      "bar_index": 3918,
+      "kind": "order",
+      "id": "3_long_exit_2",
+      "direction": "short",
+      "qty": 0.003482
+    }
+  ],
+  "trades": [
+    {
+      "entry_id": "1_long_entry",
+      "entry_bar_index": 3908,
+      "entry_price": 29792,
+      "exit_bar_index": 3909,
+      "exit_price": 30438,
+      "exit_id": "1_long_exit",
+      "size": 0.003357,
+      "direction": "long",
+      "closed": true,
+      "profit": 2.17
+    },
+    {
+      "entry_id": "2_long_entry",
+      "entry_bar_index": 3914,
+      "entry_price": 31108,
+      "exit_bar_index": 3916,
+      "exit_price": 30069,
+      "exit_id": "2_long_exit",
+      "size": 0.006441,
+      "direction": "long",
+      "closed": true,
+      "profit": -6.69
+    },
+    {
+      "entry_id": "3_long_entry",
+      "entry_bar_index": 3917,
+      "entry_price": 29066,
+      "exit_bar_index": 3918,
+      "exit_price": 28397,
+      "exit_id": "3_long_exit_1",
+      "size": 0.006792,
+      "direction": "long",
+      "closed": true,
+      "profit": -4.54
+    },
+    {
+      "entry_id": "3_long_entry",
+      "entry_bar_index": 3917,
+      "entry_price": 29066,
+      "exit_bar_index": 3919,
+      "exit_price": 26539,
+      "exit_id": "3_long_exit_2",
+      "size": 0.003482,
+      "direction": "long",
+      "closed": true,
+      "profit": -8.80
+    }
+  ]
+}

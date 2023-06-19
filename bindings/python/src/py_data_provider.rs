@@ -2,7 +2,7 @@ use std::{path::Path, sync::Arc, time::Duration};
 
 use nersent_pace::{
     core::{
-        data_provider::{AnyDataProvider, DataProvider},
+        data_provider::{AnyDataProvider, DataProvider, SymInfo},
         in_memory_data_provider::InMemoryDataProvider,
     },
     polars::io::read_df,
@@ -36,6 +36,20 @@ impl PyDataProvider {
             return Self { instance };
         }
 
+        let mut sym_info = SymInfo::default();
+
+        if config.get_item("sym_info").is_some() {
+            let sym_info_config = config.get_item("sym_info").unwrap();
+
+            if sym_info_config.get_item("min_qty").is_ok() {
+                sym_info.min_qty = sym_info_config.get_item("min_qty").unwrap().to_f64();
+            }
+
+            if sym_info_config.get_item("min_tick").is_ok() {
+                sym_info.min_tick = sym_info_config.get_item("min_tick").unwrap().to_f64();
+            }
+        }
+
         let time = config.get_item("time").unwrap().to_vec_f64();
         let open = config.get_item("open").unwrap().to_vec_f64();
         let high = config.get_item("high").unwrap().to_vec_f64();
@@ -48,7 +62,9 @@ impl PyDataProvider {
             .map(|&x| Some(Duration::from_secs(x as u64)))
             .collect();
 
-        let instance = InMemoryDataProvider::new(open, high, low, close, volume, time).to_arc();
+        let instance = InMemoryDataProvider::new(open, high, low, close, volume, time)
+            .with_sym_info(sym_info)
+            .to_arc();
 
         return Self { instance };
     }

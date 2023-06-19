@@ -19,8 +19,11 @@ pub fn order_size(
     // the instrument’s point value, which the currency amount for one full point of price movement. For stocks, that’s 1. For the E-mini Nasdaq 100 future, that’s 20.
     point_value: f64,
 ) -> f64 {
-    assert!(equity > 0.0, "Equity must be greater than 0");
-    assert!(equity_pct > 0.0, "Equity percentage must be greater than 0");
+    assert!(equity >= 0.0, "Equity must be greater than 0");
+    assert!(
+        equity_pct >= 0.0,
+        "Equity percentage must be greater than 0"
+    );
     return (equity_pct * equity * exchange_rate) / (instrument_price * point_value);
 }
 

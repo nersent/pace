@@ -11,14 +11,14 @@ mod tests {
     use crate::{
         core::{
             context::Context,
-            data_provider::DataProvider,
+            data_provider::{DataProvider, SymInfo},
             in_memory_data_provider::InMemoryDataProvider,
             incremental::{Incremental, IncrementalDefault},
         },
         pinescript::common::PineScriptFloat64,
-        polars::series::SeriesCastUtils,
+        polars::{io::read_df, series::SeriesCastUtils},
         strategy_refactor::{
-            common::{Qty, Signal, SignalOptions},
+            common::{OrderConfig, Qty, Signal, SignalOptions},
             strategy::{Strategy, StrategyConfig},
             trade::{Trade, TradeDirection},
         },
@@ -37,7 +37,6 @@ mod tests {
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
     pub struct BacktestFixture {
-        pub name: String,
         pub config: BacktestFixtureConfig,
         pub signals: Vec<BacktestSignal>,
         pub trades: Vec<BacktestTrade>,
@@ -91,6 +90,13 @@ mod tests {
         pub price: Option<Vec<f64>>,
         pub fixture: Option<String>,
         pub price_precision: Option<usize>,
+        pub sym_info: Option<BacktestFixtureConfigSymInfo>,
+    }
+
+    #[derive(Debug, Deserialize, Serialize, Clone)]
+    pub struct BacktestFixtureConfigSymInfo {
+        pub min_tick: f64,
+        pub min_qty: f64,
     }
 
     #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -240,7 +246,23 @@ mod tests {
             let mut df: Option<DataFrame> = None;
 
             if let Some(fixture_path) = &backtest_fixture.config.fixture {
-                let (_df, _ctx) = Fixture::load(&format_path(fixture_path));
+                let _df = read_df(&format_path(fixture_path));
+
+                let mut dp = InMemoryDataProvider::from_df(&_df);
+
+                println!("{:?}", backtest_fixture.config.sym_info);
+
+                if let Some(sym_info_config) = &backtest_fixture.config.sym_info {
+                    let sym_info = SymInfo {
+                        min_tick: sym_info_config.min_tick,
+                        min_qty: sym_info_config.min_qty,
+                        ..SymInfo::default()
+                    };
+
+                    dp = dp.with_sym_info(sym_info);
+                }
+
+                let _ctx = Context::new(dp.to_arc());
 
                 backtest_fixture.timeline = Some(BacktestTimeline {
                     equity: Some(_df.column("equity").unwrap().to_f64()),
@@ -260,6 +282,7 @@ mod tests {
                 ctx = Some(_ctx);
             } else {
                 let price = backtest_fixture.config.price.clone().unwrap();
+
                 ctx = Some(Context::new(
                     InMemoryDataProvider::from_values(price).to_arc(),
                 ));
@@ -270,7 +293,7 @@ mod tests {
             let strategy_config = StrategyConfig {
                 initial_capital: backtest_fixture.config.initial_capital,
                 process_orders_on_close: backtest_fixture.config.process_orders_on_close,
-                ..StrategyConfig::default(ctx.clone())
+                ..StrategyConfig::default()
             };
 
             let strategy = Strategy::new(ctx.clone(), strategy_config);
@@ -283,6 +306,32 @@ mod tests {
         }
 
         pub fn run(&mut self) {
+            let price_precision = 1.0;
+
+            let mut snapshot_equity = ArraySnapshot::<f64>::new()
+                .with_name("Equity")
+                .with_precision(price_precision);
+            let mut snapshot_position_size = ArraySnapshot::<f64>::new()
+                .with_name("Position Size")
+                .with_precision(0.000001);
+            let mut snapshot_open_profit = ArraySnapshot::<f64>::new()
+                .with_name("Open Profit")
+                .with_precision(price_precision);
+            let mut snapshot_net_profit = ArraySnapshot::<f64>::new()
+                .with_name("Net Profit")
+                .with_precision(price_precision);
+            let mut snapshot_open_trades = ArraySnapshot::<f64>::new().with_name("Open Trades");
+            let mut snapshot_closed_trades = ArraySnapshot::<f64>::new().with_name("Closed Trades");
+            let mut snapshot_gross_loss = ArraySnapshot::<f64>::new()
+                .with_name("Gross Loss")
+                .with_precision(price_precision);
+            let mut snapshot_gross_profit = ArraySnapshot::<f64>::new()
+                .with_name("Gross Profit")
+                .with_precision(price_precision);
+            let mut snapshot_winning_trades =
+                ArraySnapshot::<f64>::new().with_name("Winning Trades");
+            let mut snapshot_losing_trades = ArraySnapshot::<f64>::new().with_name("Losing Trades");
+
             for i in self.ctx.first_bar_index..=self.ctx.last_bar_index {
                 self.ctx.bar.index.set(i);
 
@@ -304,13 +353,18 @@ mod tests {
                         _ => panic!("Unknown direction {}", signal_fixture.direction),
                     };
 
-                    let config = SignalOptions::new(direction)
-                        .with_qty(Qty::EquityPct(1.0))
-                        .with_id(signal_fixture.id.clone());
+                    // let config = SignalOptions::new(direction)
+                    //     .with_qty(Qty::EquityPct(1.0))
+                    //     .with_id(signal_fixture.id.clone());
 
                     let signal: Signal = match signal_fixture.kind.as_str() {
-                        "entry" => Signal::Entry(config),
-                        "exit" => Signal::Exit(config),
+                        // "entry" => Signal::Entry(config),
+                        // "close" => Signal::Close(config),
+                        "order" => Signal::Order(OrderConfig {
+                            direction,
+                            id: signal_fixture.id.clone(),
+                            qty: Qty::Contracts(signal_fixture.qty.unwrap_or(1.0)),
+                        }),
                         _ => panic!("Unknown signal kind {}", signal_fixture.kind),
                     };
 
@@ -319,145 +373,16 @@ mod tests {
 
                 self.strategy.next(());
 
-                let price_precision = 1.0;
-
-                if true {
-                    if let Some(timeline) = &self.fixture.timeline {
-                        if let Some(equity_series) = &timeline.equity {
-                            let target_equity = equity_series[bar_index];
-                            assert!(
-                                self.strategy
-                                    .equity
-                                    .compare_with_precision(target_equity, price_precision),
-                                "Equity mismatch at bar index {}. {} != {} | Diff: {}",
-                                bar_index,
-                                self.strategy.equity,
-                                target_equity,
-                                self.strategy.equity - target_equity
-                            );
-                        }
-
-                        if let Some(position_size_series) = &timeline.position_size {
-                            let target_position_size = position_size_series[bar_index];
-                            assert!(
-                                self.strategy.position_size.compare(target_position_size),
-                                "Position size mismatch at bar index {}. {} != {} | Diff: {}",
-                                bar_index,
-                                self.strategy.position_size,
-                                target_position_size,
-                                self.strategy.position_size - target_position_size
-                            );
-                        }
-
-                        if let Some(open_profit_series) = &timeline.open_profit {
-                            let target_open_profit = open_profit_series[bar_index];
-                            assert!(
-                                self.strategy
-                                    .open_profit
-                                    .compare_with_precision(target_open_profit, price_precision),
-                                "Open profit mismatch at bar index {}. {} != {} | Diff: {}",
-                                bar_index,
-                                self.strategy.open_profit,
-                                target_open_profit,
-                                self.strategy.open_profit - target_open_profit
-                            );
-                        }
-
-                        if let Some(net_profit_series) = &timeline.net_profit {
-                            let target_net_profit = net_profit_series[bar_index];
-                            assert!(
-                                self.strategy
-                                    .net_profit
-                                    .compare_with_precision(target_net_profit, price_precision),
-                                "Net profit mismatch at bar index {}. {} != {} | Diff: {}",
-                                bar_index,
-                                self.strategy.net_profit,
-                                target_net_profit,
-                                self.strategy.net_profit - target_net_profit
-                            );
-                        }
-
-                        if let Some(open_trades_series) = &timeline.open_trades {
-                            let src_open_trades = self.strategy.open_trades.len() as f64;
-                            let target_open_trades = open_trades_series[bar_index];
-                            assert!(
-                                src_open_trades.compare(target_open_trades),
-                                "Open trades mismatch at bar index {}. {} != {} | Diff: {}",
-                                bar_index,
-                                src_open_trades,
-                                src_open_trades,
-                                src_open_trades - target_open_trades
-                            );
-                        }
-
-                        if let Some(closed_trades_series) = &timeline.closed_trades {
-                            let src_closed_trades = self.strategy.closed_trades.len() as f64;
-                            let target_closed_trades = closed_trades_series[bar_index];
-                            assert!(
-                                src_closed_trades.compare(target_closed_trades),
-                                "Closed trades mismatch at bar index {}. {} != {} | Diff: {}",
-                                bar_index,
-                                src_closed_trades,
-                                target_closed_trades,
-                                src_closed_trades - target_closed_trades
-                            );
-                        }
-
-                        if let Some(gross_profit) = &timeline.gross_profit {
-                            let src_gross_profit = self.strategy.gross_profit;
-                            let target_gross_profit = gross_profit[bar_index];
-                            assert!(
-                                src_gross_profit
-                                    .compare_with_precision(target_gross_profit, price_precision),
-                                "Gross profit mismatch at bar index {}. {} != {} | Diff: {}",
-                                bar_index,
-                                src_gross_profit,
-                                target_gross_profit,
-                                src_gross_profit - target_gross_profit
-                            );
-                        }
-
-                        if let Some(gross_loss) = &timeline.gross_loss {
-                            let src_gross_loss = self.strategy.gross_loss;
-                            let target_gross_loss = gross_loss[bar_index];
-                            assert!(
-                                src_gross_loss
-                                    .compare_with_precision(target_gross_loss, price_precision),
-                                "Gross loss mismatch at bar index {}. {} != {} | Diff: {}",
-                                bar_index,
-                                src_gross_loss,
-                                target_gross_loss,
-                                src_gross_loss - target_gross_loss
-                            );
-                        }
-
-                        if let Some(winning_trades) = &timeline.winning_trades {
-                            let src_winning_trades = self.strategy.winning_trades as f64;
-                            let target_winning_trades = winning_trades[bar_index];
-                            assert!(
-                                src_winning_trades.compare(target_winning_trades),
-                                "Winning trades mismatch at bar index {}. {} != {} | Diff: {}",
-                                bar_index,
-                                src_winning_trades,
-                                target_winning_trades,
-                                src_winning_trades - target_winning_trades
-                            );
-                        }
-
-                        if let Some(losing_trades) = &timeline.losing_trades {
-                            let src_losing_trades = self.strategy.losing_trades as f64;
-                            let target_losing_trades = losing_trades[bar_index];
-                            assert!(
-                                src_losing_trades.compare(target_losing_trades),
-                                "Losing trades mismatch at bar index {}. {} != {} | Diff: {}",
-                                bar_index,
-                                src_losing_trades,
-                                target_losing_trades,
-                                src_losing_trades - target_losing_trades
-                            );
-                        }
-                    }
-                }
+                snapshot_equity.push(self.strategy.equity);
+                snapshot_position_size.push(self.strategy.position_size);
+                snapshot_open_profit.push(self.strategy.open_profit);
+                snapshot_net_profit.push(self.strategy.net_profit);
+                snapshot_open_trades.push(self.strategy.open_trades.len() as f64);
+                snapshot_closed_trades.push(self.strategy.closed_trades.len() as f64);
+                snapshot_gross_loss.push(self.strategy.gross_loss);
+                snapshot_gross_profit.push(self.strategy.gross_profit);
+                snapshot_winning_trades.push(self.strategy.winning_trades as f64);
+                snapshot_losing_trades.push(self.strategy.losing_trades as f64);
             }
 
             let trades_fixture = self
@@ -506,20 +431,55 @@ mod tests {
                 BacktestTrade::from_trade(trade).assert_eq(trade_fixture);
             }
 
+            if true {
+                if let Some(timeline) = &self.fixture.timeline {
+                    if let Some(position_size) = &timeline.position_size {
+                        snapshot_position_size.assert(position_size);
+                    }
+                    if let Some(open_trades) = &timeline.open_trades {
+                        snapshot_open_trades.assert(open_trades);
+                    }
+                    if let Some(closed_trades) = &timeline.closed_trades {
+                        snapshot_closed_trades.assert(closed_trades);
+                    }
+                    if let Some(open_profit) = &timeline.open_profit {
+                        snapshot_open_profit.assert(open_profit);
+                    }
+                    if let Some(net_profit) = &timeline.net_profit {
+                        snapshot_net_profit.assert(net_profit);
+                    }
+                    if let Some(equity) = &timeline.equity {
+                        snapshot_equity.assert(equity);
+                    }
+                    if let Some(gross_profit) = &timeline.gross_profit {
+                        snapshot_gross_profit.assert(gross_profit);
+                    }
+                    if let Some(gross_loss) = &timeline.gross_loss {
+                        snapshot_gross_loss.assert(gross_loss);
+                    }
+                    if let Some(winning_trades) = &timeline.winning_trades {
+                        snapshot_winning_trades.assert(winning_trades);
+                    }
+                    if let Some(losing_trades) = &timeline.losing_trades {
+                        snapshot_losing_trades.assert(losing_trades);
+                    }
+                }
+            }
+
             assert_eq!(
-                closed_trades_fixture.len(),
                 closed_trades.len(),
+                closed_trades_fixture.len(),
                 "Closed trades count mismatch. Expected: {:?}, Actual: {:?}",
                 closed_trades_fixture,
                 closed_trades
             );
             assert_eq!(
-                open_trades_fixture.len(),
                 open_trades.len(),
+                open_trades_fixture.len(),
                 "Open trades count mismatch. Expected: {:?}, Actual: {:?}",
                 open_trades_fixture,
                 open_trades
-            )
+            );
         }
     }
 
@@ -528,11 +488,32 @@ mod tests {
     //     Backtest::new(BacktestFixture::load(&format_path("simple.json"))).run();
     // }
 
+    // #[test]
+    // pub fn tv_entry_only_duplicates() {
+    //     Backtest::new(BacktestFixture::load(&format_path(
+    //         "tv_entry_only_duplicates.json",
+    //     )))
+    //     .run();
+    // }
+
+    // #[test]
+    // pub fn tv_entry_close_duplicates() {
+    //     Backtest::new(BacktestFixture::load(&format_path(
+    //         "tv_entry_close_duplicates.json",
+    //     )))
+    //     .run();
+    // }
+
     #[test]
-    pub fn tv_entry_only_duplicates() {
+    pub fn tv_order_contracts() {
         Backtest::new(BacktestFixture::load(&format_path(
-            "tv_entry_only_duplicates.json",
+            "tv_order_contracts.json",
         )))
         .run();
+    }
+
+    #[test]
+    pub fn tv_equity_pct() {
+        Backtest::new(BacktestFixture::load(&format_path("tv_equity_pct.json"))).run();
     }
 }

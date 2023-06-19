@@ -1,6 +1,6 @@
 use super::trade::TradeDirection;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Qty {
     Default,
     Contracts(f64),
@@ -43,20 +43,28 @@ impl SignalOptions {
     }
 }
 
-#[derive(Debug)]
-pub enum Signal {
-    Entry(SignalOptions),
-    Exit(SignalOptions),
-    Order(SignalOptions),
+#[derive(Debug, Clone)]
+pub struct OrderConfig {
+    pub id: String,
+    pub direction: TradeDirection,
+    pub qty: Qty,
 }
 
-impl Signal {
-    pub fn as_signal_options(self) -> Option<SignalOptions> {
-        return match self {
-            Signal::Entry(options) => Some(options),
-            Signal::Exit(options) => Some(options),
-            Signal::Order(options) => Some(options),
-            _ => None,
-        };
-    }
+#[derive(Debug, Clone)]
+pub enum Signal {
+    Hold,
+    // Entry(SignalOptions),
+    // Close(SignalOptions),
+    Order(OrderConfig),
 }
+
+// impl Signal {
+//     pub fn as_signal_options(self) -> Option<SignalOptions> {
+//         return match self {
+//             Signal::Entry(options) => Some(options),
+//             Signal::Close(options) => Some(options),
+//             Signal::Order(options) => Some(options),
+//             _ => None,
+//         };
+//     }
+// }

@@ -1,0 +1,36 @@
+// @version=5
+strategy("a", overlay=true,  initial_capital = 1000.0, process_orders_on_close = false, default_qty_type = strategy.fixed)
+
+if bar_index == 2000
+    strategy.order("entry long", strategy.long, 0.5)
+if bar_index == 2100
+    strategy.order("entry short", strategy.short, 0.5)
+
+if bar_index == 2105
+    strategy.order("entry short", strategy.short, 0.25)
+if bar_index == 2110
+    strategy.order("entry short", strategy.short, 0.75)
+if bar_index == 2115
+    strategy.order("entry long", strategy.long, 0.8)
+if bar_index == 2125
+    strategy.order("entry long", strategy.long, 0.2)
+
+if bar_index == 2140
+    strategy.order("entry long", strategy.long, 0.25)
+if bar_index == 2180
+    strategy.order("entry long", strategy.long, 0.25)
+if bar_index == 2250
+    strategy.order("entry short", strategy.short, 0.5)
+
+plot(volume, title='volume', display = display.none)
+plot(bar_index, title='bar_index', display = display.none)
+plot(strategy.position_size, title='position_size', display = display.none)
+plot(strategy.equity, title='equity', display = display.none)
+plot(strategy.netprofit, title='net_profit', display = display.none)
+plot(strategy.openprofit, title='open_profit', display = display.none)
+plot(strategy.opentrades, title='open_trades', display = display.none)
+plot(strategy.closedtrades, title='closed_trades', display = display.none)
+plot(strategy.grossloss, title='gross_loss', display = display.none)
+plot(strategy.grossprofit, title='gross_profit', display = display.none)
+plot(strategy.wintrades, title='winning_trades', display = display.none)
+plot(strategy.losstrades, title='losing_trades', display = display.none)

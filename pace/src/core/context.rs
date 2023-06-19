@@ -1,6 +1,6 @@
 use std::{
     borrow::{Borrow, BorrowMut},
-    cell::{Cell, RefCell, RefMut, UnsafeCell},
+    cell::{Cell, Ref, RefCell, RefMut, UnsafeCell},
     rc::Rc,
     sync::Arc,
     time::Duration,
@@ -8,7 +8,7 @@ use std::{
 
 use chrono::NaiveDateTime;
 
-use crate::utils::time::to_datetime;
+use crate::utils::{math::round_to_min_tick, time::to_datetime};
 
 use super::data_provider::{AnyDataProvider, DataProvider};
 
@@ -123,6 +123,36 @@ impl Context {
             },
             is_running: Rc::clone(&self.is_running),
         };
+    }
+
+    /// Rounds `size` to the nearest multiple of the minimum order quantity.
+    pub fn round_contracts(&self, size: f64) -> f64 {
+        if let Some(sym_info) = self.data.get_sym_info() {
+            if sym_info.min_qty.is_nan() {
+                return size;
+            }
+            // 0.000001
+            let round_val = 1000000.0;
+            return ((size * round_val) + f64::EPSILON).round() / round_val;
+            // return (size * round_val).floor() / round_val;
+        }
+        return size;
+    }
+
+    /// Checks if `size` is a valid order quantity by comparing it to the minimum order quantity.
+    pub fn validate_contracts(&self, size: f64) -> bool {
+        if let Some(sym_info) = self.data.get_sym_info() {
+            return sym_info.min_qty.is_nan() || size >= sym_info.min_qty;
+        }
+        return true;
+    }
+
+    pub fn round_to_min_tick(&self, value: f64) -> f64 {
+        return self
+            .data
+            .get_sym_info()
+            .map(|sym_info| round_to_min_tick(value, sym_info.min_tick))
+            .unwrap_or(value);
     }
 
     /// Returns **`N`** previous high price.

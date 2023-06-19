@@ -1,0 +1,150 @@
+{
+  "config": {
+    "initial_capital": 1000.0,
+    "process_orders_on_close": false,
+    "fixture": "tv_order_contracts.csv",
+    "sym_info": {
+      "min_tick": 1.0,
+      "min_qty": 0.000001
+    }
+  },
+  "signals": [
+    {
+      "bar_index": 2000,
+      "kind": "order",
+      "id": "1_long_entry",
+      "direction": "long",
+      "qty": 0.5
+    },
+    {
+      "bar_index": 2100,
+      "kind": "order",
+      "id": "1_long_exit",
+      "direction": "short",
+      "qty": 0.5
+    },
+    {
+      "bar_index": 2105,
+      "kind": "order",
+      "id": "2_short_entry_1",
+      "direction": "short",
+      "qty": 0.25
+    },
+    {
+      "bar_index": 2110,
+      "kind": "order",
+      "id": "2_short_entry_2",
+      "direction": "short",
+      "qty": 0.75
+    },
+    {
+      "bar_index": 2115,
+      "kind": "order",
+      "id": "2_short_exit_1",
+      "direction": "long",
+      "qty": 0.8
+    },
+    {
+      "bar_index": 2125,
+      "kind": "order",
+      "id": "2_short_exit_2",
+      "direction": "long",
+      "qty": 0.2
+    },
+    {
+      "bar_index": 2140,
+      "kind": "order",
+      "id": "3_long_entry_1",
+      "direction": "long",
+      "qty": 0.25
+    },
+    {
+      "bar_index": 2180,
+      "kind": "order",
+      "id": "3_long_entry_2",
+      "direction": "long",
+      "qty": 0.25
+    },
+    {
+      "bar_index": 2250,
+      "kind": "order",
+      "id": "3_long_exit",
+      "direction": "short",
+      "qty": 0.5
+    }
+  ],
+  "trades": [
+    {
+      "entry_id": "1_long_entry",
+      "entry_bar_index": 2001,
+      "entry_price": 1226,
+      "exit_bar_index": 2101,
+      "exit_price": 2734,
+      "exit_id": "1_long_exit",
+      "size": 0.5,
+      "direction": "long",
+      "closed": true,
+      "profit": 754.00
+    },
+    {
+      "entry_id": "2_short_entry_1",
+      "entry_bar_index": 2106,
+      "entry_price": 2502,
+      "exit_bar_index": 2116,
+      "exit_price": 2603,
+      "exit_id": "2_short_exit_1",
+      "size": 0.25,
+      "direction": "short",
+      "closed": true,
+      "profit": -25.25
+    },
+    {
+      "entry_id": "2_short_entry_2",
+      "entry_bar_index": 2111,
+      "entry_price": 2465,
+      "exit_bar_index": 2116,
+      "exit_price": 2603,
+      "exit_id": "2_short_exit_1",
+      "size": 0.55,
+      "direction": "short",
+      "closed": true,
+      "profit": -75.90
+    },
+    {
+      "entry_id": "2_short_entry_2",
+      "entry_bar_index": 2111,
+      "entry_price": 2465,
+      "exit_bar_index": 2126,
+      "exit_price": 1971,
+      "exit_id": "2_short_exit_2",
+      "size": 0.2,
+      "direction": "short",
+      "closed": true,
+      "profit": 98.80
+    },
+    {
+      "entry_id": "3_long_entry_1",
+      "entry_bar_index": 2141,
+      "entry_price": 2746,
+      "exit_bar_index": 2251,
+      "exit_price": 7675,
+      "exit_id": "3_long_exit",
+      "size": 0.25,
+      "direction": "long",
+      "closed": true,
+      "profit": 1232.25
+    },
+    {
+      "entry_id": "3_long_entry_2",
+      "entry_bar_index": 2181,
+      "entry_price": 4327,
+      "exit_bar_index": 2251,
+      "exit_price": 7675,
+      "exit_id": "3_long_exit",
+      "size": 0.25,
+      "direction": "long",
+      "closed": true,
+      "profit": 837.00
+    }
+  ]
+}

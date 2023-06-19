@@ -2,7 +2,10 @@ use std::{sync::Arc, time::Duration};
 
 use polars::prelude::DataFrame;
 
-use super::{data_provider::DataProvider, timeframe::Timeframe};
+use super::{
+    data_provider::{DataProvider, SymInfo},
+    timeframe::Timeframe,
+};
 
 /// Implements `DataProvider`. Stores all data in memory.
 pub struct InMemoryDataProvider {
@@ -15,6 +18,7 @@ pub struct InMemoryDataProvider {
     pub start_tick: usize,
     pub end_tick: usize,
     pub timeframe: Timeframe,
+    pub sym_info: Option<SymInfo>,
 }
 
 impl InMemoryDataProvider {
@@ -93,6 +97,10 @@ impl DataProvider for InMemoryDataProvider {
     fn get_timeframe(&self) -> Timeframe {
         return self.timeframe;
     }
+
+    fn get_sym_info(&self) -> Option<&SymInfo> {
+        return self.sym_info.as_ref();
+    }
 }
 
 impl InMemoryDataProvider {
@@ -117,6 +125,7 @@ impl InMemoryDataProvider {
             end_tick,
             time,
             timeframe: Timeframe::Unknown,
+            sym_info: None,
         };
     }
 
@@ -131,6 +140,12 @@ impl InMemoryDataProvider {
             end_tick: values.len() - 1,
             time: vec![None; values.len()],
             timeframe: Timeframe::Unknown,
+            sym_info: None,
         };
+    }
+
+    pub fn with_sym_info(mut self, sym_info: SymInfo) -> Self {
+        self.sym_info = Some(sym_info);
+        return self;
     }
 }

@@ -7,6 +7,7 @@ pub struct ArraySnapshot<T> {
     pub print_max_index: Option<usize>,
     pub actual: Vec<T>,
     pub name: Option<String>,
+    pub precision: f64,
 }
 
 pub trait Compare<T> {
@@ -20,11 +21,17 @@ impl<T: std::fmt::Debug> ArraySnapshot<T> {
             debug_mode: false,
             print_max_index: None,
             name: None,
+            precision: 0.00001,
         };
     }
 
     pub fn with_name(mut self, name: &str) -> Self {
         self.name = Some(name.to_string());
+        return self;
+    }
+
+    pub fn with_precision(mut self, precision: f64) -> Self {
+        self.precision = precision;
         return self;
     }
 
@@ -45,7 +52,7 @@ impl<T: std::fmt::Debug> ArraySnapshot<T> {
         self.actual.push(value);
     }
 
-    pub fn assert_iter(&self, expected: &[T], compare_delegate: fn(&T, &T) -> bool) {
+    pub fn assert_iter(&self, expected: &[T], compare_delegate: impl Fn(&T, &T) -> bool) {
         assert_eq!(
             self.actual.len(),
             expected.len(),
@@ -88,7 +95,9 @@ impl<T: std::fmt::Debug> ArraySnapshot<T> {
 
 impl ArraySnapshot<f64> {
     pub fn assert(&self, expected: &[f64]) {
-        self.assert_iter(expected, |actual, expected| (*actual).compare(*expected));
+        self.assert_iter(expected, |actual, expected| {
+            (*actual).compare_with_precision(*expected, self.precision)
+        });
     }
 }
 

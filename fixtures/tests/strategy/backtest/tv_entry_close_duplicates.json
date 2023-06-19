@@ -1,0 +1,34 @@
+{
+  "config": {
+    "initial_capital": 1000.0,
+    "process_orders_on_close": false,
+    "fixture": "tv_entry_close_duplicates.csv"
+  },
+  "signals": [
+    {
+      "bar_index": 2100,
+      "kind": "entry",
+      "id": "1_long_entry",
+      "direction": "long"
+    },
+    {
+      "bar_index": 2150,
+      "kind": "close",
+      "id": "1_long_entry"
+    }
+  ],
+  "trades": [
+    {
+      "entry_id": "1_long_entry",
+      "entry_bar_index": 2101,
+      "entry_price": 2734,
+      "exit_bar_index": 2151,
+      "exit_price": 3343,
+      "exit_id": "1_long_entry",
+      "size": 0.364963,
+      "direction": "long",
+      "closed": true,
+      "profit": 222.26
+    }
+  ]
+}

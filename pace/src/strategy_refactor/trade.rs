@@ -4,8 +4,8 @@ use super::utils::trade_profit;
 
 #[derive(Debug, PartialEq, Clone, Copy, FromPrimitive)]
 pub enum TradeDirection {
-    Long = 0,
-    Short = 1,
+    Long = 1,
+    Short = -1,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -103,15 +103,15 @@ impl Trade {
             !self.closed,
             "Cannot close a trade that has already been closed"
         );
-        self.profit = trade_profit(
-            self.size,
-            self.entry_price,
-            exit_price,
-            self.direction == TradeDirection::Long,
-        );
+        self.update_profit(exit_price);
         self.exit_price = exit_price;
         self.exit_id = Some(exit_id);
         self.exit_bar_index = Some(exit_bar_index);
         self.closed = true;
+    }
+
+    pub fn set_size(&mut self, size: f64) {
+        assert!(size > 0.0, "Trade size must be greater than 0");
+        self.size = size;
     }
 }
