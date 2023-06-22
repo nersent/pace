@@ -57,6 +57,12 @@ impl Into<FeatureValue> for i64 {
     }
 }
 
+impl Into<FeatureValue> for Option<Trend> {
+    fn into(self) -> FeatureValue {
+        return self.map(|x| x.into()).unwrap_or(FeatureValue::Empty);
+    }
+}
+
 impl Into<String> for FeatureValue {
     fn into(self) -> String {
         match self {
