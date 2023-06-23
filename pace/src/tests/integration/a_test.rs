@@ -88,7 +88,7 @@ mod tests {
                 // }
                 if i > 0 {
                     // let _length = diff_s.get(i - 1).ps_nz() - diff_s.get(i + 1 - 1).ps_nz();
-                    let _length = diff.index(i) - diff.index(i + 1);
+                    let _length = diff.get(i) - diff.get(i + 1);
                     length += _length;
 
                     // if ctx.bar.index() < 15 {

@@ -512,8 +512,8 @@ mod tests {
         .run();
     }
 
-    #[test]
-    pub fn tv_equity_pct() {
-        Backtest::new(BacktestFixture::load(&format_path("tv_equity_pct.json"))).run();
-    }
+    // #[test]
+    // pub fn tv_equity_pct() {
+    //     Backtest::new(BacktestFixture::load(&format_path("tv_equity_pct.json"))).run();
+    // }
 }

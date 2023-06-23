@@ -34,7 +34,7 @@ mod tests {
             target.set(2.0);
             target.set(4.0);
             target.set(5.0);
-            snapshot.push(target.index(index));
+            snapshot.push(target.get(index));
             target.next(());
         }
         snapshot.assert(expected);

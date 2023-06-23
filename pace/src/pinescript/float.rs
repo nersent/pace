@@ -30,11 +30,11 @@ impl Float {
         self._value = value;
     }
 
-    pub fn get(&self) -> f64 {
+    pub fn value(&self) -> f64 {
         return self._value;
     }
 
-    pub fn index(&self, index: usize) -> f64 {
+    pub fn get(&self, index: usize) -> f64 {
         if index == 0 {
             return self._value;
         }
@@ -52,6 +52,6 @@ impl Incremental<(), ()> for Float {
 
 impl Into<f64> for Float {
     fn into(self) -> f64 {
-        return self.get();
+        return self.value();
     }
 }

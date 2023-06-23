@@ -14,6 +14,7 @@ pub struct Change {
 }
 
 impl Change {
+    /// Length is `1` by default.
     pub fn new(ctx: Context, length: usize) -> Self {
         assert!(length >= 1, "Change must have a length of at least 1");
         return Self {
