@@ -1,3 +1,4 @@
+pub mod acc_dist;
 pub mod average_true_range;
 pub mod bars;
 pub mod bars_since;

@@ -1,3 +1,4 @@
+mod acc_dist_test;
 mod average_true_range_test;
 mod bars_since_test;
 mod change_test;
