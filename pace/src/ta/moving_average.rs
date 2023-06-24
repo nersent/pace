@@ -4,8 +4,8 @@ use crate::{
 };
 
 use super::{
-    exponential_moving_average::Ema, running_moving_average::Rma, simple_moving_average::Sma,
-    symmetrically_weighted_moving_average::Swma,
+    exponential_moving_average::Ema, hull_moving_average::Hma, running_moving_average::Rma,
+    simple_moving_average::Sma, symmetrically_weighted_moving_average::Swma,
 };
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -14,6 +14,7 @@ pub enum MaKind {
     EMA,
     RMA,
     SWMA,
+    HMA,
 }
 
 impl Into<&'static str> for MaKind {
@@ -23,6 +24,7 @@ impl Into<&'static str> for MaKind {
             MaKind::EMA => "ema",
             MaKind::RMA => "rma",
             MaKind::SWMA => "swma",
+            MaKind::HMA => "hma",
         };
     }
 }
@@ -51,6 +53,7 @@ impl Ma {
             MaKind::EMA => Box::new(Ema::new(ctx, length)),
             MaKind::RMA => Box::new(Rma::new(ctx, length)),
             MaKind::SWMA => Box::new(Swma::new(ctx)),
+            MaKind::HMA => Box::new(Hma::new(ctx, length)),
         }
     }
 }

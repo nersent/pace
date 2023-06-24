@@ -39,6 +39,7 @@ pub struct Tr {
 }
 
 impl Tr {
+    // handle_na is false by default
     pub fn new(ctx: Context, handle_na: bool) -> Self {
         return Self {
             ctx: ctx.clone(),
