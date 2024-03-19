@@ -1,3 +1,5 @@
+<https://www.tradingview.com/v/BICzyhq0/>
+
 <div align="center">
   <img src="static/logo.svg" width="184">
 
@@ -170,10 +172,10 @@ We performed multiple benchmarks for popular indicators across different technic
 - [FinTA](https://github.com/peerchemist/finta)
 - [spectre](https://github.com/Heerozh/spectre)
 - [TA](https://github.com/bukosabino/ta)
-- https://tulipindicators.org/
-- https://kernc.github.io/backtesting.py/
+- <https://tulipindicators.org/>
+- <https://kernc.github.io/backtesting.py/>
 
-### Details:
+### Details
 
 - AMD Ryzen 5 3600
 - 16GB RAM
@@ -183,7 +185,7 @@ We performed multiple benchmarks for popular indicators across different technic
 - Python 3.9
 - Pace benchmark uses [mimalloc allocator](https://github.com/purpleprotocol/mimalloc_rust) and has been compiled with [cargo pgo](https://github.com/Kobzol/cargo-pgo)
 
-### Interpretation:
+### Interpretation
 
 - talib is the fastest library across all benchmarks, thanks to vectorization
 - Pace is the second fastest library, despite not being designed towards vector calculations
@@ -191,7 +193,7 @@ We performed multiple benchmarks for popular indicators across different technic
 - Pandas and Numpy have both their own runtime overhead
 - It's not worth to do technical analysis on GPU for smaller datasets
 
-### Mean time (ms):
+### Mean time (ms)
 
 > Note: The less the better
 
@@ -207,7 +209,7 @@ We performed multiple benchmarks for popular indicators across different technic
 
 ![1m_bars_log10](/static/benchmarks/1000000_mean_time_log10.png)
 
-### Mean time difference compared to Pace (ms):
+### Mean time difference compared to Pace (ms)
 
 > Note: The more the better
 

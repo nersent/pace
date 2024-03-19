@@ -25,6 +25,7 @@ impl Lowest {
 }
 
 impl Incremental<f64, f64> for Lowest {
+    // ctx.bar.low() by default
     fn next(&mut self, value: f64) -> f64 {
         self.series.next(value);
 

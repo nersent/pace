@@ -410,6 +410,8 @@ impl Strategy {
                     let equity = equity * new_trade_qty;
 
                     trade.fill_size = fill_size(equity, entry_price);
+                } else {
+                    trade.fill_size = fill_size(1000.0, entry_price);
                 }
 
                 trade.entry_price = entry_price;

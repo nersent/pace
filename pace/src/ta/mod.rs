@@ -13,6 +13,7 @@ pub mod cross_under_threshold;
 pub mod cum;
 pub mod dev;
 pub mod exponential_moving_average;
+pub mod exponential_moving_average_2;
 pub mod highest;
 pub mod highest_bars;
 pub mod hull_moving_average;

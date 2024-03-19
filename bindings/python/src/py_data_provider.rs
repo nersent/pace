@@ -17,15 +17,29 @@ pub struct PyDataProvider {
 }
 
 impl PyDataProvider {
+    pub fn new(instance: AnyDataProvider) -> Self {
+        return Self { instance };
+    }
+
     pub fn get(&self) -> AnyDataProvider {
         return Arc::clone(&self.instance);
+    }
+
+    pub fn clone(&self) -> PyDataProvider {
+        return PyDataProvider {
+            instance: Arc::clone(&self.instance),
+        };
+    }
+
+    fn get_tick_iterator(&self) -> impl Iterator<Item = usize> {
+        return (self.instance.get_first_tick()..=self.instance.get_last_tick()).into_iter();
     }
 }
 
 #[pymethods]
 impl PyDataProvider {
     #[new]
-    pub fn new(config: &PyDict) -> Self {
+    pub fn py_new(config: &PyDict) -> Self {
         if config.get_item("path").is_some() {
             let path = config.get_item("path").unwrap().to_str();
             let path = Path::new(&path);
@@ -56,6 +70,7 @@ impl PyDataProvider {
         let low = config.get_item("low").unwrap().to_vec_f64();
         let close = config.get_item("close").unwrap().to_vec_f64();
         let volume = config.get_item("volume").unwrap().to_vec_f64();
+        // let xd: Result<Vec<Option<Duration>>, _> = config.get_item("time").unwrap().to_vec_f64();
 
         let time: Vec<Option<Duration>> = time
             .iter()
@@ -79,5 +94,51 @@ impl PyDataProvider {
 
     pub fn find_tick(&self, seconds: u64) -> Option<usize> {
         return self.instance.find_tick(seconds);
+    }
+
+    pub fn get_open_series(&self) -> Vec<f64> {
+        return self
+            .get_tick_iterator()
+            .map(|i| self.instance.get_open(i))
+            .collect();
+    }
+
+    pub fn get_high_series(&self) -> Vec<f64> {
+        return self
+            .get_tick_iterator()
+            .map(|i| self.instance.get_high(i))
+            .collect();
+    }
+
+    pub fn get_low_series(&self) -> Vec<f64> {
+        return self
+            .get_tick_iterator()
+            .map(|i| self.instance.get_low(i))
+            .collect();
+    }
+
+    pub fn get_close_series(&self) -> Vec<f64> {
+        return self
+            .get_tick_iterator()
+            .map(|i| self.instance.get_close(i))
+            .collect();
+    }
+
+    pub fn get_volume_series(&self) -> Vec<f64> {
+        return self
+            .get_tick_iterator()
+            .map(|i| self.instance.get_volume(i))
+            .collect();
+    }
+
+    pub fn get_time_series(&self) -> Vec<f64> {
+        return self
+            .get_tick_iterator()
+            .map(|i| self.instance.get_time(i).unwrap().as_secs_f64())
+            .collect();
+    }
+
+    pub fn get_tick_series(&self) -> Vec<usize> {
+        return self.get_tick_iterator().collect();
     }
 }

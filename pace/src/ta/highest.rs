@@ -26,6 +26,7 @@ impl Highest {
 }
 
 impl Incremental<f64, f64> for Highest {
+    // ctx.bar.high() by default
     fn next(&mut self, value: f64) -> f64 {
         self.series.next(value);
 

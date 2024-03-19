@@ -42,6 +42,13 @@ impl FloatSeries {
         return self.values[index];
     }
 
+    pub fn at(&self, index: usize) -> f64 {
+        if index >= self.values.len() {
+            return f64::NAN;
+        }
+        return self.values[index];
+    }
+
     // /// Returns all **`N`** previous values.
     pub fn window(&self, length: usize) -> &[f64] {
         return &self.values[self.values.len() - length..];
